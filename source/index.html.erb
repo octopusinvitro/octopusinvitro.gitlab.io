@@ -1,0 +1,54 @@
+---
+title: Octopus in vitro
+blog: blog
+---
+<header class="site-header center">
+  <h1>Octopus in vitro</h1>
+  <p>Polyglot developer</p>
+  <a href="/"><img src="<%= image_host %>/images/logo.png" width="270" height="270" alt="Site logo"></a>
+</header>
+
+<div class="wrapper center">
+  <p>I'm a developer, illustrator and musician with too many hobbies, a background in scientific research, and a wide experience working abroad with multicultural teams</p>
+</div>
+
+<section class="wrapper diagonal-top diagonal-bot right">
+  <h2>Popular Work</h2>
+
+  <ul class="featured">
+    <% featured_work.each do |article| %>
+    <li class="hexagon">
+      <a href="<%= article.url %>">
+        <img src="<%= featured_image(article) %>" width="200" height="173" alt="<%= featured_image_alt(article) %>">
+        <div class="over"><span><%= article.title %></span></div>
+      </a>
+    </li>
+    <% end %>
+  </ul>
+
+  <p><a class="taxonomy-item" href="/work/">See all work</a></p>
+</section>
+
+<section class="wrapper">
+  <h2>Popular posts</h2>
+  <ul class="section-recent featured-posts">
+    <% featured_posts.each do |article| %>
+    <li>
+      <span><%= article.date.strftime('%b %e, %Y') %></span>
+      <%= link_to article.title, article %>
+    </li>
+    <% end %>
+  </ul>
+</section>
+
+<section class="wrapper diagonal-top diagonal-bot right">
+  <h2>Regarding work...</h2>
+  <p>I am passionate about best practices and writing clean and maintainable code that works. I also need my work to have a meaning and impact the world in a positive way.</p>
+
+  <h2>Regarding hobbies...</h2>
+  <p>I enjoy having free time to create, be it art, music, comics or photography experiments, reading good fantasy or sci-fi books, traveling, and what not. It's better with friends!.</p>
+
+  <p><a class="taxonomy-item" href="/about/">Learn more</a></p>
+</section>
+
+<%= partial 'contact' %>

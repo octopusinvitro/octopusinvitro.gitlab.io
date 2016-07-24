@@ -1,0 +1,56 @@
+.floating-octopus-img figcaption {
+  color: transparent;
+}
+
+@media only screen and (min-width: 35em) {
+  .floating-octopus {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .floating-octopus-img,
+  .floating-octopus-text {
+    flex-grow: 1;
+  }
+
+  .floating-octopus-img {
+    max-width: 16.25em;
+    margin: 0 1em 1em 0;
+  }
+
+  .floating-octopus-text {
+    max-width: calc(100% - 17.25em);
+  }
+
+  .floating-octopus-img {
+    text-align: center;
+
+    img {
+      animation: float 3s ease-out infinite;
+    }
+
+    figcaption {
+      width: 30%;
+      height: 2em;
+      margin: 3em auto 0;
+      background-color: #E6F1F5;
+      border-radius: 50%;
+      animation: shadow 3s ease-out infinite;
+    }
+  }
+
+  @keyframes float {
+    50% {
+      transform: translate(0, 1.25em);
+    }
+  }
+
+  @keyframes shadow {
+    50% {
+      width:  50%;
+      height: 2.5em;
+      background-color: #D3E8F0;
+    }
+  }
+}

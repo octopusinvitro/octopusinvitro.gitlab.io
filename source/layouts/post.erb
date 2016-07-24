@@ -1,0 +1,73 @@
+<% wrap_layout :layout do %>
+
+  <article class="wrapper-post">
+
+    <header class="article-header">
+      <% if current_article.title %><h1><%= current_article.title %></h1><% end %>
+      <p class="center"><%=reading_time(current_article.body)%></p>
+    </header>
+
+    <div class="article-body">
+      <%= deprecation_notice %>
+      <%= anchorize(yield) %>
+    </div>
+
+    <footer class="article-footer">
+      <p class="center">
+        <a href="<%= retweet_url(current_page) %>" target="_blank" class="sharebutton" data-show-count="false">Tweet this!</a>
+        <a href="<%= twitter_url %>" target="_blank" class="sharebutton" data-show-count="false">Follow me!</a>
+      </p>
+
+      <ul>
+        <li>
+          <strong>Published:</strong> <%= current_article.date.strftime('%d %B %Y') %>
+        </li>
+
+        <% tags = article_tags %>
+        <% unless tags.empty? %>
+        <li>
+          <strong>Tags:</strong>
+          <% tags.each do |tag| %>
+            <%= link_to "##{tag}", tag_path(tag) %>
+          <% end %>
+        </li>
+        <% end %>
+
+        <li>
+          <strong>Categories:</strong>
+          <% current_article.data.categories.each do |category| %>
+            <%= link_to "#{category}", "/blog/#{current_article.data.category}/" %>
+          <% end %>
+        </li>
+      </ul>
+    </footer>
+
+  </article>
+
+  <%= partial 'aside' %>
+
+  <h1 class="comments-title">Comments</h1>
+
+  <% if build? %>
+  <div id="disqus_thread" class="wrapper"></div>
+  <script>
+  https://disqus.com/admin/universalcode/#configuration-variables
+  var disqus_config = function () {
+    this.page.url = '<%= current_url(current_page) %>';
+    this.page.identifier = '<%= current_page.date %>';
+  };
+
+  (function() { // DON'T EDIT BELOW THIS LINE
+    var d = document, s = d.createElement('script');
+    s.src = '//http-octopusinvitro-tk.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+  })();
+  </script>
+  <script id="dsq-count-scr" src="//http-octopusinvitro-tk.disqus.com/count.js" async></script>
+  <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments.</a></noscript>
+  <% end %>
+
+  <script src="/javascripts/vendor/prism.js"></script>
+
+<% end %>
