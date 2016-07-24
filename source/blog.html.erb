@@ -1,0 +1,37 @@
+---
+title: Blog - Octopus in vitro
+blog: blog
+---
+<h1>Blog</h1>
+
+<%= partial "taxonomy" %>
+
+<%= partial "articlegrid" %>
+
+<article class="wrapper-post" style="display:none" id="search-results">
+  <div class="article-body">
+    <h2>Search results:</h2>
+
+    <ul class="section-recent search-posts" id="search-posts"></ul>
+    <ul class="section-recent search-posts" id="search-images"></ul>
+
+    <span class="taxonomy-item" id="more">More</span>
+  </div>
+</article>
+
+<%= partial "aside" %>
+
+<!-- truncate("Once upon a time in a world far far away", :length => 8) -->
+<!-- simple_format("hello\nworld")
+  # => "<p>hello<br/>world</p>"
+pluralize(2, 'person')
+  # => '2 people' -->
+
+  <!-- lorem.image('300x400')
+    #=> http://placehold.it/300x400
+  lorem.image('300x400', :background_color => '333', :color => 'fff')
+    #=> http://placehold.it/300x400/333/fff
+  lorem.image('300x400', :random_color => true)
+    #=> http://placehold.it/300x400/f47av7/9fbc34d
+  lorem.image('300x400', :text => 'blah')
+    #=> http://placehold.it/300x400&text=blah -->

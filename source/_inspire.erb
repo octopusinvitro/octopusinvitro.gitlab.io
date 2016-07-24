@@ -1,0 +1,12 @@
+<ul class="inspire">
+  <% articles.each do |article| %>
+  <li class="hexagon">
+    <a href="<%= article.url %>">
+      <img src="<%= featured_image(article) %>" width="200" height="173" alt="<%= featured_image_alt(article) %>">
+      <div class="over">
+        <span><%= article.title %></span>
+      </div>
+    </a>
+  </li>
+  <% end %>
+</ul>

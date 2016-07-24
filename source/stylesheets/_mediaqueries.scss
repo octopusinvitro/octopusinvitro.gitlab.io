@@ -1,0 +1,193 @@
+code,
+pre {
+  font-family: 'Ubuntu Mono', monospace;
+  color: $darker-violet;
+  background: $bg-blog-lighter;
+}
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: $darker-violet;
+  font-family: 'Ubuntu Mono', monospace;
+}
+
+code[class*="language-"] {
+  display: inline-block;
+  margin-top: -1.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background: $bg-blog-light;
+}
+
+:not(pre) > code[class*="language-"] {
+  padding: 0 .2em;
+}
+
+pre[class*="language-"] {
+  margin: 1em 0;
+}
+
+/* ==========================================================================
+    EXAMPLE Media Queries for Responsive Design.
+    These examples override the primary ('mobile first') styles.
+    Modify as content requires.
+  ========================================================================== */
+@media only screen and (min-width: 35em) {
+  h1 {
+    letter-spacing: .5em;
+  }
+
+  .floating-octopus {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .floating-octopus-img,
+  .floating-octopus-text {
+    flex-grow: 1;
+  }
+
+  .floating-octopus-img {
+    max-width: 16.25em;
+    margin: 0 1em 1em 0;
+  }
+
+  .floating-octopus-text {
+    max-width: calc(100% - 17.25em);
+  }
+
+  .floating-octopus-img {
+    img {
+      animation: float 3s ease-out infinite;
+    }
+
+    figcaption {
+      height: 2.5em;
+    }
+
+    span {
+      display: block;
+      width: 30%;
+      height: 2em;
+      margin: 3em 0 0 3.5em;
+      background-color: #E6F1F5;
+      border-radius: 50%;
+      animation: shadow 3s ease-out infinite;
+    }
+  }
+
+  @keyframes float {
+    50% {
+      transform: translate(0, 1.25em);
+    }
+  }
+
+  @keyframes shadow {
+    50% {
+      width:  50%;
+      height: 2.5em;
+      margin-left: 2em;
+      background-color: #D3E8F0;
+    }
+  }
+
+  .inline-img {
+    display: inline-block;
+    float: left;
+    margin: 1em;
+  }
+
+  .footer-navigation {
+    background-color: $footer-navigation-color;
+
+    &:before,
+    &:after {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 0;
+      height: 0;
+      border: 1em solid $footer-navigation-color;
+    }
+
+    &:before {
+      right: 100%;
+      border-left-color: transparent;
+    }
+
+    &:after {
+      left: 100% ;
+      border-right-color: transparent;
+    }
+
+    a {
+      color: #fff;
+    }
+  }
+}
+
+@media only screen and (min-width: 43.75em) { // 700px
+  body {
+    font-size: 120%;
+  }
+}
+
+@media only screen and (min-width: 55em) {
+  .wrapper {
+    padding-left:  calc(50% - 20em);
+    padding-right: calc(50% - 20em);
+  }
+
+  .wrapper-post {
+    padding-left:  calc(50% - 30em);
+    padding-right: calc(50% - 30em);
+  }
+
+  .site-header p {
+    position: relative;
+    max-width: 33em;
+    margin-right: auto;
+    margin-left:  auto;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      margin-top: -.1em;
+      width: 8%;
+      border: .1em solid #ccc;
+    }
+
+    &:before {
+      right: 82%;
+    }
+
+    &:after {
+      left: 81%;
+    }
+  }
+}
+
+@media only screen and (min-width: 120em) {
+  body {
+    font-size: 150%;
+  }
+}
+
+@media only screen and (min-width: 190em) {
+  body {
+    font-size: 180%;
+  }
+}
+
+@media print,
+  (-webkit-min-device-pixel-ratio: 1.25),
+  (min-resolution: 1.25dppx),
+  (min-resolution: 120dpi) {
+  /* Style adjustments for high resolution devices */
+}
+// body{animation:party 1s linear infinite}@keyframes party{to{filter:hue-rotate(360deg)}}

@@ -1,0 +1,58 @@
+---
+title: Octopus in vitro
+blog: blog
+---
+<header class="site-header center">
+  <h1>Octopus in vitro</h1>
+  <p>Creating universes</p>
+  <a href="/"><img src="images/logo.png" width="270" height="270" alt="Site logo"></a>
+</header>
+
+<div class="wrapper center">
+  <p>This page is a HUGE experiment.<br>Put on your safety helmet!</p>
+</div>
+
+<section class="wrapper diagonal-top diagonal-bot right">
+  <h2>Popular Work</h2>
+
+  <p>I'm a developer and illustrator, with an interest in multi-platform application development, a background in data analysis, and a wide experience working abroad with multicultural teams.</p>
+
+  <p><a class="taxonomy-item" href="/work/">See more</a></p>
+
+  <ul class="featured">
+    <% featured_work.each do |article| %>
+    <li class="hexagon">
+      <a href="<%= article.url %>">
+        <img src="<%= featured_image(article) %>" width="200" height="173" alt="<%= featured_image_alt(article) %>">
+        <div class="over">
+          <span><%= article.title %></span>
+        </div>
+      </a>
+    </li>
+    <% end %>
+  </ul>
+</section>
+
+<section class="wrapper">
+  <h2>Popular posts</h2>
+  <ul class="section-recent featured-posts">
+    <% featured_posts.each do |article| %>
+    <li>
+      <span><%= article.date.strftime('%b %e, %Y') %></span>
+      <%= link_to article.title, article %>
+    </li>
+    <% end %>
+  </ul>
+</section>
+
+<section class="wrapper diagonal-top diagonal-bot right">
+  <h2>Carl Sagan once said that...</h2>
+  <p>"<em>...If you wish to make an apple pie from scratch, you must first invent the universe</em>".</p>
+  <p>So, here I am, creating universes. Welcome to my lab!</p>
+</section>
+
+<section class="wrapper">
+  <%= partial "form" %>
+  <p style="margin-top:4em">Or catch me on the internets:</p>
+  <%= partial "social" %>
+</section>

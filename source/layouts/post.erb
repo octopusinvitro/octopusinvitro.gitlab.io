@@ -1,0 +1,44 @@
+<% wrap_layout :layout do %>
+  <article class="wrapper-post">
+
+    <header class="article-header">
+      <% if current_article.title %><h1><%= current_article.title %></h1><% end %>
+      <p class="center"><%=reading_time(current_article.body)%></p>
+    </header>
+
+    <div class="article-body">
+      <%# anchorize(yield) %>
+      <%= yield %>
+    </div>
+
+    <footer class="article-footer">
+      <%= partial "retweet_button" %>
+      <ul style="list-style-image: url('/images/icon-star-filled.svg')">
+        <li>
+          <strong>Published:</strong> <%= current_article.date.strftime('%d %B %Y') %>
+        </li>
+
+        <li>
+          <strong>Tags:</strong>
+          <% article_tags(current_article).each do |tag| %>
+            <%= link_to "&num;#{tag}", tag_path(tag) %>
+          <% end %>
+        </li>
+
+        <li>
+          <strong>Categories:</strong>
+          <% current_article.data.categories.each do |category| %>
+            <%= link_to "#{category}", "/blog/#{current_article.data.category}/" %>
+          <% end %>
+        </li>
+      </ul>
+    </footer>
+
+  </article>
+
+  <%= partial "aside" %>
+  <%= partial "comments" %>
+
+  <script src="/javascripts/prism.js"></script>
+  <script id="dsq-count-scr" src="//http-octopusinvitro-tk.disqus.com/count.js" async></script>
+<% end %>
