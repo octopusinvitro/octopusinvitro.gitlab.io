@@ -1,0 +1,65 @@
+.floating-octopus-figure {
+  margin: auto;
+  text-align: center;
+
+  p {
+    height: 2em;
+    width: 50%;
+    margin: auto;
+    color: transparent;
+    background-color: #E6F1F5;
+    border-radius: 50%;
+  }
+}
+
+@media only screen and (min-width: 35em) {
+  .floating-octopus {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .floating-octopus-figure,
+  .floating-octopus-text {
+    flex-grow: 1;
+  }
+
+  .floating-octopus-figure {
+    max-width: 16.25em;
+    margin: 0 1em 1em 0;
+  }
+
+  .floating-octopus-text {
+    max-width: calc(100% - 17.25em);
+  }
+
+  .floating-octopus-figure {
+    img {
+      animation: float 3s ease-out infinite;
+    }
+
+    figcaption {
+      height: 2.5em;
+    }
+
+    p {
+      width: 30%;
+      margin: 3em auto 0;
+      animation: shadow 3s ease-out infinite;
+    }
+  }
+
+  @keyframes float {
+    50% {
+      transform: translate(0, 1.25em);
+    }
+  }
+
+  @keyframes shadow {
+    50% {
+      width:  50%;
+      height: 2.5em;
+      background-color: #D3E8F0;
+    }
+  }
+}
