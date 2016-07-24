@@ -1,0 +1,36 @@
+people:
+- url: http://en.wikipedia.org/wiki/Carl_Sagan
+  data:
+    featured_image: /images/about-carlsagan.jpg
+    featured_image_alt: Carl Sagan
+  title: Carl<br>Sagan
+- url: https://cv.verou.me/?detail=5
+  data:
+    featured_image: /images/about-leaverou.jpg
+    featured_image_alt: Lea Verou
+  title: Lea<br>Verou
+- url: https://www.youtube.com/watch?v=1ThCusVQ4Zw
+  data:
+    featured_image: /images/about-georgesmelies.jpg
+    featured_image_alt: Georges M&eacute;li&egrave;s
+  title: Georges<br>M&eacute;li&egrave;s
+- url: https://www.youtube.com/watch?v=fatAqXSAy_8
+  data:
+    featured_image: /images/about-albertcasals.jpg
+    featured_image_alt: Albert Casals
+  title: Albert<br>Casals
+- url: http://blog.amandapalmer.net/20130713/
+  data:
+    featured_image: /images/about-amandapalmer.jpg
+    featured_image_alt: Amanda Palmer
+  title: Amanda<br>Palmer
+- url: https://www.ted.com/talks/ziauddin_yousafzai_my_daughter_malala
+  data:
+    featured_image: /images/about-malala.jpg
+    featured_image_alt: Malala Yousafzai
+  title: Malala<br>Yousafzai
+- url: https://www.youtube.com/watch?v=BUmV6fsZegs
+  data:
+    featured_image: /images/about-saronyitbarek.jpg
+    featured_image_alt: Saron Yitbarek
+  title: Saron<br>Yitbarek
