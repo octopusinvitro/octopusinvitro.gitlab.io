@@ -1,0 +1,27 @@
+image: ruby:3.1.1
+
+cache:
+  paths:
+  - vendor
+
+test:
+  script:
+  - apt update -yqqq
+  - apt install -y nodejs
+  - bundle config set --local path 'vendor'
+  - bundle install
+  - bundle exec middleman build
+  rules:
+    - if: $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+
+pages:
+  script:
+  - apt update -yqqq
+  - apt install -y nodejs
+  - bundle install --path vendor
+  - bundle exec middleman build
+  artifacts:
+    paths:
+    - public
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
