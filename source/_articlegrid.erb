@@ -1,0 +1,27 @@
+<div class="article-grid" id="grid">
+  <% page_articles.each_with_index do |article, i| %>
+
+  <article class="article-item">
+    <h2 class="item-title"><%= truncate_words(article.title, length: 5) %></h2>
+    <p class="item-excerpt"><%= strip_tags(truncate_words(article.body, length: 15)) %></p>
+    <p class="item-metadata">
+      <span><%= article.date.strftime('%b %e, %Y') %></span>
+      <span><%= reading_time(article.body) if blog? %></span>
+      <span>
+        <% article_tags(article).each do |tag| %>
+          #<%= tag %>
+        <% end %>
+      </span>
+    </p>
+    <a class="item-readmore" href="<%= article.url %>">Read more...</a>
+  </article>
+
+  <% end %>
+</div>
+
+<script>
+  // show hover effect on mobile devices
+  [].slice.call(document.querySelectorAll('a[href="#"')).forEach(function(element) {
+    element.addEventListener('click', function(event) { event.preventDefault(); });
+  });
+</script>

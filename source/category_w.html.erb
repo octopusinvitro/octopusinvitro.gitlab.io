@@ -1,0 +1,10 @@
+---
+blog: work
+pageable: true
+per_page: 12
+---
+<h1>Work: <%= category %></h1>
+
+<%= partial(:taxonomy, locals: { items: work_taxonomy }) %>
+
+<%= partial(:inspire, locals: { articles: work_category(category) }) %>
