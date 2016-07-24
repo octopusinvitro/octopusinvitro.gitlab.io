@@ -1,0 +1,94 @@
+---
+title: Work - Octopus in vitro
+blog: work
+---
+
+<article>
+  <h1>Work</h1>
+
+  <%= partial(:taxonomy, locals: { items: work_taxonomy }) %>
+
+  <section class="diagonal-top diagonal-bot right">
+    <h2 class="wrapper">Projects by language</h2>
+    <% languages = ['Python', 'Ruby', 'JavaScript', 'Java'].sort %>
+    <%= partial(:inspire, locals: { articles: github_search_list(languages, username)[0...max] }) %>
+    <% if languages.size > max %>
+    <p class="center"><a class="taxonomy-item" href="https://github.com/octopusinvitro?tab=repositories&q=&type=source">See more</a></p>
+    <% end %>
+  </section>
+
+  <section>
+    <h2 class="wrapper">Side projects</h2>
+    <% projects = non_game_projects %>
+    <%= partial(:inspire, locals: { articles: projects[0...max] }) %>
+    <p class="center"><a class="taxonomy-item" href="/work/projects/">See more</a></p>
+  </section>
+
+  <section class="diagonal-top diagonal-bot right">
+    <h2 class="wrapper">Games</h2>
+    <% games = work_tag('games') %>
+    <%= partial(:inspire, locals: { articles: games[0...max] }) %>
+    <% if games.size > max %>
+    <p class="center"><a class="taxonomy-item" href="/work/tags/games/">See more</a></p>
+    <% end %>
+  </section>
+
+  <section>
+    <h2 class="wrapper">Books</h2>
+    <% books = work_tag('book') %>
+    <%= partial(:inspire, locals: { articles: books[0...max] }) %>
+    <% if books.size > max %>
+    <p class="center"><a class="taxonomy-item" href="/work/tags/book/">See more</a></p>
+    <% end %>
+  </section>
+
+  <section class="diagonal-top diagonal-bot right">
+    <h2 class="wrapper">Sinatra apps</h2>
+    <% sinatra = work_tag('Sinatra') %>
+    <%= partial(:inspire, locals: { articles: sinatra[0...max] }) %>
+    <% if sinatra.size > max %>
+    <p class="center"><a class="taxonomy-item" href="/work/tags/sinatra/">See more</a></p>
+    <% end %>
+  </section>
+
+  <!-- <section>
+    <h2 class="wrapper">Django sites</h2>
+    <% urls = [
+      'https://github.com/mysociety/pombola',
+      'https://github.com/octopusinvitro/treasure-gram',
+      'https://github.com/octopusinvitro/team-directory',
+      'https://github.com/octopusinvitro/weather-forecast-emailer'
+    ] %>
+    <%= partial(:inspire, locals: { articles: github_repos_list(urls, username)[0...max] }) %>
+    <% if projects.size > max %>
+    <p class="center"><a class="taxonomy-item" href="https://github.com/octopusinvitro?tab=repositories">See more</a></p>
+    <% end %>
+  </section>
+ -->
+  <section>
+    <h2 class="wrapper">Jekyll sites</h2>
+    <% jekyll = work_tag('Jekyll') %>
+    <%= partial(:inspire, locals: { articles: jekyll[0...max] }) %>
+    <% if jekyll.size > max %>
+    <p class="center"><a class="taxonomy-item" href="/work/tags/jekyll/">See more</a></p>
+    <% end %>
+  </section>
+
+  <section class="diagonal-top diagonal-bot right">
+    <h2 class="wrapper">Rails apps</h2>
+    <% projects = ['kitepkana', 'rails-twitter-sample', 'railsblog-spike', 'railstoy-app'] %>
+    <%= partial(:inspire, locals: { articles: gitlab_repos_list(projects, username)[0...max] }) %>
+    <% if projects.size > max %>
+    <p class="center"><a class="taxonomy-item" href="https://github.com/octopusinvitro?tab=repositories">See more</a></p>
+    <% end %>
+  </section>
+
+  <section>
+    <h2 class="wrapper">Illustrations</h2>
+    <% illustration = work_category('illustration') %>
+    <%= partial(:inspire, locals: { articles: illustration[0...max] }) %>
+    <% if illustration.size > max %>
+    <p class="center"><a class="taxonomy-item" href="/work/illustration/">See more</a></p>
+    <% end %>
+  </section>
+</article>

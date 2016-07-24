@@ -1,0 +1,308 @@
+.search {
+  z-index: 10;
+  position: absolute;
+  top: 14em;
+  right: 10%;
+  width: 80%;
+  min-height: 2.5em;
+  background-color: $bg-blog-light;
+  transform-origin: 100% 0;
+  transition-property: min-height, width, top, right, background-color;
+  transition-duration: 0.5s;
+  transition-timing-function: cubic-bezier(0.7,0,0.3,1);
+}
+
+.search.open {
+  top: 0px;
+  right: 0px;
+  width: 100%;
+  min-height: 100%;
+  background-color: #f1f1f1;
+}
+
+.search-form {
+  width: 100%;
+  height: 2.5em;
+  margin: 0 auto;
+  position: relative;
+  transition-property: width, height, transform;
+  transition-duration: 0.5s;
+  transition-timing-function: cubic-bezier(0.7,0,0.3,1);
+}
+
+.search.open .search-form {
+  width:  80%;
+  height: 10em;
+  transform: translate3d(0,3em,0);
+}
+
+.search-input {
+  width: 100%;
+  height: 100%;
+  padding: 0 25% 0 10px;
+  font-size: 0.8em;
+  font-weight: 700;
+  color: #ec5a62;
+  background: transparent;
+  border: none;
+  transition: font-size 0.5s cubic-bezier(0.7,0,0.3,1);
+
+  &::-webkit-input-placeholder {
+    color: #D9BD57;
+  }
+
+  &:-moz-placeholder {
+    color: #D9BD57;
+  }
+
+  &::-moz-placeholder {
+    color: #D9BD57;
+  }
+
+  &:-ms-input-placeholder {
+    color: #D9BD57;
+  }
+
+  /* remove cross in IE */
+  &::-ms-clear {
+    display: none;
+  }
+}
+
+.search.hideInput .search-input {
+  color: transparent;
+  transition: color 0.3s;
+}
+
+.search.open .search-input {
+  font-size: 2em;
+}
+
+/* hide placeholder when active in Chrome */
+.gn-search:focus::-webkit-input-placeholder {
+  color: transparent;
+}
+
+.search-input:focus,
+.search-submit:focus {
+  outline: none;
+}
+
+.search-submit {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width:  5em;
+  height: 5em;
+  text-indent: 6.25em;
+  background: transparent url('/images/icon-search.svg') no-repeat center center;
+  background-size: 100%;
+  border: none;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  transform: translate3d(-30px,-50%,0) scale3d(0,0,1);
+}
+
+.search.open .search-submit {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate3d(0,-50%,0) scale3d(0.5,0.5,1);
+  transition: opacity 0.3s, transform 0.3s;
+  transition-delay: 0.5s;
+}
+
+.search-close {
+  position: absolute;
+  right:  1em;
+  top:    1em;
+  width:  2.25em;
+  height: 2.25em;
+  text-indent: 100%;
+  overflow: hidden;
+  opacity: 0;
+  cursor: pointer;
+  pointer-events: none;
+  transform: scale3d(0,0,1);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 100%;
+    top: 0;
+    left: 50%;
+    border-radius: 3px;
+    opacity: 0.2;
+    background: #000;
+  }
+
+  &::before {
+    transform: rotate(45deg);
+  }
+
+  &::after {
+    transform: rotate(-45deg);
+  }
+
+}
+
+.search.open .search-close {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale3d(1,1,1);
+  transition: opacity 0.3s,         transform 0.3s;
+  transition-delay: 0.5s;
+}
+
+.search-close:hover.search-close::before,
+.search-close:hover.search-close::after {
+  opacity: 1;
+}
+
+.search-content {
+  position: absolute;
+  width: 100%;
+  height: 0;
+  margin-top: 4.5em;
+  padding: 0 10.5%;
+  color: #333;
+  background: #f1f1f1;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.search.open .search-content {
+  opacity: 1;
+  height: auto;
+  overflow: visible; /* this breaks the transition of the children in FF: https://bugzilla.mozilla.org/show_bug.cgi?id=625289 */
+  pointer-events: auto;
+  transition: opacity 0.3s 0.5s;
+}
+
+.search-column {
+  width: auto;
+  padding: 0 0 2em;
+  opacity: 0;
+  transform: translate3d(0,100px,0);
+  transition: transform 0.5s, opacity 0.5s;
+}
+
+.search-column h2 {
+  font-size: 1em;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #c2c2c2;
+  padding: 0.5em 0;
+}
+
+.search.open .search-column:first-child {
+  transition-delay: 0.4s;
+}
+
+.search.open .search-column:nth-child(2) {
+  transition-delay: 0.45s;
+}
+
+.search.open .search-column:nth-child(3) {
+  transition-delay: 0.5s;
+}
+
+.search.open .search-column {
+  opacity: 1;
+  transform: translate3d(0,0,0);
+}
+
+.round {
+  border-radius: 50%;
+}
+
+.search-column-item {
+  padding: 0.75em;
+  display: block;
+  margin: 0.3em 0;
+  cursor: pointer;
+  border-radius: 5px;
+  text-decoration: none;
+  background: rgba(118,117,128,0.05);
+
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+    width:  3em;
+    height: 3em;
+    margin: 0 .625em 0 0;
+  }
+
+  span {
+    display: inline-block;
+    vertical-align: middle;
+    width: calc(100% - 5em);
+    margin: 0;
+    color: rgba(145,145,145,0.7);
+    font-size: 0.85em;
+    font-weight: 700;
+  }
+}
+
+.search-column-item:hover,
+.search-column-item:focus {
+  background: rgba(118,117,128,0.1);
+}
+
+.search-column-item:hover span {
+  color: rgba(236,90,98,1);
+}
+
+.overlay {
+  position: fixed;
+  top:  0;
+  left: 0;
+  width:  100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s;
+  transition-timing-function: cubic-bezier(0.7,0,0.3,1);
+}
+
+.search.open ~ .overlay {
+  opacity: 1;
+}
+
+@media screen and (min-width: 49.75em) {
+  .search {
+    width:  12em;
+    top:     9em;
+    right: 2.5em;
+  }
+}
+
+@media screen and (min-width: 53.125em) {
+  .search-input {
+    padding: 0 10% 0 0.6em;
+  }
+
+  .search.open .search-input {
+    font-size: 7em;
+  }
+
+  .search-column {
+    width: 30%;
+    padding: 0 0 6em;
+    float: left;
+  }
+
+  .search-column:nth-child(2) {
+    margin: 0 5%;
+  }
+
+  .search.open .search-submit {
+    transform: translate3d(-30px,-50%,0) scale3d(1,1,1);
+  }
+}

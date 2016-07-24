@@ -1,0 +1,36 @@
+@mixin bg($bg-color, $crosses-color) {
+  background:
+    radial-gradient(circle, transparent 20%, $bg-color 20%, $bg-color 80%, transparent 80%, transparent),
+    radial-gradient(circle, transparent 20%, $bg-color 20%, $bg-color 80%, transparent 80%, transparent) 50px 50px,
+    linear-gradient($crosses-color 8px, transparent 8px) 0 -4px,
+    linear-gradient(90deg, $crosses-color 8px, transparent 8px) -4px 0;
+  background-color: $bg-color;
+}
+
+.index {
+  @include bg($lighter-grey, $light-grey);
+}
+
+.work {
+  @include bg($bg-work-lighter, $bg-work-light);
+}
+
+.blog {
+  @include bg($bg-blog-lighter, $bg-blog-light);
+}
+
+.about {
+  @include bg($bg-about-lighter, $bg-about-light);
+}
+
+.reach {
+  @include bg($bg-reach-lighter, $bg-reach-light);
+}
+
+.index,
+.work,
+.blog,
+.about,
+.reach {
+  background-size: 100px 100px, 100px 100px, 50px 50px, 50px 50px;
+}
