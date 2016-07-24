@@ -1,0 +1,13 @@
+<% text_align = articles.count < max ? 'center ' : 'left ' %>
+<% text_align = '' if tag_class == 'featured' %>
+
+<ul class="<%= text_align + tag_class %>">
+  <% articles.each do |article| %>
+  <li class="hexagon">
+    <a class="hexagon-link" href="<%= article.url %>">
+      <img src="<%= featured_image(article) %>" width="200" height="173" alt="<%= featured_image_alt(article) %>">
+      <div class="hexagon-over"><%= article.title %></div>
+    </a>
+  </li>
+  <% end %>
+</ul>
