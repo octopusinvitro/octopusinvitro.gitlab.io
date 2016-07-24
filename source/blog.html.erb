@@ -1,0 +1,82 @@
+---
+title: Blog - Octopus in vitro
+blog: blog
+---
+<h1>Blog</h1>
+
+<%= partial(:taxonomy, locals: { items: blog_taxonomy }) %>
+
+<%= partial 'articlegrid' %>
+
+<article id="search-results" class="wrapper-post" style="display:none">
+  <div class="article-body">
+    <h2>Search results:</h2>
+
+    <ul id="search-posts" class="section-recent search-posts"></ul>
+    <ul id="search-images" class="section-recent search-posts"></ul>
+
+    <span id="more" class="taxonomy-item">More</span>
+  </div>
+</article>
+
+<%= partial 'aside' %>
+
+<footer>
+  <div id="search" class="search">
+
+    <form class="search-form">
+      <input class="search-input" type="search" placeholder="Search..."/>
+      <button class="search-submit" type="submit">Search</button>
+    </form>
+
+    <div class="search-content">
+
+      <div class="search-column">
+        <h2>Recent</h2>
+        <% blog.articles[0...6].each do |article| %>
+        <a class="search-column-item" href="<%= article.url %>">
+          <svg aria-hidden="true" class="icon-recent"><use href="/images/symbol-defs.svg#icon-recent"></use></svg>
+          <span><%= article.title %></span>
+        </a>
+        <% end %>
+      </div>
+
+      <div class="search-column">
+        <h2>Categories</h2>
+        <a class="search-column-item" href="/blog/code-and-tech">
+          <svg aria-hidden="true" class="icon-categories"><use href="/images/symbol-defs.svg#icon-categories"></use></svg>
+          <span>Code and tech</span>
+        </a>
+        <a class="search-column-item" href="/blog/science">
+          <svg aria-hidden="true" class="icon-categories"><use href="/images/symbol-defs.svg#icon-categories"></use></svg>
+          <span>Science</span>
+        </a>
+        <a class="search-column-item" href="/blog/thoughts">
+          <svg aria-hidden="true" class="icon-categories"><use href="/images/symbol-defs.svg#icon-categories"></use></svg>
+          <span>Thoughts</span>
+        </a>
+        <a class="search-column-item" href="/blog/web-development">
+          <svg aria-hidden="true" class="icon-categories"><use href="/images/symbol-defs.svg#icon-categories"></use></svg>
+          <span>Web development</span>
+        </a>
+      </div>
+
+      <div class="search-column">
+        <h2>Popular Tags</h2>
+        <% tags_sorted(6).each do |tag, articles| %>
+        <a class="search-column-item" href="<%= tag_path(tag) %>">
+          <svg aria-hidden="true" class="icon-tags"><use href="/images/symbol-defs.svg#icon-tags"></use></svg>
+          <span><%= "#{tag} (#{articles.size})" %></span>
+        </a>
+        <% end %>
+      </div>
+    </div>
+
+    <span class="search-close"></span>
+  </div>
+
+  <div class="overlay"></div>
+</footer>
+
+<script src="/javascripts/classie.js"></script>
+<script src="/javascripts/search.js"></script>

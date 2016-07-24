@@ -1,0 +1,123 @@
+@mixin diagonal-top($color) {
+  background: linear-gradient(to bottom right, transparent 50%, $color 50%, $color);
+}
+
+@mixin diagonal-bot($color) {
+  background: linear-gradient(to bottom left, $color 50%, transparent 50%, transparent);
+}
+
+.diagonal-top,
+.diagonal-bot {
+  position: relative;
+}
+
+.diagonal-top::before,
+.diagonal-bot::after {
+  content: '';
+  z-index: -1;
+  position: absolute;
+  right: 0; left: 0;
+  height: $diagonal-height;
+}
+
+.diagonal-top {
+  margin-top: $diagonal-height;
+
+  &::before {
+    bottom: 100%;
+  }
+}
+
+.diagonal-bot {
+  margin-bottom: $diagonal-height;
+
+  &::after {
+    top: 100%;
+  }
+}
+
+.index {
+  .diagonal-top,
+  .diagonal-bot {
+    color: $text-color;
+    background-color: $portfolio-color;
+
+    h2 {
+      color: $home-color;
+    }
+  }
+  .diagonal-top::before { @include diagonal-top($portfolio-color); }
+  .diagonal-bot::after  { @include diagonal-bot($portfolio-color); }
+}
+
+.work {
+  .diagonal-top,
+  .diagonal-bot {
+    color: #fff;
+    background-color: $work-color;
+
+    h2 {
+      color: #fff
+    }
+  }
+  .diagonal-top::before { @include diagonal-top($work-color); }
+  .diagonal-bot::after  { @include diagonal-bot($work-color); }
+}
+
+.blog {
+  .diagonal-top,
+  .diagonal-bot {
+    color: $text-color;
+    background-color: $blog-color;
+
+    h2 {
+      color: #fff
+    }
+  }
+  .diagonal-top::before { @include diagonal-top($blog-color); }
+  .diagonal-bot::after  { @include diagonal-bot($blog-color); }
+}
+
+.about {
+  .diagonal-top,
+  .diagonal-bot {
+    color: #fff;
+    background-color: $about-color;
+
+    h2 {
+      color: #fff
+    }
+  }
+  .diagonal-top::before { @include diagonal-top($about-color); }
+  .diagonal-bot::after  { @include diagonal-bot($about-color); }
+}
+
+.reach {
+  .diagonal-top,
+  .diagonal-bot {
+    color: #fff;
+    background-color: $reach-color;
+
+    h2 {
+      color: #fff;
+    }
+  }
+  .diagonal-top::before { @include diagonal-top($reach-color); }
+  .diagonal-bot::after  { @include diagonal-bot($reach-color); }
+}
+
+.aside.diagonal-top,
+.aside.diagonal-bot {
+  color: #fff;
+  background-color: $aside-color;
+
+  h2 {
+    color: #fff
+  }
+}
+
+.aside.diagonal-top::before { @include diagonal-top($aside-color); }
+.aside.diagonal-bot::after  { @include diagonal-bot($aside-color); }
+
+.aside.diagonal-top { margin-top: 0; }
+.aside.diagonal-bot { margin-bottom: 0; }
