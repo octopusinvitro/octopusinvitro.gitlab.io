@@ -1,0 +1,33 @@
+{
+  "env": {
+    "browser":  true,
+    "node":     true,
+    "amd":      true,
+    "commonjs": true,
+    "jasmine":  true
+  },
+  "globals": {
+    "classie": true,
+    "isAnimating": true,
+    "Modernizr": true
+  },
+  "extends": "eslint:recommended",
+  "rules": {
+    "indent": [
+      "error",
+      2
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "semi": [
+      "error",
+      "always"
+    ]
+  }
+}
