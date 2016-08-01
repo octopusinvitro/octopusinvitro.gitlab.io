@@ -1,0 +1,58 @@
+<script async defer src="https://maps.googleapis.com/maps/api/js?callback=initialize&amp;key=AIzaSyClMAcs2FV26rNFWsxmbGSeM3qv4CCuAIA"></script>
+<script>// <![CDATA[
+  function initialize() {
+    var
+      markers = [
+        ['RCNP, Osaka',            34.826857, 135.527157, 0],
+        ['JYFL, Jyväskylä',        62.236664,  25.731612, 0],
+        ['ISOLDE, CERN',           46.233890,   6.055297, 0],
+        ['IFIC, Valencia',         39.514938,  -0.424926, 0],
+        ['GSI, Frankfurt',         49.984539,   8.677763, 0],
+        ['8L, London',             51.507400,  -0.127800, 0],
+        ['mySociety, Bristol',     51.454500,  -2.587900, 0],
+        ['David, Panama',           8.433290, -82.431718, 1],
+        ['Sliema, Malta',          35.913605,  14.501209, 1],
+        ['Santiago de Compostela', 42.879922,  -8.545285, 1]
+      ],
+      bounds = new google.maps.LatLngBounds(),
+      map = new google.maps.Map(document.getElementById("map"), { mapTypeId: 'roadmap' }),
+      boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+        this.setZoom(2);
+        google.maps.event.removeListener(boundsListener);
+      });
+    var infoWindow = new google.maps.InfoWindow(), marker, i;
+
+    map.setTilt(45);
+
+    for (i = 0, n = markers.length; i < n; i++) {
+      var
+        position = new google.maps.LatLng(markers[i][1], markers[i][2]),
+        marker = new google.maps.Marker({
+          map:      map,
+          position: position,
+          icon:     setIcon(markers[i][3]),
+          title:    markers[i][0],
+        });
+
+      google.maps.event.addListener(marker, 'click', (function(marker, i) {
+        return function() {
+          infoWindow.setContent(markers[i][0]);
+          infoWindow.open(map, marker);
+        }
+      })(marker, i));
+
+      // Automatically center the map fitting all markers on the screen
+      bounds.extend(position);
+      map.fitBounds(bounds);
+    }
+  }
+
+  function setIcon(markerType) {
+    if (markerType == 0) {
+      return '/images/icon-worked.svg';
+    }
+    if (markerType == 1) {
+      return '/images/icon-lived.svg';
+    }
+  }
+// ]]></script>

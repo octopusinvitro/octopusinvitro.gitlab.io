@@ -2,16 +2,18 @@
 
 ---
 
-Example [Middleman] website using GitLab Pages.
+This [Middleman] website uses GitLab Pages.
 
 Learn more about GitLab Pages at https://pages.gitlab.io and the official
 documentation http://doc.gitlab.com/ee/pages/README.html.
+
+**Beware:** Don't fork this repo, as it is a personal project and I will rebase master VERY often
 
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+**Table of Contents**
 
 - [GitLab CI](#gitlab-ci)
 - [Building locally](#building-locally)
@@ -27,7 +29,7 @@ This project's static Pages are built by [GitLab CI][ci], following the steps
 defined in [`.gitlab-ci.yml`](.gitlab-ci.yml):
 
 ```
-image: ruby:2.1
+image: ruby:2.3
 
 cache:
   paths:
@@ -96,4 +98,3 @@ unless you want to contribute back to the upstream project.
 [documentation]: https://middlemanapp.com/basics/install/
 [userpages]: http://doc.gitlab.com/ee/pages/README.html#user-or-group-pages
 [projpages]: http://doc.gitlab.com/ee/pages/README.html#project-pages
-
