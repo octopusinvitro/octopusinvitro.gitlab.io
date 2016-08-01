@@ -1,0 +1,26 @@
+middleman init 27.octopusinvitro
+        run  git clone --depth 1 https://github.com/middleman/middleman-templates-default.git /tmp/d20160627-15969-4y80q2 from "."
+Clonar en «/tmp/d20160627-15969-4y80q2»...
+remote: Counting objects: 22, done.
+remote: Compressing objects: 100% (15/15), done.
+remote: Total 22 (delta 0), reused 14 (delta 0), pack-reused 0
+Unpacking objects: 100% (22/22), done.
+Checking connectivity... hecho.
+      exist
+     create  .gitignore
+     create  Gemfile
+     create  config.rb
+     create  source/images/middleman-logo.svg
+     create  source/index.html.erb
+     create  source/javascripts/all.js
+     create  source/layouts/layout.erb
+     create  source/stylesheets/_normalize.scss
+     create  source/stylesheets/site.css.scss
+Do you want to use Compass? n
+Do you want to use LiveReload? y
+     insert  Gemfile
+     insert  config.rb
+     insert  Gemfile
+Do you want a Rack-compatible config.ru file? y
+     create  config.ru
+        run  bundle install from "./27.octopusinvitro"

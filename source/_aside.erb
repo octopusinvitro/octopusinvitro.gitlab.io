@@ -1,0 +1,32 @@
+<aside class="diagonal-top diagonal-bot aside">
+
+  <section class="aside-section">
+    <h2>By Year</h2>
+    <ul class="section-year taxonomy-list">
+      <% blog_articles.group_by {|a| a.date.year }.each do |year, articles| %>
+      <li><%= link_to "#{year} (#{articles.size})", blog_year_path(year), class: "taxonomy-item" %></li>
+      <% end %>
+    </ul>
+  </section>
+
+  <section class="aside-section">
+    <h2>Tags</h2>
+    <ul class="section-tags">
+      <% blog_tags.each do |tag, articles| %>
+      <li><%= link_to "&num;#{tag} (#{articles.size})", tag_path(tag) %></li>
+      <% end %>
+    </ul>
+  </section>
+
+  <section class="aside-section">
+    <h2>Recent Articles</h2>
+    <ul class="section-recent">
+      <% blog_articles[0...10].each do |article| %>
+      <li>
+        <span><%= article.date.strftime('%b %e') %></span>
+        <%= link_to article.title, article %>
+      </li>
+      <% end %>
+    </ul>
+  </section>
+</aside>
