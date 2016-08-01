@@ -1,0 +1,37 @@
+<% wrap_layout :layout do %>
+  <article class="wrapper-post">
+
+    <header class="article-header">
+      <% if current_article.title %><h1><%= current_article.title %></h1><% end %>
+    </header>
+
+    <div class="article-body">
+      <%# anchorize(yield) %>
+      <%= yield %>
+    </div>
+
+    <footer class="article-footer">
+      <ul>
+        <li>
+          <strong>Published:</strong> <%= current_article.date.strftime('%d %B %Y') %>
+        </li>
+
+        <li>
+          <strong>Tags:</strong>
+          <% current_article.tags.each do |tag| %>
+            <%= link_to "&num;#{tag}", tag_path(tag) %>
+          <% end %>
+        </li>
+
+        <li>
+          <strong>Categories:</strong>
+          <% current_article.data.categories.each do |category| %>
+            <%= link_to "#{category}", "/work/#{current_article.data.category}/" %>
+          <% end %>
+        </li>
+      </ul>
+    </footer>
+
+  </article>
+
+<% end %>

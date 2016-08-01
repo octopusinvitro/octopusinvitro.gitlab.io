@@ -1,0 +1,79 @@
+<form id="form-js" class="form" autocomplete="off">
+
+  <div class="form-inner">
+
+    <ol class="questions">
+      <li>
+        <span><label for="q1">Wanna say hi?</label></span>
+        <input id="q1" name="q1" type="text" placeholder="Type here anything you want to say"/>
+      </li>
+      <li>
+        <span><label for="q2">What's your name?</label></span>
+        <input id="q2" name="q2" type="text"/>
+      </li>
+      <li>
+        <span><label for="q3">What's your email?</label></span>
+        <input id="q3" name="q3" type="email"/>
+      </li>
+    </ol>
+
+    <button class="submit" type="submit">Send answers</button>
+
+    <div class="controls">
+      <button class="next">
+        <svg aria-hidden="true" class="icon-arrow-right"><use xlink:href="/images/symbol-defs.svg#icon-arrow-right"></use></svg>
+      </button>
+      <div class="progress-bar"></div>
+      <span class="number">
+        <span class="number-current"></span>
+        <span class="number-total"></span>
+      </span>
+      <span class="error-message"></span>
+    </div>
+
+  </div>
+
+  <span class="final-message"></span>
+</form>
+
+<script src="/javascripts/modernizr.custom.js"></script>
+<script src="/javascripts/classie.js"></script>
+<script src="/javascripts/form.js"></script>
+<script>
+var formJS = document.getElementById( 'form-js' );
+
+new stepsForm( formJS, {
+  onSubmit : function( form ) {
+    // hide form
+    classie.addClass( formJS.querySelector( '.form-inner' ), 'hide' );
+
+    // Submit the form using AJAX.
+    var
+      msg  = document.getElementById('q1').value,
+      name = document.getElementById('q2').value,
+      mail = document.getElementById('q3').value
+      xhr  = new XMLHttpRequest(),
+      url  = 'https://getsimpleform.com/messages?form_api_token=ee3f5ad2f168e411b8aa4cd59d079412'
+    ;
+
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+      if (xhr.status === 200 && xhr.responseText !== newName) {
+        alert('Something went wrong. ' + xhr.responseText);
+      }
+      else if (xhr.status !== 200) {
+        alert('Request failed. Returned status of ' + xhr.status);
+      }
+    };
+    xhr.send(encodeURI('name=' + name + '&mail=' + mail + '&msg=' + msg));
+    /*
+    (maybe show loading indicator while we don't have an answer..)
+    */
+
+    var messageEl = formJS.querySelector( '.final-message' );
+    messageEl.innerHTML = 'Thank you! We\'ll be in touch.';
+    classie.addClass( messageEl, 'show' );
+  }
+} );
+</script>
