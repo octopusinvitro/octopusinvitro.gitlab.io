@@ -1,0 +1,67 @@
+$base-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+$base-font-size:   12pt;
+$base-font-weight: 400;
+$small-font-size:  $base-font-size * 0.875;
+$base-line-height: 1.5;
+
+/* BODY BACKGROUNDS */
+$bg-work-light:  $green-light;
+$bg-blog-light:  $yellow-light;
+$bg-about-light: $blue-light;
+$bg-reach-light: $violet-light;
+
+$bg-work-lighter:  $green-lighter;
+$bg-blog-lighter:  $yellow-lighter;
+$bg-about-lighter: $blue-lighter;
+$bg-reach-lighter: $violet-lighter;
+
+/* BASE LAYOUT */
+$text-color:       $darker-violet;
+$background-color: #fff;
+$link-color:       $dark-aqua;
+$link-color-hover: $aqua;
+$selection-color:  lightblue;
+
+$footer-navigation-color: $violet;
+
+/* SITE NAVIGATION */
+$home-color:  $red;
+$work-color:  $green;
+$blog-color:  $yellow;
+$about-color: $blue;
+$reach-color: $violet;
+
+$index-shadow: $grey-shadow;
+$work-shadow:  $green-shadow;
+$blog-shadow:  $yellow-shadow;
+$about-shadow: $blue-shadow;
+$reach-shadow: $violet-shadow;
+
+/* SITE ELEMENTS */
+$portfolio-color: $light-grey;
+$aside-color:     $dark-violet;
+
+/* ARTICLE GRID */
+$grid-gradient-color: orange;
+$grid-gradient-stop:  15em;
+
+$article-item-bg:       $blog-color;
+$article-item-bg-hover: $dark-yellow;
+$article-item-title:    $dark-red;
+$article-item-excerpt:  #fff;
+$article-item-metadata: $dark-violet;
+
+/* CATEGORY DECORATION */
+$taxonomy-item-bg:       $dark-aqua;
+$taxonomy-item-bg-hover: $blog-color;
+
+/* variables */
+$diagonal-height: 15em;
+
+$content-width: 40em;
+$spacing-unit:  1.5em;
+
+$readmore-z-index: 1;
+$search-z-index: $readmore-z-index + 1;
+
+$hex-width: 200px;

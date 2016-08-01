@@ -1,0 +1,68 @@
+<script defer async src="http://maps.googleapis.com/maps/api/js?sensor=false&callback=initialize"></script>
+<script>// <![CDATA[
+  function initialize() {
+
+    var bounds     = new google.maps.LatLngBounds();
+    var mapOptions = {
+        mapTypeId: 'roadmap'
+    };
+
+    // Display a map on the page
+    var map = new google.maps.Map(document.getElementById("googleMap"), mapOptions);
+    map.setTilt(45);
+
+    var markers = [
+      ['RCNP, Osaka',            34.826857, 135.527157, 0],
+      ['JYFL, Jyväskylä',        62.236664,  25.731612, 0],
+      ['ISOLDE, CERN',           46.233890,   6.055297, 0],
+      ['IFIC, Valencia',         39.514938,  -0.424926, 0],
+      ['GSI, Frankfurt',         49.984539,   8.677763, 0],
+      ['8L, London',             51.507400,  -0.127800, 0],
+      ['mySociety, Bristol',     51.454500,  -2.587900, 0],
+      ['David, Panama',           8.433290, -82.431718, 1],
+      ['Sliema, Malta',          35.913605,  14.501209, 1],
+      ['Santiago de Compostela', 42.879922,  -8.545285, 1]
+    ];
+
+    // Display multiple markers on a map
+    var infoWindow = new google.maps.InfoWindow(), marker, i;
+
+    // Loop through our array of markers & place each one on the map
+    for( i = 0; i < markers.length; i++ ) {
+
+      var position = new google.maps.LatLng(markers[i][1], markers[i][2]);
+      bounds.extend(position);
+
+      // Work places and live places have different marker colors
+      var seticon;
+      if      (markers[i][3] == 0) // WORK
+        seticon = '/images/icon-worked.svg';
+      else if (markers[i][3] == 1) // LIVE
+        seticon = '/images/icon-lived.svg';
+
+      marker = new google.maps.Marker({
+        map:      map,
+        position: position,
+        icon:     seticon,
+        title:    markers[i][0],
+      });
+
+      // Allow each marker to have an info window
+      google.maps.event.addListener(marker, 'click', (function(marker, i) {
+        return function() {
+          infoWindow.setContent(markers[i][0]);
+          infoWindow.open(map, marker);
+        }
+      })(marker, i));
+
+      // Automatically center the map fitting all markers on the screen
+      map.fitBounds(bounds);
+    }
+
+    // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
+    var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+      this.setZoom(2);
+      google.maps.event.removeListener(boundsListener);
+    });
+  }
+// ]]></script>
