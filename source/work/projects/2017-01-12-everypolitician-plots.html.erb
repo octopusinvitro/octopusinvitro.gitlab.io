@@ -1,0 +1,56 @@
+---
+layout: work
+title: Every politician plots
+date: 2017-01-12 13:46:13.000000000 +00:00
+type: work
+published: true
+status: publish
+categories:
+- Projects
+tags:
+- JavaScript
+- SVG
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+featured_image: /images/uploads/2017/01/projects-epplots-featured.png
+featured_image_alt: 'Featured image for the EP plots project'
+---
+
+<p><a href="<%= image_host %>/images/uploads/2017/01/projects-epplots1.png"><img class="aligncenter" src="<%= image_host %>/images/uploads/2017/01/projects-epplots1.png" alt="Screenshot of a bar plot of data from Scandinavian parliaments" width="675" height="458" /></a></p>
+
+<p>Last year, while I was working on the <a href="/work/web-dev/sinatra-everypolitician">Every politician project</a>, I did some research on how to visualize the data we were working with using just plain web technologies (HTML, CSS, JS, SVG, etc.). No bloated and complex frameworks.</p>
+
+<p>I experimented with pure CSS in the first batch, using semantic HTML elements that made sense to present the data in the absence of JavaScript, so that people with screen readers etc. could also get the information read to them and not sound weird. Data lists, tables and <code class="language-markup">&lt;ul&gt;</code> elements can be styled to look like plots!</p>
+
+<p>I also played with SVG, and I had intended to explore the D3.js library, but I have very limited time. The datasets used for the plots is taken from the EveryPolitician project through an AJAX request. </p>
+
+<p>It is still a work in progress, and I want to organize the code a bit better.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <th>See it in action</th>
+      <td><a href="http://epplots.tk/">http://epplots.tk/</a></td>
+    </tr>
+    <tr>
+      <th>Creation Date</th>
+      <td>2016 - 2017.</td>
+    </tr>
+    <tr>
+      <th>Technologies</th>
+      <td>GitHub pages, HTML5/CSS/JavaScript, SVG</td>
+    </tr>
+    <tr>
+      <th>Description</th>
+      <td>Styling semantic HTML elements to look like plots. Some examples use SVG. Data from the Every politician project. Some examples have animations on hover.</td>
+    </tr>
+    <tr>
+      <th>Repository</th>
+      <td><a href="https://github.com/octopusinvitro/ep-plots">https://github.com/octopusinvitro/ep-plots</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><a href="<%= image_host %>/images/uploads/2017/01/projects-epplots.png"><img class="aligncenter" src="<%= image_host %>/images/uploads/2017/01/projects-epplots.png" alt="Screenshot of a pie chart" width="654" height="438" /></a></p>
