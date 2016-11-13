@@ -1,0 +1,53 @@
+---
+layout: post
+title: First steps with Rails
+date: 2016-04-04 18:09:19.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Rails
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>Rails is hard!</p>
+<p>At least harder than I thought.</p>
+<p>If you are a control freak like me and want to know how things happen and why, you will have a hard time with Rails, because it hides EVERYTHING for you.</p>
+<p>My prediction was that I could sit through some tutorials during the course of a week, and then start a personal project using Rails, to practice and settle what I learnt.</p>
+<p>I was wrong.</p>
+<p>I started with the CodeSchool course <a href="https://www.codeschool.com/courses/rails-for-zombies-redux">Rails for Zombies</a> and continued with <a href="https://www.codeschool.com/courses/rails-for-zombies-2">Rails for Zombies 2</a> and <a href="https://www.codeschool.com/courses/rails-testing-for-zombies">Rails testing for Zombies</a>. Then I went through the <a href="http://guides.rubyonrails.org/getting_started.html">Getting started</a> section of the official Rails guides and their guide on <a href="http://guides.rubyonrails.org/testing.html">testing Rails applications</a>. </p>
+<p>The Rails REST controller-methods are very similar to the API I built for my contact manager system (all, create, update, etc.). It was a console application, and I came up with the same names for the methods that operate with the database, even though the initial structure I used before using a database was a simple array, and I didn't have any idea of Rails at the time. I'm happy to see that we all humans tend naturally to the same concepts or solutions in a similar way.</p>
+<p>After all this resources my impression of the framework was:</p>
+<ul>
+<li>There is a lot of magic going on behind the scenes.</li>
+<li>I am still not sure where to put certain pieces of code.</li>
+<li>"At" variables in the model become magically available in the views... WAAA...???.</li>
+<li>In general, lots of globally scoped stuff and the feeling of bad design (COF <span class="small">helpers</span> COF).</li>
+<li>How do I implement Dependency Injection?.</li>
+<li>Just as WordPress (PHP), Rails (Ruby) feels a bit monolithic to me.</li>
+<li>I still don't know how to run the tests with an in-memory implementation of the database and how to change from memory to the real database when I want so. Should I do it with shared examples? How do people do it?</li>
+</ul>
+<p>In summary, I felt that after all this guides, there was still a lot to learn. I felt I had just scratched the surface.</p>
+<p>Then I discovered the online book <a href="https://www.railstutorial.org/book">Ruby on Rails tutorial</a>. I like the approach of the book because it goes from zero to a full developed application, and it doesn't stop in the basics. For example, something I always wanted to learn is how to implement a secure login and user authentication and authorization. The book teaches you that.</p>
+<p>The application you will built with this book is a Twitter-like kind of web application. I read one person say on the preface of the book, "<em>I finished this book in three days!</em>", and that gave me a huge motivation to read it. <strong>So I decided to track the time that every chapter was taking me</strong>, to check if this guy was nuts or what (LOL), but mainly, and since I suck at time estimations, to have an idea of how much time would I need to finish the book.</p>
+<p>Because I always finish what I start.</p>
+<p>So I worked in steps of 55 minutes, set an alarm on my phone and stopped for five minutes to make some exercise or eat something. Then started again for another 55 minutes, and so on. Kind of my own Pomodoro thing.</p>
+<p>I was so happy with my initial results. For the first six chapters, these were my timings:</p>
+<p>Chapter 1: 3h<br />
+Chapter 2: 2h<br />
+Chapter 3: 2h 30min<br />
+Chapter 4: 1h 30min<br />
+Chapter 5: 3h<br />
+Chapter 6: 2h</p>
+<p>That's so cool! an average of 2-3 hours per chapter! I was covering three chapters per day! in two days more I would be able to finish the book and know everything there is to know about Rails!</p>
+<p>Wrong again.</p>
+<p><strong>From chapter seven on, the curve got so steep that I stopped tracking my time</strong>, because I was ashamed of how much time it was taking me. Basically, I went from 2-3 hours per chapter to a whole day per chapter. I think it was mostly because this was all totally new stuff for me, while the six first chapters were just a refresh of what I had seen in the previous tutorials. Yet those first chapters took me some time, because I was TYPING the code, comparing what I was doing with what I had done in the previous projects, and adding tests where there weren't any.</p>
+<p>I finished the book (I told you I always finish what I start), but I feel like I have to go through those chapters for a second time.</p>
+<p>How was it, you ask me? I learnt a lot, and I am thankful that there were tests. Some times, even test-driven code. But I was not happy to see <strong>some big chunks of code been written with no tests at all</strong>. The author has <a href="https://www.railstutorial.org/book/static_pages#aside-when_to_test">a soft approach to TDD</a>, considering it should be used only in certain scenarios, while I am used to not writing any code without writing a test first. But due to my ignorance with Rails, I'm still not sure how to test certain things or at times, what to test even, or where does the test go. As I was writing the code, I felt insecure, fearing I would forget to go back to all those lines of code to test them, and they would remain uncovered.</p>
+<p>I'll make another post with the notes I took while going through the tutorial.</p>
+<p>My next step is <strong>to work on one of the apps I want to build</strong> (I have so many! which would I choose?) but I want to completely test-drive it this time. I don't want to write any code again without writing a test first, it felt so weird.</p>
+<p>Later on, at some point when I am more experienced with Rails, I will go through Daniel Kehoe's book <a href="http://learn-rails.com/learn-ruby-on-rails.html">Learn Ruby on Rails</a>. He uses a different approach, he has some chapters on product development, and doesn't use a database, for security reasons, but a Google Docs Spreadsheet.</p>
