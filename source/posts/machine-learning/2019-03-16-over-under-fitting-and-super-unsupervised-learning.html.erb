@@ -1,0 +1,107 @@
+---
+layout: post
+title: Overfitting / underfitting and supervised / unsupervised learning
+date: 2019-03-16 07:31:38.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+author:
+  display_name: Octopus in vitro
+---
+
+<h2>Overfitting and Underfitting</h2>
+
+<h3>Overfitting</h3>
+
+<p>Overfitting occurs when our model becomes really good at being able to classify or predict on data that was included in the training set, but is not as good at classifying data that it wasn't trained on. So essentially, the model has overfit the data in the training set.</p>
+
+<p>We can tell if the model is overfitting if the metrics that are given for our training data are better than the ones for the validation data during training, or if it can't make predictions on test or real data.</p>
+
+<p>Some ways to reduce it:</p>
+
+<ul>
+  <li><strong>Adding more training data samples:</strong> this makes the dataset more diverse.</li>
+  <li><strong>Data augmentation:</strong> Cropping, rotating, flipping or zooming the training samples to generate more data.</li>
+  <li><strong>Reduce the complexity of the model:</strong> Remove layers and/or neurons.</li>
+  <li><strong>Dropout:</strong> Regularization technique that randomly ignores a percentage of neurons in a given layer. </li>
+</ul>
+
+<h3>Underfitting</h3>
+
+<p>A model is said to be underfitting when it's not even able to classify the data it was trained on, let alone data it hasn't seen before.</p>
+
+<p>We can tell that a model is underfitting when the metrics given for the training data are poor, meaning that the training accuracy of the model is low and/or the training loss is high.</p>
+
+<p>Some ways to reduce it:</p>
+
+<ul>
+  <li><strong>Increase the complexity of the model:</strong> Add layers and/or neurons, changing what type of layers we're using and where.</li>
+  <li><strong>Adding more features to training data samples</strong></li>
+  <li><strong>Reduce Dropout:</strong> If we are ignoring say 50% of the neurons in a layer, reduce to 25% for example.</li>
+</ul>
+
+<h2>Supervised and unsupervised learning</h2>
+
+<h3>Supervised learning</h3>
+
+<p>With supervised learning, each piece of data passed to the model during training is a pair that consists of the sample and the corresponding <strong>label</strong>.</p>
+
+<p>The model will classify the output of an input sample, and then determine its error by looking at the difference between the value it predicted and the sample's actual label.</p>
+
+<h3>Unsupervised learning</h3>
+
+<p>With unsupervised learning, each piece of data passed to our model during training is solely an <strong>unlabelled</strong> input object, or sample. There is no corresponding label that's paired with the sample. The model will attempt to learn some type of structure from the data and extract its features.</p>
+
+<p>Since the model is unaware of the labels for the training data, there is no way to <strong>measure accuracy</strong>.</p>
+
+<p>Examples:</p>
+
+<ul>
+  <li><strong>Clustering algorithms:</strong> A clustering algorithm could analyze the data samples and start to learn the structure of it even though it's not labelled. Through learning the structure, it can start to cluster the data into groups.</li>
+  <li><strong>Autoencoders:</strong>  Unsupervised learning is also used by autoencoders. This neural network will take in an input, and it will encode it, then, it will output the decoded reconstructed version of the original input. The goal is for the reconstructed sample to be as close as possible to the original sample. One application for this could be to denoise images.</li>
+</ul>
+
+<p>Autoencoders are data-specific which makes them generally <strong>impractical</strong> for real-world data compression problems: you can only use them on data that is similar to what they were trained on, and making them more general thus requires lots of training data. But future advances might change this, who knows. The creator of Keras wrote <a href="https://blog.keras.io/building-autoencoders-in-keras.html">a blog post about autoencoders</a>.</p>
+
+<h3>Semi-supervised learning</h3>
+
+<p>Semi-supervised learning uses a combination of supervised and unsupervised learning techniques. It is used when we have a combination of both labelled and unlabelled data.</p>
+
+<p>With semi-supervised learning, we first manually label a subset of our unlabelled data and train our model with it using supervised learning. Then we use the model to predict the labels of the remaining unlabelled data. This process is called pseudo-labeling. Finally, we retrain the model using the full dataset of labelled and pseudo-labelled data.</p>
+
+<h2>One-hot encoding</h2>
+
+<p>Labels for classes are encoded into integers or arrays of integers. One-hot encodings transform our categorical labels into vectors of 0s and 1s. The length of these vectors is the number of classes or categories that our model is expected to classify.</p>
+
+<p>Example:</p>
+
+<ul>
+  <li>Cat: <code class="language-plaintext">[1, 0, 0]</code></li>
+  <li>Dog: <code class="language-plaintext">[0, 1, 0]</code></li>
+  <li>Frog: <code class="language-plaintext">[0, 0, 1]</code></li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Value</th>
+      <th>Interpretation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Cold</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Hot</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>With each one-hot encoded vector, every element will be a zero EXCEPT for the element that corresponds to the actual category of the given input, which will be the "hot" element.</p>

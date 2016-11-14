@@ -1,0 +1,401 @@
+---
+layout: post
+title: 'Responsive / responsible development'
+date: 2015-11-25 11:02:46.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- CSS
+- HTML
+- JavaScript
+- responsive
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+
+<h2>Introduction</h2>
+
+<p>What do you understand by responsive?</p>
+
+<p>Responsive development is about adapting to the unknown.
+It's a way of re-wiring our brains to think about one-web.</p>
+
+<p><img src="<%= image_host %>/images/uploads/2015/11/responsive-content-is-like-water.jpg" alt="Content is like water" /></p>
+
+<p>But, does one size fit it all always?</p>
+
+<p>Think about how your visitors will use your site.
+If you visit an airport site from your phone, you may want to know how to access the parking area, or get information on departures/arrivals, while if you are on a desktop computer, you may want to print your boarding pass.</p>
+
+<p>Dabbling sites like CodePen may not need to be responsive. A blog is an example of a site that could benefit from being responsive. If you have a webapp though, or if you need integration with the device (like having access to the camera or phone contacts), going native for mobile or hybrid could be the best option.</p>
+
+
+<h3>Graceful degradation and progressive enhancement</h3>
+
+<p>Graceful degradation is older than progressive enhancement.
+Nowadays, developers prefer to stick to progressive enhancement.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2015/11/responsive-degradation-vs-enhancement.png" alt="Graceful degradation vs progressive enhancement" />
+  <figcaption><strong>Img. 1:</strong> Source: <a href="http://www.slideshare.net/AdRoll/unlocking-mobile-roi-webinar-deck">Unlocking Mobile ROI</a></figcaption>
+</figure>
+
+<h4>Graceful degradation</h4>
+
+<p>In graceful degradation, you start with the whole picture, and provide simpler defaults for edge cases.
+Smashing Magazine has <a href="http://www.smashingmagazine.com/2011/08/techniques-for-gracefully-degrading-media-queries/">an article on techniques</a> to achieve this.
+For example:</p>
+
+<pre><code class="language-markup">
+&lt;script type="text/javascript" src="/menu.js">&lt;/script>
+&lt;noscript>
+  &lt;ul id="menu">
+    &lt;li>&lt;a href="/">Home&lt;/a>&lt;/li>
+    &lt;li>&lt;a href="/products/">Products&lt;/a>&lt;/li>
+    &lt;li>&lt;a href="/services/">Services&lt;/a>&lt;/li>
+  &lt;/ul>
+&lt;/noscript>
+</code></pre>
+
+<p>The <code class="language-">menu.js</code> file contains some fancy interactions, but you should provide basic functionality inside the <code class="language-markup">&lt;noscript></code> tag, for users who may have JavaScript disabled.</p>
+
+<h4>Progressive enhancement</h4>
+
+<p>In progressive enhancement, you start with the basics and add complexity, for example through media queries.
+This is the preferred method. For example:</p>
+
+<pre><code class="language-css">
+.box {
+  background-color: red;  /* fallback */
+  background-color: rgba(255, 0, 0, 0.5);
+}
+</code></pre>
+
+<p>Browsers that don't support rgba would show a red background.
+This is because CSS is error tolerant like HTML.
+If a browser does not understand an HTML tag or a CSS property, it ignores it.
+You can check which browsers support what in <a href="http://caniuse.com">http://caniuse.com/</a>.</p>
+
+<p>Mobile/wearable-first development follows the progressive enhancement approach, and it's preferred over desktop-first development (graceful degradation).</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2015/11/responsive-desktop-vs-mobile.jpg" alt="Desktop-first vs mobile-first" />
+  <figcaption><strong>Img. 2:</strong> Source: <a href="http://brettjankord.com/">brettjankord.com</a></figcaption>
+</figure>
+
+
+<h2>Let's DO THIS!</h2>
+
+<p>How to make a site responsive is a wide topic that requires much more than just code, but also thinking about who is going to use your site and how.
+However, it can be trimmed down to three basic &ldquo;musts&rdquo;:</p>
+
+<ul>
+  <li><strong>media queries:</strong> Media queries allow the page to use different CSS style rules based on characteristics of the device the site is being displayed on, most commonly the width of the browser.</li>
+  <li><strong>fluid grids:</strong> The fluid grid concept calls for page element sizing to be in relative units like percentages or ems, rather than absolute units like pixels or points.</li>
+  <li><strong>flexible images and media:</strong> Flexible media is also sized in relative units (up to 100%), so as to prevent them from displaying outside their containing element.</li>
+</ul>
+
+<p>Let's look at them more closely:</p>
+
+<h3>1. Media queries</h3>
+
+<p>From the words:</p>
+
+<ul>
+  <li><strong>media:</strong> <code class="language-css">@media screen</code>, <code class="language-css">@media print</code>, etc.
+  <li><strong>query:</strong> <code class="language-css">(min-width:768px)</code>, <code class="language-css">(min-aspect-ratio: 1/1)</code>, etc.
+</ul>
+
+<p><em>Beware:</em> Even if you have media queries in your CSS, they won't work if you don't use:</p>
+
+<pre><code class="language-markup">
+&lt;meta name="viewport" content="initial-scale=1.0, width=device-width"/>
+</code></pre>
+
+<p>This tells viewport-aware browsers that a website shouldn’t be scaled down, and that the width of the browser window should be treated the same as the overall device width.</p>
+
+<p><strong>Example:</strong></p>
+
+<p>Let's say we have this simple markup:</p>
+
+<pre><code class="language-markup">
+&lt;div class="container">
+  &lt;div class="sidebar">Sidebar&lt;/div>
+  &lt;div class="content">Content&lt;/div>
+&lt;/div>
+</code></pre>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2015/11/responsive-demo-desktop.png" alt="Demo - Desktop" />
+  <figcaption><strong>Img. 3:</strong> Desktop view</figcaption>
+</figure>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2015/11/responsive-demo-mobile.png" alt="Demo - Mobile" />
+  <figcaption><strong>Img. 4:</strong> Mobile view</figcaption>
+</figure>
+
+<p>If we use a desktop-first approach (<a href="http://dabblet.com/gist/923bdaa9a767707edd63">demo</a>):</p>
+
+<pre><code class="language-css">
+.sidebar {
+  float: left;
+  width: 25%;
+}
+
+.content {
+  float: left;
+  width: 75%;
+}
+
+@media (max-width: 40em) {
+  .sidebar,
+  .content {
+    float: none;
+    width: auto;
+  }
+}
+</code></pre>
+
+<p>Here, <code class="language-css">max-width: 40em</code> is our <strong>breakpoint</strong> for smaller viewports: under this width, the styles inside the <code class="language-css">@media</code> brackets will be applied. Over this width, the default styles (the ones outside the media query) will be applied.</p>
+
+<p>The problem with this approach is that, in the media query for smaller viewports, we will have to undo the floats for smaller screens.</p>
+
+<p>Also, html elements have a width of <code class="language-css">auto</code> by default, but because we had to set it to something else in our default styles (for bigger screens), it must be reset as well for smaller viewports.</p>
+
+<p>In other words, for smaller and potentially less powerful devices, we are adding more code instead of reducing it.</p>
+
+<p>If we use a mobile-first approach (<a href="http://dabblet.com/gist/92958d424df0028ada81">demo</a>):</p>
+
+<pre><code class="language-css">
+@media (min-width: 40em) {
+  .sidebar {
+     float: left;
+     width: 25%;
+  }
+
+  .content {
+     float: left;
+     width: 75%;
+  }
+}
+</code></pre>
+
+<p>Now, for small viewports we do nothing, so the default browser styles will be applied. Only if the viewport is bigger (for viewports with a <code class="language-css">min-width</code> of <code class="language-css">40em</code>) we add more code.</p>
+
+<p>Also, if we wanted to add a new background image for some element, but the image was too big for a small device, we could add the background image to the element inside a media query, and the browser <a href="https://timkadlec.com/2012/04/media-query-asset-downloading-results/">wouldn't download the resource</a> for smaller devices, while it would for bigger devices. This is very helpful for small devices on a bad connection, for example.</p>
+
+<p>With media queries:</p>
+
+<ul>
+  <li>You can use your content to set the breakpoints.</li>
+  <li>Only the minimum required files are loaded.</li>
+  <li>Keeps the mobile solution lightweight.</li>
+</ul>
+
+<p>Media queries are supported in all major browsers <a href="http://caniuse.com/#feat=css-mediaqueries">except IE8 and below</a>.</p>
+
+<h3>2. Fluid Layout</h3>
+
+<p>You may want to check out this nice resource on <a href="http://www.lukew.com/ff/entry.asp?1514">Multi-Device Layout Patterns</a> by Luke Wroblewski.</p>
+
+<ul>
+<li>Use ems and percentages for your elements. Ideally, ems to size typography and vertical measurements, and percentages for layout and horizontal measurements.</li>
+
+<li>Use ems for your breakpoints instead of pixels. This helps you account for varying browser zoom levels. <a href="http://pxtoem.com/">PXtoEM</a> is a nice conversion tool.</li>
+
+<li>On small screens, the content fits the viewport, but remember to give it enough padding to breath.</li>
+
+<li>On bigger screens, keep a confortable width for reading, by setting the <code>max-width</code> property to about 30 - 40em.</li>
+
+<li>Place the relevant content at the top, and the controls at the bottom. This is a common industrial design convention that’s now making its way to the software. We don’t want our fingers covering the content when we are interacting with the site.</li>
+
+<li>For tablet-like sizes, favor the sides and corners and avoid the center.</li>
+</ul>
+
+<h3 id="3flexibleimages">3. Flexible Images</h3>
+
+<p>When talking about <strong>responsible</strong> web development, it is impossible not to talk about <strong>performance</strong>.
+Images are the elephant in the room, as they are the main source of performance problems.</p>
+
+<p>This is a long topic, not covered fully in this article (search for art direction, adaptive images, picture element, etc.). There is still no solution for responsive images. In the meanwhile, you can have fluid images and media with:</p>
+
+<pre><code class="language-css">
+img {
+  height: auto;
+  max-width: 100%;
+}
+</code></pre>
+
+<p>However:</p>
+
+<ul>
+<li>Avoid images if possible.</li>
+
+<li>If not possible, prefer vector images (SVG) over raster images (GIF, PNG, JPG). Vector images are basically text and can be gzipped considerably more than normal images (around 10% to 90% ratio in average).</li>
+
+<li>If not possible, you could try CSS gradients for simple backgrounds. <a href="http://lea.verou.me/css3patterns/">Lea Verou's gallery</a> is a great resource and it also tells you the size of the code as you type.</li>
+
+<li>If not possible, use PNG and flat colors. If the image is complex, like a photograph, use JPG. In Photoshop, you can use <strong>save for web</strong> to optimize PNG and JPG, or take the ones that <a href="https://gtmetrix.com/">GTmetrix</a> generates for you.</li>
+
+<li>For logos and icons, use SVG and avoid font-icons as well. <a href="https://icomoon.io/app/#/select">IcoMoon</a> is a great tool to generate them.</li>
+
+<li>Load the less relevant images for bigger screens only, through media queries.</li>
+
+<li>If all this fails, consider creating multiple versions of your graphics. This can greatly affect the speed at which your design loads on smaller screens.</li>
+</ul>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2015/11/responsive-png-vs-jpg.png" alt="Adaptive SVG logo" />
+  <figcaption><strong>Img. 5:</strong> PNG (left) vs JPG (right). For images with flat colors, no gradients and sharp borders, prefer PNG over JPG.</figcaption>
+</figure>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2015/11/responsive-adaptive-svg-logo.gif" alt="Adaptive SVG logo" />
+  <figcaption><strong>Img. 6:</strong> Example of adaptive logo made in SVG. You can achieve this through media queries inside the SVG. Image source: <a href="https://sarasoueidan.com">https://sarasoueidan.com/</a></figcaption>
+</figure>
+
+<h2 id="otherbestpractices">Other best practices</h2>
+
+<h3 id="responsivenavigation">Responsive navigation</h3>
+
+<p>There are a lot of ergonomics limitations to think about in smaller screens.</p>
+
+<p>On a smartphone:</p>
+
+<ul>
+<li>Horizontal space is limited, we can fit about 4 links across. Hide the menu items that you think your mobile users won't use.</li>
+
+<li>Vertical menus take up a lot of space. Reposition the navigation with CSS without needing to alter the HTML.</li>
+
+<li>Show only the most important information first.</li>
+</ul>
+
+<p>On touch screens in general:</p>
+
+<ul>
+<li>Tap size should be at least 3em.</li>
+
+<li>Give enough space for fingers to reach. Thumbs move in diagonal.</li>
+
+<li>Provide feedback when screen is touched.</li>
+
+<li>Minimize text input.</li>
+
+<li>Keep the most content visible and accessible through one click, two-clicks maximum.</li>
+</ul>
+
+<h3 id="typography">Typography</h3>
+
+<ul>
+<li>Don't make your users download a lot of fonts, keep it to no more than one for the copy, one for titles, and maybe one for code snippets.</li>
+
+<li><a href="https://www.google.com/fonts">Google Fonts</a> optimizes font delivery according to the user browser and shows you the impact on page load time.</li>
+
+<li>A font-size of at least 16px (1em) and a line height of 1.5 are good for readability.</li>
+
+<li>Resize the type for bigger screens and have the relevant elements sized in ems, so that the layout adapts to the font.</li>
+</ul>
+
+<h3 id="responsivetables">Responsive tables</h3>
+
+<p>The other elephant in the room, together with images.
+Several techniques are discussed in this CSS-Tricks article about <a href="https://css-tricks.com/responsive-data-tables/">responsive data tables</a>.</p>
+
+<h3 id="resetstylesheets">Reset stylesheets</h3>
+
+<p>Different browsers behave differently:</p>
+
+<pre><code class="css language-css">
+.robot {
+  border-radius: 50%;
+  border: 1em dotted grey;
+}
+</code></pre>
+
+<p>Result:</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2015/11/responsive-cross-browser.png" alt="Cross-browser optimization" />
+  <figcaption><strong>Img. 7:</strong> A dotted-border-radiused element in different browsers.</figcaption>
+</figure>
+
+
+<p>And different O.S. have different defaults.
+For example, the default monospaced font in Windows would be <code>Courier</code>, <code>Ubuntu-mono</code> in Ubuntu, and <code>Monaco</code> in a Mac.
+This could break your layout.</p>
+
+<p>The first example (cross-browser dotted-border-radiused elements) could only be fixed by <a href="https://twitter.com/_mestevens/status/494911817773510656">using an SVG</a>.
+The second example (default monospaced font), by loading a specific font for code snippets.
+But there are other defaults that can be accessed and reset.</p>
+
+<p>There are several ways to reset these defaults.
+Long ago, developers used this simple one, but it was left behind because it is performance-heavy, and does not really reset your styles:</p>
+
+<pre><code class="css language-css">
+/* Please never do this */
+* {
+  margin:  0;
+  padding: 0;
+}
+</code></pre>
+
+<p>Eric Meyer created a <a href="http://meyerweb.com/eric/tools/css/reset/">reset stylesheet</a> that became very popular and widely used a while ago.</p>
+
+<p>Nowadays, a better solution is <a href="https://necolas.github.io/normalize.css/">normalize</a>, which, together with Paul Irish's <a href="https://html5boilerplate.com/">html5 boilerplate</a>, fixes several well-known cross-browser issues and documents them.</p>
+
+<h2 id="aboutresponsibilityisthisenough">About responsibility. Is this enough?</h2>
+
+<p>72% of responsive sites send the same assets to mobile sites as they do to desktop sites.
+Only 6% optimize things for specific devices (<a href="http://www.lukew.com/ff/entry.asp?1900">source</a>).</p>
+
+<p>As a summary, these are some basic things to keep in mind:</p>
+
+<ul>
+<li>Keep it simple and light (size &lt; 1 Mb, load time &lt; 2-3 s)</li>
+
+<li>Reduce the number of images</li>
+
+<li>Reduce image dimensions</li>
+
+<li>Fewer files, fewer http requests</li>
+
+<li>Include your JavaScript files at the end of the document and <a href="http://dejanstojanovic.net/javascript/2015/march/the-ways-of-loading-javascript-files-onto-your-page/">load them asynchronously</a> (<code class="language-markup">&lt;script async src="file.js" /&gt;</code>)</li>
+
+<li>For the parts of your assets/resources that won't change much, serve them from a CDN.</li>
+
+<li>For the parts that change the most and can't benefit from browser caching, minify, concatenate and gzip them.
+You can automate this process along with other tasks using a service like <a href="http://gruntjs.com/">Grunt</a> or <a href="http://gulpjs.com/">Gulp</a>.</li>
+
+<li>Little or no client-side processing.
+Keeping our functionality independent of JavaScript improves performance.
+All your users are non-JavaScript users while a page is downloading.</li>
+
+<li>Load the essential parts of a page first. Then load the rest of non-essential elements in the background after all the core content has loaded.</li>
+</ul>
+
+<h1 id="resources">Resources</h1>
+
+<ul>
+<li><a href="https://www.w3.org/wiki/Graceful_degradation_versus_progressive_enhancement">W3C: Graceful degradation vs. progressive enhancement</a></li>
+
+<li><a href="https://www.w3.org/TR/css3-mediaqueries/">W3C: Media queries spec</a></li>
+
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries">MDN: Using media queries</a></li>
+
+<li><a href="http://bradfrost.com/blog/web/responsive-nav-patterns/">Brad Frost: Responsive navigation patterns</a></li>
+
+<li><a href="https://www.smashingmagazine.com/2014/09/improving-smashing-magazine-performance-case-study/">SM: Improving Smashing Magazine’s Performance: A Case Study</a></li>
+
+<li>Use tools like <a href="https://gtmetrix.com/">GTmetrix</a>, <a href="https://developers.google.com/speed/pagespeed/insights/">Google PageSpeed</a> and <a href="http://validator.w3.org/mobile/">W3C mobileOK checker</a>.</li>
+
+<li><a href="https://www.splio.com/blog/10-basic-tips-about-responsive-design/">Splio: 10 basic tips about responsive design</a></li>
+
+<li><a href="https://medium.freecodecamp.com/the-fab-four-technique-to-create-responsive-emails-without-media-queries-baf11fdfa848">The fab-four technique to create responsive emails</a></li>
+</ul>

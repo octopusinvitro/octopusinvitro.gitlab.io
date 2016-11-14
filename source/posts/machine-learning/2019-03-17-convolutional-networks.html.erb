@@ -1,0 +1,136 @@
+---
+layout: post
+title: Convolutional networks
+date: 2019-03-17 08:19:24.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+author:
+  display_name: Octopus in vitro
+---
+
+<p>A convolutional neural network / CNN / ConvNet is an artificial neural network that detects patterns in images using filters. They are mostly used for analyzing images for computer vision tasks.</p>
+
+<p>The inputs to convolutional layers are called <strong>input channels</strong>, and the outputs are called <strong>output channels</strong>.</p>
+
+<p>The transformation is called a <strong>convolution</strong> operation in the deep learning community, and <strong>cross-correlation</strong> mathematically. A convolution operation maps an input to an output using a filter and a sliding window.</p>
+
+<h2>Filters</h2>
+
+<p>We need to specify the number of <strong>filters</strong> each layer should have. The number of filters determines the number of output channels.</p>
+
+<p>These filters are what detect the patterns. Patterns can be edges, shapes, textures, curves, objects, colors, etc. in the first layers. The deeper the network goes, the more sophisticated the filters become.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2019/03/cnn-filter.gif" width="395" height="449" alt="Animation of a CNN filter in action." />
+  <figcaption>
+    Animation of a 3x3 CNN filter (gray) sliding through the input channel in the bottom (blue) and the resulting output channel at the top (green).
+  </figcaption>
+</figure>
+
+<p>The convolution of a filter and each subset of the same size in the input channel is calculated as <strong>the summation of the element-wise products</strong>.</p>
+
+<p>For example, for a 3x3 filter:</p>
+
+<pre><code class="language-palintext">
+         | a11 a12 a13 |           | b11 b12 b13 |
+filter = | a21 a22 a23 |  subset = | b21 b22 b23 |
+         | a31 a32 a33 |           | b31 b32 b33 |
+
+product = a11 b11 + a12 b12 + ... + a33 b33
+</code></pre>
+
+<p>Because the filter is 3x3, the resulting output channel will be smaller by a margin of 1 pixel on all sides.</p>
+
+<p>Sometimes this is called <strong>dot product</strong> since it is an <em>inner product</em> (generalization of the dot product). Other names are "Frobenius inner product" or "summation of the Hadamard product".</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2019/03/cnn-edge-filters.png" width="771" height="901" alt="Example of CNN edge detection filters." />
+  <figcaption>
+    The four filters detect horizontal and vertical edges in one sample of the MNIST dataset representing the number 7. The "Layer 2" image shows edge detection examples from several images in the first layers of a CNN.
+  </figcaption>
+</figure>
+
+
+<p>In the past, computer vision experts would develop filters manually (for example, the <a href="http://imgprocessing.tk/digital/filtering.html">Sobel filter</a>). Today, pattern detectors are derived automatically by the network as it learns. The filter values start out with random values, and the values change as the network learns during training.</p>
+
+<p>Use <a href="https://deeplizard.com/resource/pavq7noze2">this interactive demonstration</a> to gain a better understanding of convolutions, or <a href="https://blog.keras.io/how-convolutional-neural-networks-see-the-world.html">Francois Chollet post "How CNNs see the world"</a>.</p>
+
+<h2>Zero padding</h2>
+
+<p>Convolutions reduce output channel dimensions by <code class="language-plaintext">(n - f + 1)(m - g + 1)</code>, where <code class="language-plaintext">n x m</code> are the dimensions of the input and <code class="language-plaintext">f x g</code> are the dimension of the filter.</p>
+
+<p>This is a problem when there is meaningful information around the edges of the image. The solution is to use <strong>zero padding</strong>, a technique where we add a border of pixels with value zero around the edges of the input image. This allows us to preserve the original input size as convolutions are applied.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Padding</th>
+      <th>Description</th>
+      <th>Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext">valid</code></td>
+      <td>No padding</td>
+      <td>Dimensions reduce</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext">same</code></td>
+      <td>Zeros around the edges</td>
+      <td>Dimensions stay the same</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>In Keras we specify the filter size with <code class="language-plaintext">kernel_size</code> and the padding with <code class="language-plaintext">padding</code>:</p>
+
+<pre><code class="language-python">
+model = Sequential([
+    Dense(16, input_shape=(20,20,3), activation='relu'),
+    Conv2D(32, kernel_size=(3,3), activation='relu', padding='valid'),
+    Dense(2, activation='softmax')
+])
+</code></pre>
+
+<p>Output goes from <code class="language-plaintext">(20, 20)</code> to <code class="language-plaintext">(18, 18)</code>:</p>
+
+<pre><code class="language-python">
+model.summary()
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #
+=================================================================
+dense_2 (Dense)              (None, 20, 20, 16)        64
+_________________________________________________________________
+conv2d_1 (Conv2D)            (None, 18, 18, 32)        4640
+_________________________________________________________________
+dense_3 (Dense)              (None, 2)                 16386
+</code></pre>
+
+<h2>Max Pooling</h2>
+
+<p>Max pooling is added after a convolutional layer, and it <strong>reduces the number of pixels</strong> in the output from the previous convolutional layer. It's used to reduce computational load (smaller image -&gt; less parameters) and reduce over-fitting.</p>
+
+<p>We define the size <code class="language-plaintext">n x m</code> of the "pool", and a <strong>stride</strong>, or how many pixels we will move to find the next region. Every pixel of the output is calculated as the maximum of the values in the corresponding region of the image. With a pool of 2x2 and a stride of 2, the output will be reduced to half the size of the input.</p>
+
+<p><strong>Average pooling</strong> is where we take the average value from each region rather than the maximum. Currently, max pooling is used vastly more.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2019/03/max-pooling.jpg" width="1235" height="479" alt="Example of max pooling." />
+  <figcaption>
+    Maximum pooling applied to a 4x4 image, with a 2x2 pool and stride 2, produces an output that is 2x2.
+  </figcaption>
+</figure>
+
+<p>In Keras, there is a specific layer for max pooling, where we can specify both the size of the pool and the stride. They usually have no padding:</p>
+
+<pre><code class="language-python">
+MaxPooling2D(pool_size=(2, 2), strides=2, padding='valid')
+</code></pre>
+
+<p>There are also <code class="language-plaintext">MaxPooling1D</code> and <code class="language-plaintext">MaxPooling3D</code>.</p>

@@ -1,0 +1,138 @@
+---
+layout: post
+title: How to read data from magnetic tapes and playing the detective with octal dump - Part 2
+date: 2012-01-18 21:45:27.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+- C++
+- nostalgia
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p><em>This post is part of a series of three posts. Check them out!:</em></p>
+<ul>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-1">How to read data from magnetic tapes and playing the detective with octal dump - Part 1</a></li>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-3">How to read data from magnetic tapes and playing the detective with octal dump - Part 3</a></li>
+</ul>
+<hr>
+<h2>About the files</h2>
+<p>The files in the tapes were in <code>lmd</code> format, or "list mode", which is the format in which the data adquisition system wrote the data. This is <strong>raw</strong> data, i.e., words of bytes of different sizes, containing information for each event received from the detectors, in the order in which the events arrived to the adquisition system.</p>
+<p>So this means several things: first, the files are going to follow a certain <strong>structure</strong>, a <strong>general</strong> one for the metadata included in the header of each event, and a <strong>specific</strong> one for the actual data, which is going to depend on the things you had connected, the signals you chose to store, how many detectors did you have, etc. And the other thing is, the way you write that stuff in the tape, what exactly do you write to know that detector X gave signal Y.</p>
+<p>You can read about this in the chapter "<a href="http://web-docs.gsi.de/~goofy/goosy/GM_BUFFER.pdf">Buffer and data structures</a>" of the GOOSY manual. This chapter is crucial to translate these files into something that makes sense to a human. There are several types of events and they all have different header structures. Our data was of <strong>type 10, subtype 1</strong>, which you can find in page 28, and it took me a good while to figure it out. I wish somebody explained this to me when I first started working with my <code>lmd</code> files!</p>
+<p>So, let's DO THIS. Let's learn about the general and specific structure of our headers:</p>
+<h2>The general structure of an event</h2>
+<p>First of all, the header and EOF files contain no relevant information, so we can get rid of them. We will work with just the data files (the meat of the sandwich). Second, at the beginning of every data file, there is a buffer header with the structure shown in page 17; we can get rid of it as well. It occupies an entire block so we need to know the size of a block. We already know this from the previous section, it is <strong>16 Kb or 16384 bytes</strong>. So I had to jump 16384 bytes before reading anything.</p>
+<p>In Figure 1.13 of the GOOSY manual we have the event structure. To read through this structure, I wrote a program in C++. What the GOOSY manual calls "word" is one byte (8 bits), and <strong>the events are written from right to left</strong>. So, when you are positioned at the beginning of a new event in your file, you will have to check for a header with the following structure:</p>
+<ul>
+  <li>First, you will read the length (in bytes) of the event. A space of <strong>4 bytes (32 bits)</strong> is reserved to store this number. This means that you should create a variable in your program of type <code>int</code> at least. If you wanted to jump to the next event, you would have to read this number and jump <code>length</code> bytes minus four in your file from your actual position.</li>
+  <li>Next, there is the <em>subtype</em>, followed by the <em>type</em> (remember, it is written from right to left Each one has a reserved space of <strong>two bytes (16 bits)</strong> to store their values, which are, as said before, 1 and 10, respectively. These values will be useful to detect events in a sea of hexadecimals and octals, as we will see later. For two bytes, use a variable of type <code>short</code> at least.</li>
+  <li>Next comes the trigger. It's <strong>two bytes</strong> long, so, a <code>short</code> at least. There was no relevant information to store that fit into two bytes, so the next two bytes you will read after the trigger are a bunch of zeros (appears in the figure as "not used") of size <code>short</code>.</li>
+  <li>After, you will find the event counter, four bytes. That adds another <code>int</code> variable to your translation program.</li>
+</ul>
+<p>This is the list of all your events, in the order in which they arrived to the adquisition system.</p>
+<table class="center" summary="This table of the structure of an event of type 10, subtype 1 gives the name and size of the different parts of the header, where each row has a size of 4 bytes, as indicated by the offset column.">
+<caption>Header structure of an Event type 10, subtype 1</caption>
+<tbody>
+<tr>
+<th colspan="2">Event length<br />
+(4 bytes or 32 bits)</td>
+<th>Offset 0</td>
+</tr>
+<tr>
+<td>Event subtype = 1<br />
+(2 bytes or 16 bits)</td>
+<td>Event type = 10<br />
+(2 bytes or 16 bits)</td>
+<td>Offset 4</td>
+</tr>
+<tr>
+<td>Trigger<br />
+(2 bytes or 16 bits)</td>
+<td>Not used<br />
+(2 bytes or 16 bits)</td>
+<td>Offset 8</td>
+</tr>
+<tr>
+<td colspan="2">Event counter<br />
+(4 bytes or 32 bits)</td>
+<td>Offset 12</td>
+</tr>
+<tr>
+<td colspan="2">Subevent 1</td>
+<td>Offset 16</td>
+</tr>
+<tr>
+<td colspan="2">Subevent 2</td>
+<td>Offset 20</td>
+</tr>
+<tr>
+<td colspan="2">...</td>
+<td>Offset ...</td>
+</tr>
+<tr>
+<td colspan="2">Subevent n</td>
+<td>Offset 16+n</td>
+</tr>
+</tbody>
+</table>
+<p>The "subevents" (your actual events, really), also come with their own header, so, after sorting the information in the big header, you'll have to sort the information in every subevent's header. But it is pretty much the same, just that here we have two variables that are <strong>1 byte long</strong>, the control and the subcrate. So they can be stored in a... you guessed it, in a <code>char</code> variable.</p>
+<table class="center" summary="This table of the structure of an subevent of type 10, subtype 1 it similar to the table showing the structure of the header of an event, but we have omitted the offset column.">
+<caption>Header structure of an Event type 10, subtype 1</caption>
+<tfoot>
+<tr>
+<td id="camac" class="small" colspan="4">* CAMAC (<a href="https://en.wikipedia.org/wiki/Computer_Automated_Measurement_and_Control">Computer Automated Measurement and Control</a>) refers to the electronic modules we were using to receive the analogic signals coming from the detectors and turn them into digital data.</td>
+</tr>
+</tfoot>
+<tbody>
+<tr>
+<td colspan="4">Subevent length<br />
+(4 bytes or 32 bits)</td>
+</tr>
+<tr>
+<td colspan="2">Subevent subtype = 1<br />
+(2 bytes or 16 bits)</td>
+<td colspan="2">Subevent type = 10<br />
+(2 bytes or 16 bits)</td>
+</tr>
+<tr>
+<td>Control<br />
+(1 bytes or 8 bits)</td>
+<td>Subcrate<br />
+(1 bytes or 8 bits)</td>
+<td colspan="2">Processor ID<br />
+(2 bytes or 16 bits)</td>
+</tr>
+<tr>
+<td colspan="2">CAMAC value<sup>[<a href="#camac">*</a>]</sup><br />
+(2 bytes or 16 bits)</td>
+<td colspan="2">CAMAC module ID<br />
+(2 bytes or 16 bits)</td>
+</tr>
+<tr>
+<td colspan="2">...</td>
+<td colspan="2">...</td>
+</tr>
+</tbody>
+</table>
+<p>Understanding this is a bit like <strong>understanding how files are stored in your computer</strong>, at a very basic level. When you write a text file in your editor, each letter is stored using 1 byte (8 bits) of space in your disk, which is the equivalent of a variable of type <code>char</code>. In this case, the ASCII code is used to translate a number that can be written with 8 bits (i.e., a number between 0 and 255) into a letter that a human can understand.</p>
+<h2>The specific structure of an event</h2>
+<p>As I said before, I had to analyze the data of two experiments, carried out in 1996 and in 2000. They had a different data structure:</p>
+<ul>
+<li><strong>1996:</strong> The CAMAC module ID and its value were printed ONLY if the CAMAC had given a signal for that event. So the event length was variable. The purpose of doing it this way was to save space.</li>
+<li><strong>2000:</strong> Only the CAMAC value was printed to the file, but all the CAMAC signals were printed (always in the same order), even if they had given no signal, in which case a zero would be recorded. In this case the event length was constant and had a value of <strong>42 bytes</strong>, or 52 in octal, that is, we had 42 signals in total.</li>
+</ul>
+<p>The CAMACs used in each experiment were different too. They were used to collect information of times and energies from different detectors (Germanium, Silicon, NaI and BaF scintillators, etc.).</p>
+<p>So the easiest files to start looking at are the second ones. We just have to print a long enough amount of bytes, and <strong>search for a 52, which is a 42 writen across four bytes</strong>, which is the size of the event length. But you can not open these files in a text editor, remember? We need to write a translation program for it. How do we do that? And how do we check that we are reading what we have to read?</p>
+<p>Octal dump comes to the rescue, in Part 3.</p>
+<hr>
+<ul>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-1">How to read data from magnetic tapes and playing the detective with octal dump - Part 1</a></li>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-3">How to read data from magnetic tapes and playing the detective with octal dump - Part 3</a></li>
+</ul>

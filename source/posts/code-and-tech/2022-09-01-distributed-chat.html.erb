@@ -1,0 +1,444 @@
+---
+layout: post
+title: Distributed chat
+date: 2022-09-01 22:51:00.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- distributed systems
+author:
+  display_name: Octopus in vitro
+---
+
+<p>I've been doing <a href="/blog/code-and-tech/distributed-systems-part1">Martin Kleppmann's distributed systems course</a>, and though I am liking it and I am learning a lot, it is too theoretical. After all, it's a university course. I feel like I really need to build a distributed system of my own if I really want to sink in the knowledge.</p>
+
+<p>I first built <a href="/blog/code-and-tech/distributed-ping-pong">a distributed ping-pong</a>, after realizing that the simplest distributed system is one with just two nodes. But it was very basic, each node only sent one message and it was hardcoded. At the end of that post I promise to do a chat next.</p>
+
+<p>In <a href="/blog/code-and-tech/distributed-systems-part1">my notes about distributed systems</a> I talk about a multiplayer network game, where it was concluded that the best design was a central server and clients connecting to it. So my chat has a main server app running in the background and different clients that can connect and disconnect to it in order to send messages to each other.</p>
+
+<p>The <a href="https://github.com/octopusinvitro/distributed-chat">code can be found here</a>, below is a walk-through, although not as detailed as for the ping pong. Please beware that I am still a distributed systems noob and this app is basically me playing with the Ruby <code class="language-ruby">Socket</code> library.</p>
+
+
+<h2>Main differences</h2>
+
+<p>I separated the code I had in the <code class="language-ruby">Connection</code> class (in the ping-pong repo) into a <code class="language-ruby">Server</code> class and a <code class="language-ruby">Client</code> class. Before, each node could act as both a server or a client, while here I have a central server with clients that connect to it.</p>
+
+<p>The <code class="language-ruby">Options</code> are reduced too, as now I just start the app as a server or as a client by adding <code class="language-plaintext">-s</code> or nothing respectively. Both client and server connect to the same IP and port, which is <code class="language-plaintext">localhost:3000</code> by default, or you can pass a custom address with the option <code class="language-plaintext">-a</code>. So here we always have to start the server first, and then the clients are started in a different terminal / device / whatever.</p>
+
+<p>Finally, the <code class="language-ruby">Options</code> struct acts as a factory that will create an instance of a server or client depending on the parameters we passed to the command line.</p>
+
+<p>This repository has two commits, one <strong>without curses</strong> and the other <strong>with curses</strong>. The first commit is the one with no curses (pun intended).</p>
+
+<p><a href="https://en.wikipedia.org/wiki/Curses_%28programming_library%29">According to Wikipedia</a>, curses is:</p>
+
+<blockquote>...a terminal control library for Unix systems, enabling the construction of text user interface apps.</blockquote>
+
+<p>Basically, it allows you to build nice terminal layouts for your CLI apps, with sections and menus and sidebars and colors and what not.</p>
+
+<p>This turned out to be more complicated than I had thought, and derailed the project a bit. But why did I need curses anyway? Let's take a look at the first commit.</p>
+
+
+<h2>First commit</h2>
+
+<p>The <code class="language-ruby">Client</code> class starts two threads, one to send messages to the server:</p>
+
+<pre><code class="language-ruby">
+  def send
+    Thread.new do
+      kernel.loop do
+        message = ui.gets
+        server.puts(message)
+      end
+    end
+  end
+</code></pre>
+
+<p>and one to receive messages from the server:</p>
+
+<pre><code class="language-ruby">
+  def receive
+    Thread.new do
+      kernel.loop do
+        message = server.gets.chomp
+        ui.puts(message)
+      end
+    end
+  end
+</code></pre>
+
+<p>The <code class="language-plaintext">server</code> here is again a Ruby <code class="language-ruby">TCPSocket</code> instance, and the <code class="language-ruby">ui</code> is a custom class to deal with writing and reading from the terminal. The reason to put these in their own thread is so that the client is not blocked while the user is typing a message, but rather can receive messages while typing.</p>
+
+<p>You would have noticed the reference to <code class="language-ruby">kernel.loop</code>. Why not just <code class="language-ruby">loop</code>? This is so that we can test the class easily, by passing a fake kernel with a loop method that has just a custom number of loops, so that we are not looping forever in the tests (which is otherwise what we want in real life). If we don't pass anything, it uses the Ruby <code class="language-ruby">Kernel</code>:</p>
+
+<pre><code class="language-ruby">
+class Client
+  def initialize(server, ui, kernel = Kernel)
+    @server = server
+    @ui = ui
+    @kernel = kernel
+
+    Thread.abort_on_exception = true
+    Thread.report_on_exception = false
+  end
+
+  # ...
+end
+</code></pre>
+
+<p>In tests I use the <code class="language-ruby">FakeKernel</code> class:</p>
+
+<pre><code class="language-ruby">
+# frozen_string_literal: true
+
+class FakeKernel
+  def initialize(times)
+    @times = times
+  end
+
+  def loop(&block)
+    times.times(&block)
+  end
+
+  private
+
+  attr_reader :times
+end
+</code></pre>
+
+<p>Which is used like this in the client's test class:</p>
+
+<pre><code class="language-ruby">
+subject(:client) { described_class.new(server, UI.new, FakeKernel.new(2)) }
+let(:server) { instance_double(TCPSocket, puts: nil) }
+</code></pre>
+
+<p>If nothing comes from the server we get a <code class="language-ruby">NoMethodError</code> for the line <code class="language-ruby">message = server.gets.chomp</code>, this probably means the server has disconnected, so we gracefully terminate the client after informing the user of what happened:</p>
+
+<pre><code class="language-ruby">
+def run
+  ui.ask_for_username
+  [receive, send].each(&:join)
+rescue NoMethodError
+  ui.print_error(UI::SERVER_DIED_ERROR)
+end
+</code></pre>
+
+<p>This can probably be improved and we could handle more error messages but for this pet project it's enough.</p>
+
+<p>The full <code class="language-ruby">Client</code> class:</p>
+
+<pre><code class="language-ruby">
+# frozen_string_literal: true
+
+class Client
+  def initialize(server, ui, kernel = Kernel)
+    @server = server
+    @ui = ui
+    @kernel = kernel
+
+    Thread.abort_on_exception = true
+    Thread.report_on_exception = false
+  end
+
+  def run
+    ui.ask_for_username
+    [receive, send].each(&:join)
+  rescue NoMethodError
+    ui.print_error(UI::SERVER_DIED_ERROR)
+  end
+
+  private
+
+  attr_reader :server, :ui, :kernel
+
+  def receive
+    Thread.new do
+      kernel.loop do
+        message = server.gets.chomp
+        ui.puts(message)
+      end
+    end
+  end
+
+  def send
+    Thread.new do
+      kernel.loop do
+        message = ui.gets
+        server.puts(message)
+      end
+    end
+  end
+end
+</code></pre>
+
+<p>The server accepts each client connection in its own thread, so that several clients can connect to it:</p>
+
+<pre><code class="language-ruby">
+class Server
+  # ...
+
+  def run
+    threads = []
+    kernel.loop do
+      threads &lt;&lt; Thread.start(server.accept) { |client| connect(client) }
+    end
+    threads.each(&:join)
+  end
+
+  #...
+end
+</code></pre>
+
+<p>As mentioned <a href="/blog/code-and-tech/distributed-ping-pong#next-steps">at the end of the ping pong post</a>, the server keeps track of all the clients, for which I created a <code class="language-ruby">ClientList</code> class:</p>
+
+<pre><code class="language-ruby">
+require_relative 'client_list'
+
+class Server
+  attr_reader :clients
+
+  def initialize(server, ui, kernel = Kernel)
+    @server = server
+    @ui = ui
+    @kernel = kernel
+
+    @clients = ClientList.new(Mutex.new)
+  end
+
+  #...
+end
+</code></pre>
+
+<p>The <code class="language-ruby">ClientList</code> class keeps the list of clients updated and uses a Ruby <code class="language-ruby">Mutex</code>, so that two clients trying to write to this list at the same time from different threads are handled gracefully. The clients are kept in a hash where the usernames are the hash keys, and a client is considered unique when both the username and client socket are unique (this design has room for improvement but for now it's fine):</p>
+
+<pre><code class="language-ruby">
+class ClientList
+  def initialize(mutex)
+    @mutex = mutex
+    @clients = {}
+  end
+
+  def add(username, client)
+    return if clients[username]
+
+    return if clients.values.find { |repeated| repeated == client }
+
+    mutex.synchronize { clients[username] = client }
+  end
+
+  #...
+end
+</code></pre>
+
+<p>The broadcastable clients are all the clients in the list except the one sending the message:</p>
+
+<pre><code class="language-ruby">
+def broadcastable(username)
+  clients.except(username)
+end
+</code></pre>
+
+<p>In the course, <strong>nodes can broadcast to themselves</strong>, which would be interesting to implement here (i.e. instead of printing the user message from its client, we wait until it is sent to the server, and when we receive it back, we print it like the messages from the other clients).</p>
+
+<p>The <code class="language-ruby">ClientList</code> class in full:</p>
+
+<pre><code class="language-ruby">
+# frozen_string_literal: true
+
+class ClientList
+  def initialize(mutex)
+    @mutex = mutex
+    @clients = {}
+  end
+
+  def add(username, client)
+    return if clients[username]
+
+    return if clients.values.find { |repeated| repeated == client }
+
+    mutex.synchronize { clients[username] = client }
+  end
+
+  def remove(username)
+    mutex.synchronize { clients.delete(username) }
+  end
+
+  def broadcastable(username)
+    clients.except(username)
+  end
+
+  def users
+    clients.keys
+  end
+
+  private
+
+  attr_reader :clients, :mutex
+end
+</code></pre>
+
+<p>Coming back to the server, in the <code class="language-ruby">connect</code> method, we receive the username from each client and then add it to the client list:<p>
+
+<pre><code class="language-ruby">
+def connect(client)
+  received = client.gets
+  return error(client) unless received
+
+  username = received.chomp.to_sym
+  return duplicate_error(client) unless clients.add(username, client)
+
+  report_user_joined(username, client)
+  start_chat(username, client)
+end
+</code></pre>
+
+<p>If a client disconnects for some reason, we recover gracefully, killing the thread where that client was. Same if the username or client is duplicated, only we also inform the client:</p>
+
+<pre><code class="language-ruby">
+def duplicate_error(client)
+  client.puts(UI::DUPLICATE_CLIENT_ERROR)
+  error(client)
+end
+
+def error(client)
+  client.flush
+  client.close
+  Thread.kill(Thread.current)
+  nil
+end
+</code></pre>
+
+<p>If none of these things happen, we consider the connection successful, so we report to all clients in the list that a new user has joined the chat.<p>
+
+<p>Then we start the chat, which is a loop that receives messages from the client and broadcasts them to all the clients in the list:</p>
+
+<pre><code class="language-ruby">
+def start_chat(username, client)
+  kernel.loop do
+    received = client.gets
+    break client_error(username, client) unless received
+
+    message = ui.format_message(received, username)
+    broadcast(username, message)
+  end
+end
+</code></pre>
+
+<p>If a client falls or the user leaves (by pressing <kbd>Ctrl</kbd> + <kbd>C</kbd>), we remove the client from our list and broadcast to everyone that the user left:</p>
+
+<pre><code class="language-ruby">
+def client_error(username, client)
+  clients.remove(username)
+  report_user_left(username)
+  error(client)
+end
+</code></pre>
+
+<p>Finally, the <code class="language-ruby">Chat</code> class wires all up, we pass it a <code class="language-ruby">node</code>, which can be an instance of the <code class="language-ruby">Client</code> class or an instance of the <code class="language-ruby">Server</code> class, depending on the options we passed in the command line. Pressing <kbd>Ctrl</kbd> + <kbd>C</kbd> will trigger the <code class="language-ruby">Interrupt</code> exception, which will allow us to exit gracefully. If there are any other errors they will be captured by the <code class="language-ruby">StandardError</code> rescue block. Using <code class="language-ruby">Kernel.exit</code> instead of just <code class="language-ruby">exit</code> is again so that we can fake it easily in tests:</p>
+
+<pre><code class="language-ruby">
+# frozen_string_literal: true
+
+class Chat
+  EXIT_CODE = 130
+
+  def initialize(node, ui)
+    @node = node
+    @ui = ui
+  end
+
+  def run
+    node.run
+  rescue Interrupt
+    Kernel.exit(EXIT_CODE)
+  rescue StandardError => e
+    ui.print_error(e.message)
+  end
+
+  private
+
+  attr_reader :node, :ui
+end
+</code></pre>
+
+<p>And the app that runs it all, either as client or as server (the <code class="language-ruby">options</code> acts as a factory that will create an instance of a server or client depending on the parameters we passed to the command line):</p>
+
+<pre><code class="language-ruby">
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), '..', 'lib')
+
+require 'chat'
+require 'parsers/arguments'
+require 'ui'
+
+options = Parsers::Arguments.new.parse(ARGV)
+Chat.new(options.node, UI.new).run
+</code></pre>
+
+
+<h2>Second commit</h2>
+
+<p>When I ran the chat, I noticed a small bug. Messages you receive from the server and characters you type <strong>are both printed to the same terminal</strong>. In other words, you may be typing a sentence and if you receive an incoming message before you are finished, it will be printed in the middle of your sentence. Yes, it's a mess, from a usability point of view. Although when you hit Enter, your message will be printed and sent correctly.</p>
+
+<p>This is because we listen to the server in one thread and we respond in another independent thread. So when something arrives, it doesn't wait for you to finish typing. It just prints it there.</p>
+
+<p>So how can we separate the "input" area from the "display-chat" area? <a href="https://github.com/ruby/curses">The curses gem</a> is introduced in the second commit to avoid this issue by separating the terminal in two areas. But why did I say this then:</p>
+
+<blockquote>This turned out to be more complicated than I had thought, and derailed the project a bit.</blockquote>
+
+<p>Well, turns out that if what you want to do with curses is a chat input, <strong>you have to micromanage the basic concept of typing</strong>. Moving the cursor left or right, inserting characters, deleting characters, etc.</p>
+
+<p>You also have to micromanage resizing elements on screen resize, or making the input window higher when you type a long message and shrinking the display chat window to accomodate for that. Scrolling also needs to be hardcoded... I started working on this and couldn't make it work completely, so I decided to leave it for later when I am more inspired or have time to do more research. So the chat only implements the basic typing stuff for now (don't type long messages lol). This micromanagement took the longest when implementing a curses UI in this chat.</p>
+
+<p>Other than that, my layout is very simple: a header at the top, a chat display area to show all the messages, and an input section at the bottom, where the user types. This did indeed solve the problem of messages being printed in the same position of the cursor where you are typing, and it works very nicely.</p>
+
+<p>The only change is a new <code class="language-ruby">ClientUI</code> to encapsulate all the curses logic, and a bunch of helper classes for dealing with curses details in the <code class="language-plaintext">curses_ui</code> folder.</p>
+
+<p>For the micromanaging logic, I had to keep both an <code class="language-ruby">Input</code> class and a <code class="language-ruby">Message</code> class. One handles what the user sees in the terminal, the other builds the message that will be sent to the network. The reason for the existence of the <code class="language-ruby">Message</code> class is that I couldn't find a way to get the text out of a curses window: it seems to behave like the <code class="language-plaintext">canvas</code> element in HTML: the stuff you draw inside, once you draw it, is irrecoverable pixels. Also, the manipulations on the <code class="language-ruby">Input</code> class work on a curses window, while the ones in the <code class="language-ruby">Message</code> class work on a simple string, so the code is different in both to achieve the same logic.</p>
+
+<p>My least liked piece of code is in the <code class="language-ruby">ClientUI</code> class. This class orchestrates all the elements in the layout: header, chatbox and input. Because I have to check what the user inputs, character by character, and do one thing or the other depending what the user entered, I ended up with a while loop that looks like this:</p>
+
+<pre><code class="language-ruby">
+def read_message # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+  while (key = input.read)
+    return enter if key.enter?
+
+    next move_left if key.left?
+    next move_right if key.right?
+    next if key.up?
+    next if key.down?
+    next move_home if key.home?
+    next move_end if key.end?
+    next backspace if key.backspace?
+    next delete if key.delete?
+
+    insert(key.to_s)
+  end
+end
+</code></pre>
+
+<p><strong>This is the micromanaging I was talking about</strong>. If you don't do this, the left arrow doesn't do anything, same for the other keys. It builds the message character by character. But just look at all those <code class="language-ruby"># rubocop:disable</code>.</p>
+
+<p>My eyes cry blood 😭.</p>
+
+<p>Taking into account the logic that needs to happen here, I dunno how to improve this without adding a bunch of classes, which will just be "more code".</p>
+
+<p>With all this, insertion still works a little funny... oh well, too much time invested in this already 🙄.</p>
+
+
+<h2>Next steps</h2>
+
+<p>I haven't really played yet with what happens if problems appear. Like the problems mentioned in the course.</p>
+
+<p>I can recover from "nothing coming from the server" (the client is told to finish gracefully) or, "client disconnected" (server updates client list) but not from other stuff. Like slow networks. Or latency due to nodes being in different countries for example, how do I ensure the order of the messages in that case? Different users will see them in different order. Or resend a message when it couldn't be delivered for some reason. Etc. etc.</p>
+
+<p>Using curses was useful but time consuming. So I'll have to experiment with those things in another moment. The important thing is that I learned things with this experiment. And I built a chat that works 🙂.</p>
+
+<p>I am not too happy with the tests in the second commit though, there is a lot of mocking because curses owns the terminal and that interferes with the test output and even debugging with pry. I need more time to research if there is something to test curses apps without so many mocks. Also having sockets, threads, infinite loops and curses windows all together made this app really challenging to test properly!</p>
+
+<p>I also feel like the server can be refactored, I am passing <code class="language-ruby">client</code> around everywhere which is usually a sign that a class is hiding inside the server. But when I attempted a refactor, I didn't get anywhere, I didn't find the right abstraction. I thought I could extract a <code class="language-ruby">User</code> class for every client, that takes a <code class="language-ruby">client</code> as a constructor argument. But that didn't clean or simplify anything.</p>

@@ -1,0 +1,55 @@
+---
+layout: post
+title: Weight initialization
+date: 2019-03-24 12:05:56.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+author:
+  display_name: Octopus in vitro
+mathjax: true
+---
+
+<h2>Vanishing and exploding gradients</h2>
+
+<p>The gradient of the loss with respect to any weight is <a href="http://localhost:4567/blog/machine-learning/backpropagation-and-maths-behind">a product of derivatives that depend on components from later in the network</a>. The earlier in the network a weight lives, the more terms in this product.</p>
+
+<p>Once SGD calculates the gradient with respect to a weight, <a href="/blog/machine-learning/training-and-learning">the weight gets updated like this</a>:</p>
+
+<pre><code class="language-plaintext">
+new weight = old weight - (learning rate * gradient)
+</code></pre>
+
+<p>A <strong>vanishing gradient</strong> happens when one or many of the terms in the gradient product is too small (lower than 1). In that case, the value of the weight gets stuck around a value and the network does not learn.</p>
+
+<p>An <strong>exploding gradient</strong> happens when one or many of the terms in the gradient product is too big (larger than 1). In that case, the optimal value for the weight won't be achieved because the update with each epoch is too large, pushing it further and further away from its optimal value.</p>
+
+<p>The problem of vanishing gradients and exploding gradients is actually a more general problem of <strong>unstable gradients</strong>.</p>
+
+<p>Weight initialization plays a role in how well and quickly we can train our networks. The inputs to our neurons have large variance when we just randomly generate a normally distributed set of weights, and this causes unstable gradients.</p>
+
+<h3>Random weight initialization</h3>
+
+<p>When we build a model, the values for the weights will be initialized with random numbers that are normally distributed with mean 0 and standard deviation 1.</p>
+
+<p>However, when we calculate the input for each node in the next layer, the standard deviation of the weighted sum of outputs from the previous layer will be bigger than 1. So the weighted sum is more likely to have a value that is significantly larger or smaller than 1.</p>
+
+<p>After passing through the activation function, the nodes would be very activated as a result, and SDG will make very small changes.</p>
+
+<h3>Xavier / Glorot weight initialization</h3>
+
+<p>Rather than the distribution of these weights having a deviation of 1, they will have a smaller variance of <code class="language-plaintext">1 / n</code>, where <code class="language-plaintext">n</code> is the number of weights of the previous layer. They will still have a mean of 0.</p>
+
+<p>To achieve this we take the random weights from before and multiply them by <math xmlns="http://www.w3.org/1998/Math/MathML" title="\sqrt\frac{1}{n}"><msqrt><mfrac><mn>1</mn><mi>n</mi></mfrac></msqrt></math>. If we are using a layer with ReLU as activation function, we should multiply by <math xmlns="http://www.w3.org/1998/Math/MathML" title="\sqrt\frac{2}{n}"><msqrt><mfrac><mn>2</mn><mi>n</mi></mfrac></msqrt></math>.</p>
+
+<p>Initially it was defined as <math xmlns="http://www.w3.org/1998/Math/MathML" title="\sqrt\frac{1}{n_{in} + n_{out}}"><msqrt><mfrac><mn>1</mn><mrow><msub><mi>n</mi><mrow><mi>i</mi><mi>n</mi></mrow></msub><mo>+</mo><msub><mi>n</mi><mrow><mi>o</mi><mi>u</mi><mi>t</mi></mrow></msub></mrow></mfrac></msqrt></math>, where <strong>n<sub>in</sub></strong> was the number of weights entering the neuron and <strong>n<sub>out</sub></strong> exiting the neuron.</p>
+
+<p>In Keras, we can use the option <code class="language-python">kernel_initializer='glorot_uniform'</code>, although it is the default. <a href="https://keras.io/api/layers/initializers/">Available initializers are listed here</a>.</p>
+
+<pre><code class="language-python">
+Dense(32, activation='relu', kernel_initializer='glorot_uniform')
+</code></pre>

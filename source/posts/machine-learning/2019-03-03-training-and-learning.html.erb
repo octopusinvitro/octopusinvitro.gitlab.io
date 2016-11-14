@@ -1,0 +1,109 @@
+---
+layout: post
+title: Training and learning
+date: 2019-03-03 17:48:09.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+author:
+  display_name: Octopus in vitro
+---
+
+
+<h2>Training</h2>
+
+<p>When we train a neural network, we are trying to <strong>optimize the weights</strong> associated with each input in each layer of the model, so that they accurately map the input data to the correct output class (each node of the output layer is a different class).</p>
+
+<p>The weights are optimized using what we call an "optimization algorithm". There are several, but one of the most used is the <em>Stochastic Gradient Descent</em> or <strong>SGD</strong>. The objective of this function is to find the best set of weights that minimize the <strong>loss function</strong>.</p>
+
+<p>The results will depend on both the <em>optimizer</em> and <em>loss function</em> we choose to use when training our model.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2019/03/stochastic-gradient-descent.png" width="1002" height="426" alt="Stochastic gradient descent function" />
+  <figcaption>
+    Example of Stochastic Gradient Descent functions by <a href="https://towardsdatascience.com/https-medium-com-reina-wang-tw-stochastic-gradient-descent-with-restarts-5f511975163">Chi-Feng Wang</a>
+  </figcaption>
+</figure>
+
+
+<p>The output produced by the neural network is a set of values of probability for every class we have. For example, if we want the network to tell us if a picture is a cat or a dog, we will have two classes at the end: cat and dog. So if we pass it a picture of a cat, the output could be 75% probability that it is a cat and 25% probability that it is a dog.</p>
+
+<ul>
+  <li>
+    <p>The <strong>loss</strong> is the error or difference between what the network is predicting for the image versus the true label of the image, and SGD will to try to minimize this error to make our model as accurate as possible in its predictions.</p>
+  </li>
+
+  <li>
+    <p><strong>Training</strong> is passing the same data over and over again to the neural network. During this process, the model learns from the data. An <strong>epoch</strong> refers to each single pass of the entire dataset to the network during training.</p>
+  </li>
+</ul>
+
+<p>Here is <a href="https://keras.io/api/optimizers/">a list of the available optimizers in Keras</a>.</p>
+
+<h2>Learning</h2>
+
+<p>The training starts with arbitrary values for the network weights and the loss is calculated at the end of the first epoch by comparing prediction with reality. Then we do a <strong>backpropagation</strong>: we calculate the gradient of this loss with respect to each of the weights. In other words, the gradient is the derivative of the loss function (L) with respect to each weight (w):</p>
+
+<pre><code class="language-plaintext">
+L = f(w1, w2, ...wN)
+
+gradient = dL / dw
+         = ∂L / ∂w1 + ∂L / ∂w2 + ... + ∂L / ∂wN
+</code></pre>
+
+<p>Once we have the value for the gradient of the loss function, we can use this value to update the model’s weights. The gradient tells us which direction will move the loss towards the minimum. The loss function has a minimum where the first derivative is zero and the second derivative is positive.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2019/03/derivatives.png" width="506" height="334" alt="Maximum, minimum and inflextion point examples" />
+  <figcaption>
+    Explanation on how to find maximum, minimum and inflection point of a function, using its first and second derivatives.
+  </figcaption>
+</figure>
+
+
+<p>We then multiply the gradient value by something called a <strong>learning rate</strong>. A learning rate is a small number usually ranging between 0.01 and 0.0001. The learning rate tells us how large of a step we should take in the direction of the minimum, and it can be different per layer.</p>
+
+<pre><code class="language-plaintext">
+new weight = old weight - (learning rate * gradient)
+</code></pre>
+
+<p>This updating of the weights is what "learning" means.</p>
+
+<p>An example of how we would train such a model in Keras, using a variant of the SDG optimizer called <a href="https://keras.io/api/optimizers/adam/">Adam</a> (<a href="https://arxiv.org/abs/1412.6980">read the paper here</a>) and a network with two hidden dense layers, can be found below:</p>
+
+<pre><code class="language-python">
+import numpy
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+
+BATCH_SIZE = 3
+train_samples = numpy.array([
+    [150, 67], [130, 60], [200, 65], [125, 52], [230, 72], [181, 70]
+])
+train_labels = numpy.array([1, 1, 0, 1, 0, 0])
+
+model = Sequential([
+  Dense(units=8, input_shape=(1,), activation='relu'),
+  Dense(units=16, activation='relu'),
+  Dense(units=2, activation='sigmoid')
+])
+model.summary()
+
+model.compile(
+    optimizer=Adam(learning_rate=0.0001),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+model.fit(
+  x=train_samples, y=train_labels, batch_size=BATCH_SIZE,
+  epochs=10, shuffle=True, verbose=2
+)
+</code></pre>
+
+<p>What you will notice is that the loss is going down and the accuracy is going up as the epochs progress.</p>

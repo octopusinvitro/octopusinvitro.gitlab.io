@@ -1,0 +1,145 @@
+---
+layout: post
+title: Database types comparison table
+date: 2014-05-02 21:17:55.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- SQL
+- featured
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>There are so many different kinds of databases available today, to the point that sometimes it can be tricky to decide which is the best option for a project. So many possibilities!</p>
+<p>Some time ago, I decided to make a compilation for myself, to clear up my mind regarding the possibilities available to me.</p>
+<p>This compilation lists types, advantages/disadvantages and use cases of different databases from my ignorant point of view.</p>
+<h2>Definitions</h2>
+<h3>Types of databases according to their logical structure</h3>
+<dl>
+<dt>Relational databases:</dt>
+<dd>These are the databases that we are all familiar with. Data is organized in tables, and there is a defined structure or <em>chema</em> which specifies the columns in each table, the relationships between tables, etc. The database can be manipulated and queried through SQL statements or <em>queries</em>. For example, MySQL is a relational database management system.</dd>
+<dt>XML databases:</dt>
+<dd>The XML format is used to store and represent data that has a hierarchical structure, which would be a complex problem in a relational database. Another advantage of using XML is that it is a platform-independent language. As opposed to relational databases, two "rows" of the same "table" in a XML database can have a different number of columns. Android applications normally use XML databases (and SQLite databases as well).</dd>
+<dt>Object-oriented databases:</dt>
+<dd>The data is saved directly as objects organized in collections. You can use a Query Language to manipulate them. Matisse is an example of object-oriented database management system.</dd>
+<dt>Document-oriented databases:</dt>
+<dd>The data doesn't have a defined structure. It is stored in text files, in a simple key-value format. Again, there are no tables but "collections", and there are no rows but "documents". In fact, documents have a wider meaning compared to rows, since there can be nested documents. In XML there was a lot of noise (tags) and few information, while here, a more direct syntax like JSON or YAML is used. MongoDB is an example of a DOD.</dd>
+</dl>
+<h3>Ways to link a database with an application</h3>
+<dl>
+<dt>Embedded databases:</dt>
+<dd>They are integrated with the application, which means they are run <em>inside</em> the application. For example: in Java, the database is run in the JVM. Apache Derby can allow you to do that.</dd>
+<dt>Object-Relational Mapping:</dt>
+<dd>The mapping turns the databases's <em>schema</em> into a structure of classes, where each table is a class and its columns are attributes of that class. Once the data is manipulated, it is stored again in the database. The conversion between one representation system and the other is totally transparent to the programmer. Hibernate ORM is an example of object-relational mapping framework for Java.</dd>
+</dl>
+<h2>Advantages and disadvantages</h2>
+<table>
+<thead>
+<tr>
+<th>
+   </th>
+<th> Advantages
+   </th>
+<th> Disadvantages
+ </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th> Relational
+   </th>
+<td> Referencial integrity is guaranteed.</p>
+<p>        No need to load the entire database in memory to work with it.</p>
+<p>		It comes with security mechanisms out of the box.
+   </td>
+<td> They can be slow and expensive.</p>
+<p>        It is complex to work with hierarchical data structures, since there are so many relationships to define.</p>
+<p>		The <em>schema</em> is fixed.
+  </td>
+</tr>
+<tr>
+<th> XML
+   </th>
+<td> More flexible (no schema). Less complexity.</p>
+<p>        Scalable.</p>
+<p>		You can write less code in XQuery.
+   </td>
+<td> Need to load the whole file in order to work with it.</p>
+<p>		Not recommended to store huge amounts of data.</p>
+<p>		No consistency. No transactions.
+  </td>
+</tr>
+<tr>
+<th> Obj. oriented
+   </th>
+<td> Easy to maintain.</p>
+<p>        Flexibles, no schema, greater modelling capacity.</p>
+<p>		Extensible.</p>
+<p>		Adapted to complex applications, they improve performance.
+   </td>
+<td> Still not widely adopted, limited, not evaluated nor improved yet.</p>
+<p>		Need to know the implementation used to access the database in order to make a query, which goes against encapsulation in OO.</p>
+<p>		No security, objects don't have access rights.
+  </td>
+</tr>
+<tr>
+<th> Doc. oriented
+   </th>
+<td> Horizontally scalable.</p>
+<p>        Flexible, no schema (or it's variable), no data types.</p>
+<p>		Simpler design.</p>
+<p>		ACID guaranteed, like relationals.
+   </td>
+<td> Data duplication is so easy.</p>
+<p>		Data integrity can be lost.</p>
+<p>		In exchange for flexibility we loose many of the things that a relational database guarantees.</p>
+<p>		Joins are made manually, which can be complex.
+  </td>
+</tr>
+<tr>
+<th> Embedded
+   </th>
+<td> Independent of the databases's storing mechanism (Derby, mySQL, etc.).</p>
+<p>        No need to run a server to use them, they are integrated in the application.
+   </td>
+<td> Not scalable.</p>
+<p>		Problems for high concurrency scenarios.</p>
+<p>		Can't stand high volumes of read/write access.
+  </td>
+</tr>
+<tr>
+<th> Mapping
+   </th>
+<td> Abstracts you from the database.</p>
+<p>        The code you write (specially queries) is simpler.</p>
+<p>		It's easy to port the application to a different database.
+   </td>
+<td> It's difficult to see what's going on "<em>behind the scenes</em>" because of the huge abstraction.</p>
+<p>		Can lead to bad-designed databases.</p>
+<p>		No <em>ad hoc</em> queries.</p>
+<p>		It takes a long time to make a query. Loss of performance and efficiency.
+</td>
+</tr>
+</tbody>
+</table>
+<h2>Use cases</h2>
+<dl>
+<dt>Relational databases:</dt>
+<dd>Applications that need a high performance, or where data loss is not allowed. When you need to store huge amounts of data in a consistent way. When you need heavy data processing or <em>ad hoc</em> queries. They work better when you have few fields (columns).</dd>
+<dt>XML databases:</dt>
+<dd>The biggest use is to export or to transfer data between applications. You can also use it for applications that need to handle a constant flow of reads/writes of data with a hierarchical structure. If you have to work with a lot of fields and you don't care about possible integrity errors, XML is easier to use than a relational database.</dd>
+<dt>Object-oriented databases:</dt>
+<dd>Low scale dynamic and interactive applications. Applications with complex models, since it provides a fast access through key-value pairs.</dd>
+<dt>Document-oriented databases:</dt>
+<dd>Applications for non-structured data, in huge amounts, and, like XML, requiring a a constant flow of reads/writes.</dd>
+<dt>Embedded databases:</dt>
+<dd>Not recommended for web applications, since you can lose everything if something fails. Use in applications where the data load is not huge and high availability is not a priority.</dd>
+<dt>Object-Relational Mapping:</dt>
+<dd>Should be used when you want to take advantage of transparent persistence and use a relational database. When you want to reduce your code and, through caching, improve performance over using an embedded SQL.</dd>
+</dl>
+<p>Do you agree with these points? Do you have anything to add? Please feel free to make your contribution in the comments!</p>

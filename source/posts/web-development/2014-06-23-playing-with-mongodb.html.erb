@@ -1,0 +1,519 @@
+---
+layout: post
+title: Playing with MongoDB
+date: 2014-06-23 10:30:45.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- NoSQL
+author:
+  display_name: Octopus in vitro
+---
+
+<p>This is meant to be a small collection of notes that I wrote here and there while playing with MongoDB as my first NoSQL database. I also wrote a <a href="/blog/code-and-tech/database-types-comparison-table/">database comparison table</a> recently, which compares and explains the differences between different types of databases, including relational and NoSQL.</p>
+
+<p>There is also a talk by Martin Fowler called <a href="https://www.youtube.com/watch?v=qI_g07C_Q5I">Introduction to NoSQL</a> from 2012 which explains the reason for the existence of NoSQL databases, the difference with relational databases and when to use each (<a href="https://www.martinfowler.com/books/nosql.html">he also has a book</a> that I will read at some point in the future). I found that talk very cool and it helped me to understand and put things in context a bit!</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>NoSQL means, well, no SQL and no relational databases. NoSQL databases are good to store unstructured data, that doesn't follow a schema. It is usually stored as key value pairs, and it doesn't support joins. In the case of MongoDB, the name "mongo" comes from "humongous", refering to the fact that it was used mainly in Big Data applications.</p>
+
+<h3 id="differencesbetweenrelationalandnosql">Differences between relational and NoSQL</h3>
+
+<p>In a relational database, you have tables, made of rows, with columns/cell values, and a defined schema. In a NoSQL database, you have collections, made of documents, with key/value pairs, and a dynamic schema. Example:</p>
+
+<ul>
+<li><strong>Relational database:</strong> All rows have the same columns:
+<pre><code class="language-bash">
+    Table: Creatures
+    ------------------------------
+    Id | Name    | Age | Specie
+    ------------------------------
+    1  | Coolio  |   4 | seahorse
+    2  | Clownio |   6 | crab
+</code></pre>
+</li>
+</ul>
+
+
+<ul>
+<li><strong>NoSQL database:</strong> You can change the schema from one document to the other. Documents are JSON-like objects:
+<pre><code class="language-json">
+    "creatures": {
+      {
+        "id": 1,
+        "name": "coolio",
+        "age": 4,
+        "race": "seahorse",
+        "props": "sunglasses"
+      },
+      {
+        "id": 2,
+        "name": "clownio",
+        "race": "crab"
+      }
+    }
+</code></pre>
+  <p>Here, creatures would be a collection and it has two documents, each with different "schemas".</p>
+</li>
+</ul>
+
+
+
+<h3 id="themondodbshell">The MondoDB shell</h3>
+
+<p>The Mongo shell is a JavaScript interpreter, so you can write plain Javascript like you would do in a node prompt. If you want to use MongoDB in your application, there are drivers for MongoDB in many languages.</p>
+
+<p>But first, you have to install it! <a href="https://docs.mongodb.com/v3.0/administration/install-on-linux/">Choose the version for your operating system</a> and make sure you have a server running before using the Mongo shell. To start the daemon:</p>
+
+<pre><code class="language-bash">
+$ sudo service mongod start
+</code></pre>
+
+<p>...and to stop it:</p>
+
+<pre><code class="language-bash">
+$ sudo service mongod stop
+</code></pre>
+
+<p>Then you can just type (in another terminal):</p>
+
+<pre><code class="language-bash">
+$ mongo
+> use databasename
+</code></pre>
+
+<p>This command will switch to the <code class="language-">databasename</code> or create it, if it doesn't exist. To show all databases you can type <code class="language-">show dbs</code> which will show their names and sizes. The first time you start the MongoDB shell it will use a default database called <code class="language-">test</code>.</p>
+
+<h2 id="insertinganddeletingdocuments">Inserting and deleting documents</h2>
+
+<h3 id="inserting">Inserting</h3>
+
+<p>Let's create a database and insert some creatures:</p>
+
+<pre><code class="language-javascript">
+$ mongo
+> use ocean
+switched to db ocean
+> db
+ocean
+> db.creatures.insert(
+   {
+     "name": "coolio",
+     "age": 4,
+     "race": "seahorse",
+     "props": "sunglasses"
+   }
+ )
+WriteResult({ "nInserted" : 1 })
+> db.creatures.insert(
+   {
+     "name": "clownio",
+     "race": "crab",
+   }
+ )
+WriteResult({ "nInserted" : 1 })
+> show tables
+creatures
+</code></pre>
+
+<p>If the <code class="language-">creatures</code> collection doesn't exist, it will create it. Also, when we create entries in a collection, we don't need to pass the <code class="language-">id</code>, it will generate one automatically, although we could pass a custom id if we wanted to. Child documents don't need an <code class="language-">id</code> either.</p>
+
+<h3 id="deleting">Deleting</h3>
+
+<p>The command <code class="language-javascript">remove()</code> will remove all documents that match the query:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.remove({YOUR_QUERY})
+</code></pre>
+
+<h2 id="valuetypes">Value types</h2>
+
+<p>BSON is kind of a wrapper over JSON, it allows you to save the same basic types but also <code class="language-javascript">ObjectId(...)</code> and <code class="language-javascript">ISODate(...)</code> types. You can check out some of the <a href="https://docs.mongodb.com/manual/reference/bson-types/">MongoDB BSON types</a> or the <a href="http://bsonspec.org/">BSON spec</a>.</p>
+
+<ul>
+<li>MongoDB preserves the precision of floating point numbers so if you save a 15.33 you will get a 15.33</li>
+
+<li>Dates are added with the Date JavaScript function: <code class="language-javascript">"date": new Date(2017, 08, 14)</code>. <strong>Caveat:</strong> Javascript months begin at 0, so 8 is actually September. However, when dates are saved to the database, they will be saved as <code class="language-javascript">"date": ISODate("2017-08-14T03:25:00Z")</code></li>
+
+<li>Array values are treated individually:</li>
+</ul>
+
+<pre><code class="language-javascript">
+> db.creatures.insert(
+...  {
+    "name": "ninja",
+    "race": "manta ray",
+    "weapons": ["starfish", "sawshark", "trident"]
+  }
+ )
+WriteResult({ "nInserted" : 1 })
+> db.creatures.find({"weapons": "starfish"})
+{ "_id" : ObjectId("5a4d0f54271798cd71c85b8e"), "name" : "ninja", "race" : "manta ray", "weapons" : [ "starfish", "sawshark", "trident" ] }
+</code></pre>
+
+<ul>
+<li>Subdocuments are found with dot notation:</li>
+</ul>
+
+<pre><code class="language-javascript">
+> db.creatures.insert(
+   {
+     "name": "cop eye",
+     "race": "dolphin",
+     "pair": { "name": "dickens", "race": "tuna"}
+   }
+ )
+WriteResult({ "nInserted" : 1 })
+> db.creatures.find({ "pair.name": "dickens" })
+{ "_id" : ObjectId("5a4d12ba271798cd71c85b8f"), "name" : "cop eye", "race" : "dolphin", "pair" : { "name" : "dickens", "race" : "tuna" } }
+>
+</code></pre>
+
+<h2 id="validations">Validations</h2>
+
+<p>In MondoDB, you have to validate the data before it hits the database. For example, MongoDB let's you save a string in a number field:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.insert(
+  {
+    "name": "coolio",
+    "age": "four",
+    // ...
+  }
+)
+</code></pre>
+
+<p>MongoDB only performs these validations:</p>
+
+<ul>
+<li>Unique <code class="language-">_id</code></li>
+
+<li>No syntax errors</li>
+
+<li>Document is less than 16MB</li>
+</ul>
+
+<h2 id="retrievingdocuments">Retrieving documents</h2>
+
+<p>To retrieve a single element in a collection:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.findOne()
+{
+  "_id" : ObjectId("5a4d099ae889d01cf188c510"),
+  "name" : "coolio",
+  "age" : 4,
+  "race" : "seahorse",
+  "props" : "sunglasses"
+}
+</code></pre>
+
+<p>We can also find several documents, and use query arguments to select certain documents:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.find()
+{ "_id" : ObjectId("5a4d099ae889d01cf188c510"), "name" : "coolio", "age" : 4, "race" : "seahorse", "props" : "sunglasses" }
+{ "_id" : ObjectId("5a4d0a1be889d01cf188c511"), "name" : "clownio", "race" : "crab" }
+> db.creatures.find({"name": "coolio"})
+{ "_id" : ObjectId("5a4d099ae889d01cf188c510"), "name" : "coolio", "age" : 4, "race" : "seahorse", "props" : "sunglasses" }
+</code></pre>
+
+<p>We can use regex as well:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.find({"title": /foo/i })
+</code></pre>
+
+<p>We can make comparisons with <code class="language-javascript">$gt</code>, <code class="language-javascript">$lt</code>, <code class="language-javascript">$gte</code>, <code class="language-javascript">$lte</code>, and <code class="language-javascript">$ne</code></p>
+
+<pre><code class="language-javascript">
+> db.creatures.find({"age": {"$gte": 2, "$lt": 5 }})
+{ "_id" : ObjectId("5a4d099ae889d01cf188c510"), "name" : "coolio", "age" : 4, "race" : "seahorse", "props" : "ferrari" }
+{ "_id" : ObjectId("5a4d0a1be889d01cf188c511"), "name" : "clownio", "race" : "crab", "age" : 2 }
+</code></pre>
+
+<p>We can use exclusions to remove sensitive data (whenever projecting, we either <em>select</em> or <em>exclude</em> the fields we want, we don't do both):</p>
+
+<pre><code class="language-javascript">
+> db.creatures.find({"age": {"$gte": 2, "$lt": 5 }}, {"passport": false})
+</code></pre>
+
+<p>If you are doing a selection instead, then the only field that can be excluded is <code class="language-">_id</code>:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.find({"age": {"$gte": 2, "$lt": 5 }}, {"name": true, "_id": false})
+</code></pre>
+
+<p>Because <code class="language-javascript">find()</code> returns a cursor, to iterate through the cursor we can type:</p>
+
+<pre><code class="language-javascript">
+> it
+</code></pre>
+
+<p>We can call other methods on the cursor:</p>
+
+<pre><code class="language-javascript">
+db.creatures.find().sort({ "age": 1}) // -1 for descending
+db.creatures.find().limit(3) // for pagination
+db.creatures.find().skip(3).limit(3) // for the second page
+db.creatures.find().skip(6).limit(3) // for the third page
+</code></pre>
+
+<p>And we can pretty-print the results, count them or explain them:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.find().pretty()
+{
+  "_id" : ObjectId("5a4d099ae889d01cf188c510"),
+  "name" : "coolio",
+  "age" : 4,
+  "race" : "seahorse",
+  "props" : "sunglasses"
+}
+{
+  "_id" : ObjectId("5a4d0a1be889d01cf188c511"),
+  "name" : "clownio",
+  "race" : "crab",
+  "age" : 2
+}
+> db.creatures.find().count()
+2
+> db.creatures.find().explain()
+{
+  "queryPlanner" : {
+    "plannerVersion" : 1,
+    "namespace" : "ocean.creatures",
+    "indexFilterSet" : false,
+    "parsedQuery" : {
+      "$and" : [ ]
+    },
+    "winningPlan" : {
+      "stage" : "COLLSCAN",
+      "filter" : {
+        "$and" : [ ]
+      },
+      "direction" : "forward"
+    },
+    "rejectedPlans" : [ ]
+  },
+  "serverInfo" : {
+    "host" : "nitro",
+    "port" : 27017,
+    "gitVersion" : "4c1bae566c0c00f996a2feb16febf84936ecaf6f"
+  },
+  "ok" : 1
+}
+</code></pre>
+
+<h2 id="updatingdocuments">Updating documents</h2>
+
+<p>We can use the update operator <code class="language-javascript">"$set"</code>:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.update({"name": "coolio"}, { "$set": {"props": "ferrari"} })
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+</code></pre>
+
+<p>This operator updates the first matching document only. So if we want to update several documents, we have to add <code class="language-javascript">{"multi": true}</code></p>
+
+<pre><code class="language-javascript">
+> db.creatures.update({"race": "dolphin"}, { "$set": {"intelligence": 100} }, {"multi": true})
+WriteResult({ "nMatched" : 2, "nUpserted" : 0, "nModified" : 2 })
+</code></pre>
+
+<p>This will update all matches.</p>
+
+<p>There is also the increment operator, which can use a negative number. If the key you are incrementing doesn't exist, it will create it.</p>
+
+<pre><code class="language-javascript">
+> db.creatures.find({"name": "clownio"})
+{ "_id" : ObjectId("5a4d0a1be889d01cf188c511"), "name" : "clownio", "race" : "crab", "age" : 6 }
+> db.creatures.update({"name": "clownio"}, { "$inc": {"age": 1} })
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+> db.creatures.find({"name": "clownio"})
+{ "_id" : ObjectId("5a4d0a1be889d01cf188c511"), "name" : "clownio", "race" : "crab", "age" : 7 }
+</code></pre>
+
+<p>If we try to increment a document that doesn't exist, it will create it if we add <code class="language-javascript">{ "upsert": true }</code></p>
+
+<pre><code class="language-javascript">
+> db.creatures.update({"name": "I don't exist yet"}, { "$inc": {"age": 1} }, { "upsert": true })
+WriteResult({ "nMatched" : 0, "nUpserted" : 1, "nModified" : 0 })
+</code></pre>
+
+<p>Remove a key from all matching documents:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.update({}, { "$unset": {"race": ""} }, { "multi": true})
+WriteResult({ "nMatched" : 4, "nUpserted" : 0, "nModified" : 4 })
+</code></pre>
+
+<p>Rename a key for all matching documents:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.update({}, { "$rename": {"name": "alias"} }, { "multi": true})
+WriteResult({ "nMatched" : 4, "nUpserted" : 0, "nModified" : 4 })
+</code></pre>
+
+<p>Update item of array: you have to provide the index with dot notation:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.update({"name": "ninja"}, { "$set": {"weapons.1": "giant sawshark"} })
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+</code></pre>
+
+<p>We can also update for several documents when the item is in a different position. For that we use the position operator:</p>
+
+<pre><code class="language-javascript">
+> db.creatures.update({"weapons": "sawshark"}, { "$set": {"weapons.$": "giant sawshark"} }, {"multi": true})
+WriteResult({ "nMatched" : 2, "nUpserted" : 0, "nModified" : 2 })
+
+> db.creatures.update({"name": "cop eye"}, { "$set": {"pair.alias": "incognito"} })
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+</code></pre>
+
+<p>You can get <a href="https://docs.mongodb.com/manual/reference/operator/">a complete list of operators</a> in the docs.</p>
+
+<h2 id="dataconsistency">Data consistency</h2>
+
+<p>In NoSQL databases, data consistency can get tricky. There are no joins, hence, there are two main ways of using subdocuments: as referenced documents or as embedded documents.</p>
+
+<h3 id="referenceddocuments">Referenced documents</h3>
+
+<p>Instead of embedding the subdocuments in all documents, we can separate them in two collections and just reference them by id, pretty much like foreign keys in relational databases. This normalizes data, reduces duplication and reduces inconsistencies.</p>
+
+<pre><code class="language-javascript">
+> db.weapons.insert({
+  "_id": "starfish",
+  //... etc.
+}, {
+  "_id": "sawshark",
+  //... etc.
+})
+
+> db.creatures.insert({
+  "name": "ninja",
+  "weapons": [{"weapon_id": "starfish"}, {"weapon_id": "sawshark"}, ... etc.]
+})
+</code></pre>
+
+<p>Referenced documents have the advantage that you update them in one place; they are accessed directly, independently of the parent, which makes for less inconsistencies in the data. But there is no warranty that both write operations, to the creatures and the weapons collection, will happen.</p>
+
+<p>This would happen in a "transaction" in relational databases. Transactions are not supported in MongoDB. There is no multi-document write support, no rollbacks, and you run the risk of ending up with an unreferenced weapon.</p>
+
+<p>Another problem with this approach is that we need two queries now: first query the creatures, then the weapons:</p>
+
+<pre><code class="language-javascript">
+db.creatures.find({"name": "ninja"})
+db.weapons.find({"_id": "starfish"})
+</code></pre>
+
+<h3 id="embeddeddocuments">Embedded documents</h3>
+
+<p>This is what we've been doing, one query to get all the data. These are atomic write operations, if we are inserting a document in a collection, the write completelly happens or doesn't happen at all. If something bad happens, we don't end up with a half-saved bunch of data. Also, subdocuments are accessed through their parent, in a single query.</p>
+
+<h2 id="howtodecideforoneortheother">How to decide for one or the other</h2>
+
+<p>To decide for one or the other, think about how the data is going to be used and ask these three questions: how often is the data used together? What is the expected size of the data? How often does the data change?</p>
+
+<dl>
+<dt>How often is the data used together?</dt>
+<dd>Data that is frequently used together will benefit from being embedded, while data that's rarely used can afford the cost of referencing and performing two queries:
+
+<ul>
+<li><strong>Always:</strong> Use embed for faster access</li>
+
+<li><strong>Sometimes:</strong> Embed or reference</li>
+
+<li><strong>Rarely:</strong> Embed or reference</li>
+</ul>
+
+</dd>
+
+<dt>What is the expected size?</dt>
+<dd>The size of the data in a relationship has significant impact on data modelling. You might start to see a decline in read performance when using embedded documents with big sets of data.
+
+<ul>
+<li><strong>&lt; 100:</strong> Embed</li>
+
+<li><strong>> 100+:</strong> Embed or reference</li>
+
+<li><strong>>= 1000+:</strong> Definitely reference
+</ul>
+</dd>
+
+<dt>How often does the data change?</dt>
+<dd>Depending on whether or not the duplicate data changes a lot, sometimes embedding data can lead to data duplication and inconsistencies.
+
+<ul>
+<li><strong>never/rarely:</strong> Embed, data duplication is OK if we don't expect change</li>
+
+<li><strong>occasionally:</strong> Embed or reference, depends on whether or not we want the overhead of managing duplication</li>
+
+<li><strong>constantly:</strong> Definitely reference, it will prevent inconsistencies
+</ul>
+</dd>
+
+<p>Some examples:</p>
+
+<ol>
+<li>Post that has comments that have authors, three queries, so maybe it's better to embed.</li>
+
+<li>Post comments: if comments don't change often, they are usually less than 100 and they are used together often, <strong>embed</strong></li>
+
+<li>Comments author: if authors change, and we only need the name and maybe the avatar, <strong>reference</strong></li>
+</ol>
+
+<p>Embed is usually a good first option; if you have a lot of data then you can use referencing. Just think how you will use them, and if you need  complex references maybe what you need is a relational database.</p>
+
+<h2 id="aggregates">Aggregates</h2>
+
+<p>Aggregates are combined data. You can use stage operators to deal with them.</p>
+
+<pre><code class="language-javascript">
+db.creatures.aggregate([{ "$group": {"_id": "$weapon_id"} }])
+</code></pre>
+
+<p>Keys with <code class="language-">$</code> are operators and values with <code class="language-javascript">$</code> are field paths.</p>
+
+<ul>
+<li><code class="language-">$group</code>: this is a stage operator</li>
+
+<li><code class="language-">_id</code> the group key, required</li>
+
+<li><code class="language-">$weapon_id</code> a field path</li>
+</ul>
+
+<h3 id="accumulators">Accumulators</h3>
+
+<p>Anything specified after the group key is considered an accumulator. Accumulators take a single expression and compute the expression for grouped documents</p>
+
+<pre><code class="language-javascript">
+db.creatures.aggregate([{ "$group": {"_id": "$weapon_id", "total": {"$sum": 1}} }])
+db.creatures.aggregate([{ "$group": {"_id": "$weapon_id", "average": {"$avg": "$age"}} }])
+db.creatures.aggregate([{ "$group": {"_id": "$weapon_id", "max_age": {"$max": "$age"}} }])
+</code></pre>
+
+<h3 id="pipelines">Pipelines</h3>
+
+<p>The aggregate method acts like a pipeline, where we can pass data through many stages in order to change it along the way. Each stage modifies the working dataset and then passes the altered documents to the next stage until we get our desired results.</p>
+
+<pre><code class="language-javascript">
+db.creatures.aggregate([
+  { "$match": { "weapons": "starfish" }},
+  { "$project": {"name": true} },
+  { "$group": {"_id": "$weapon_id", "total": {"$sum": 1}} },
+  { "$sort": {"total": -1} },
+  { "$limit": 3 }
+])
+</code></pre>
+
+<p>A good practice is to use <code class="language-javascript">$match</code> and <code class="language-javascript">$project</code> early to reduce the number of documents to handle and improve performance. The queries passed are like those you would use with <code class="language-javascript">find()</code>.</p>
+
+<hr>
+
+And that is all I have! Hope you enjoyed it.

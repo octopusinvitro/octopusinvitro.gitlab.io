@@ -1,0 +1,107 @@
+---
+layout: post
+title: How to work with Python in 2020
+date: 2020-05-13 17:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Python
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>Four years ago I had to use Python at work, so I had to figure out <a href="/blog/code-and-tech/virtual-environments-in-python/">the best way to work with it</a>. I've recently recovered interest again on Python as I am playing with Machine Learning stuff, but my setup now is different.</p>
+
+<h2><code class="language-bash">rbenv</code> ➡️ <code class="language-bash">pyenv</code>: Installing several versions of Python in parallel</h2>
+
+<p>Is there an equivalent to <a href="https://cbednarski.com/articles/installing-ruby/">rbenv in Ruby</a>? Yes, it's called <a href="https://github.com/pyenv/pyenv"><code class="language-bash">pyenv</code></a> and it's basically a translation of rbenv to Python. How cool is that. The philosophy, installation and use is the same. As with rbenv, I cloned the repo and configured my <code class="language-bash">.bashrc</code> file.</p>
+
+<pre><code class="language-bash">
+git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+echo -e 'if command -v pyenv 1>/dev/null 2>&amp;1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
+exec $SHELL -l
+</code></pre>
+
+<p>Now all Python versions will be installed under <code class="language-bash">.pyenv/versions</code> and everytime you use <code class="language-bash">pip</code> (the equivalent of <code class="language-bash">gem</code>), it will install it inside of the relevant Python version.</p>
+
+<p>Before installing a Python version you may have to install the relevant build dependencies for Python. For example, in Ubuntu:</p>
+
+<pre><code class="language-bash">
+sudo apt-get update; sudo apt-get install --no-install-recommends make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev xz-utils libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+</code></pre>
+
+<p>and then:</p>
+
+<pre><code class="language-bash">
+pyenv install --list
+# Find your version
+pyenv install &lt;VERSION>
+</code></pre>
+
+<p>Now go to your project folder and do:</p>
+
+<pre><code class="language-bash">
+pyenv local &lt;VERSION>
+</code></pre>
+
+<p>Just like Ruby! Awesome. And it will also generate a local file with the Python version you are using.</p>
+
+<h3 id="virtualenvwrapper">Virtualenvwrapper</h3>
+
+<p>In <a href="/blog/code-and-tech/virtual-environments-in-python/">my previous post</a> four years ago, I had praised <a href="https://virtualenvwrapper.readthedocs.io/en/latest">virtualenvwrapper</a>. You can not really make it work with <code class="language-bash">pyenv</code>, but the author of <code class="language-bash">pyenv</code> has made <code class="language-bash">pyenv-virtualenvwrapper</code> so that you can still enjoy using it. You can also <code class="language-bash">git clone</code> it and configure your <code class="language-bash">.bashrc</code> file.</p>
+
+<p>(I set my environments in the opt folder, but the usual is to put them in your home directory)</p>
+
+<pre><code class="language-bash">
+# Make sure you have configured a global Python with:
+#   pyenv global &lt;VERSION>
+
+git clone https://github.com/pyenv/pyenv-virtualenvwrapper.git $(pyenv root)/plugins/pyenv-virtualenvwrapper
+echo 'export PYENV_VIRTUALENVWRAPPER_PREFER_PYVENV="true"' >> ~/.bashrc
+echo 'export VIRTUALENVWRAPPER_PYTHON=/home/USERNAME/.pyenv/shims/python' >> ~/.bashrc
+echo 'export WORKON_HOME=/opt/virtualenvwrapper' >> ~/.bashrc
+echo 'pyenv virtualenvwrapper_lazy' >> ~/.bashrc
+</code></pre>
+
+<p>The docs tell you that when you install a new version of Python, you have to reinstall <code class="language-bash">virtualenvwrapper</code> for that version with <code class="language-bash">pyenv virtualenvwrapper_lazy</code>.</p>
+
+<p>Now you can go to your project and create a virtual environment like you did before:</p>
+
+<pre><code class="language-bash">
+:) mkvirtualenv -a . PROJECT_NAME
+</code></pre>
+
+<p>Now you are in your environment!</p>
+
+<pre><code class="language-bash">
+(PROJECT_NAME) :)
+</code></pre>
+
+Check other commands in <a href="https://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html">the home page</a>
+
+<h2><code class="language-bash">bundler</code> ➡️ <code class="language-bash">pipenv</code> Package version managing</h2>
+
+<p>After this the best you can do is to install <a href="https://github.com/pypa/pipenv">pipenv</a> to manage your dependencies like bundler. It will create a <code class="language-bash">Pipfile</code> (<code class="language-bash">Gemfile</code>) and a <code class="language-bash">Pipfile.lock</code> (<code class="language-bash">Gemfile.lock</code>)</p>
+
+<pre><code class="language-bash">
+(PROJECT-NAME) :) pip install pipenv
+(PROJECT-NAME) :) pipenv install requests
+Creating a Pipfile for this project…
+Installing requests…
+Adding requests to Pipfile's [packages]…
+✔ Installation Succeeded
+Pipfile.lock not found, creating…
+Locking [dev-packages] dependencies…
+Locking [packages] dependencies…
+✔ Success!
+Updated Pipfile.lock (85b5da)!
+Installing dependencies from Pipfile.lock (85b5da)…
+  🐍   ▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉▉ 46/46 — 00:00:11
+</code></pre>

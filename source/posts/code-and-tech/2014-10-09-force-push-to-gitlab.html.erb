@@ -1,0 +1,33 @@
+---
+layout: post
+title: How to force push to GitLab (but don't do it, please)
+date: 2014-10-09 13:28:14.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- git
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>This post should start with a big red warning:</p>
+<blockquote><p>Never force push to master, evah! Or you will piss off a lot of people, specially all the other people working with you in the same project. And then, all the kittens of the world will die at once.</p>
+<p>-- Me.</p></blockquote>
+<p>Now, after you tattoo this quote in a visible part of your body: if you are using the awesome and REALLY open-source git repository known as <a href="https://about.gitlab.com/">GitLab</a>, then, you will still not be able to force push to master.</p>
+<p>Why? Because GitLab has just created "<a href="https://about.gitlab.com/2014/11/26/keeping-your-code-protected/">protected branches</a>", a concept to protect you from yourself, and that will save us from many headaches in the future, in my humble opinion.</p>
+<p>So, if you want to force push to GitLab from now on, you will have to:</p>
+<ul>
+<li><a href="https://gitlab.com/users/sign_in">Log in to GitLab</a></li>
+<li>Go to your repo.</li>
+<li>Click "<strong>Settings</strong>".</li>
+<li>Click "<strong>Protected branches</strong>".</li>
+<li>Find the branch you want to force push to and click "<strong>Unprotect</strong>", just next to it.</li>
+<li>Force push.</li>
+<li>Go back to the Protected branches page and in the "<strong>Branch</strong>" dropdown, select your branch again.</li>
+<li>Click "<strong>Protect</strong>".</li>
+</ul>
+<p>With knowledge comes responsibility, so use this information wisely :-)</p>

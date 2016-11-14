@@ -1,0 +1,183 @@
+---
+layout: post
+title: A look at promises in JavaScript
+date: 2015-04-16 11:02:46.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- JavaScript
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>Everybody is talking about promises in JavaScript as a replacement for callback hell. So I decided to take a look.</p>
+
+<h2>What are promises?</h2>
+
+<p>Promises are a software abstraction that makes working with asynchronous operations much more pleasant.
+Sync code is <strong>blocking</strong>, you have to wait until it finishes execution to continue with the next statement, while async code is <strong>non-blocking</strong>. When using callbacks we are mostly writing async code.</p>
+
+<p>However, in async mode, the extra callback parameter confuses our idea of what is input and what is the return value. If an error is thrown, nobody is there to catch it (unless you write a try/catch statement for that).</p>
+
+<p>A promise can be in three states:</p>
+
+<ul>
+  <li><strong>pending</strong> - The initial state of a promise.</li>
+  <li><strong>fulfilled</strong> - The state of a promise representing a successful operation.</li>
+  <li><strong>rejected</strong> - The state of a promise representing a failed operation.</li>
+</ul>
+
+<p>Once a promise is fulfilled or rejected, it is immutable (i.e. it can never change again).</p>
+
+<p>With promises we go from code like this:</p>
+
+<pre><code class="language-javascript">
+getTweetsFor('octopusinvitro', function (error, results) {
+  // the rest of your code goes here.
+});
+</code></pre>
+
+<p>to one where your functions return a value, called a promise, which represents the eventual results of that operation:</p>
+
+<pre><code class="language-javascript">
+var promiseForTweets = getTweetsFor('octopusinvitro');
+</code></pre>
+
+<p>With promises, when you call a function which performs some long-running operation, instead of that function blocking and then eventually returning with the result of the operation, it will return immediately. But rather than passing back the result of the operation (which isn’t available yet) it passes back a promise. This promise is a sort of proxy, representing the future result of the operation. You would then register a callback on the promise, which will be executed by the promise once the operation does complete and the result is available.</p>
+
+<h2>Using .then()</h2>
+
+<p>To avoid callback hell, you use <code class="language-javascript">.then()</code> to attach callbacks to a promise, whether for success or for errors (or even progress), as shown <a href="http://wiki.commonjs.org/wiki/Promises/A">in the commonjs wiki</a>:</p>
+
+<pre><code class="language-javascript">
+.then(fulfilledHandler, errorHandler, progressHandler)
+</code></pre>
+
+<p>This function should return a new promise that is fulfilled when the given <code class="language-plaintext">fulfilledHandler</code> or <code class="language-plaintext">errorHandler</code> callback is finished. This allows promise operations to be chained together. The value returned from the callback handler is the fulfillment value for the returned promise. If the callback throws an error, the returned promise will be moved to failed state. <code class="language-javascript">.then()</code> causes errors to bubble up the stack by default.</p>
+
+<p>Put simply, <code class="language-javascript">.then()</code> is to <code class="language-javascript">.done()</code> as <code class="language-javascript">.map()</code> is to <code class="language-javascript">.forEach()</code>. To put that another way, use <code class="language-javascript">.then()</code> whenever you're going to do something with the result (even if that's just waiting for it to finish) and use <code class="language-javascript">.done()</code> whenever you aren't planning on doing anything with the result. Another way to see it is state-machine vs. chained if-elses</p>
+
+<h2>But what are promises really?</h2>
+
+<p>At the end of the day, promises are about something much deeper, namely providing a direct correspondence between synchronous functions and asynchronous functions:</p>
+
+<ul>
+  <li>They return values</li>
+  <li>They throw exceptions</li>
+</ul>
+
+<p>In an asynchronous world, you can no longer return values: they simply aren’t ready in time. Similarly, you can’t throw exceptions, because nobody’s there to catch them. With promises:</p>
+
+<ul>
+  <li>If either handler returns a value, the new promise is fulfilled with that value.</li>
+  <li>If either handler throws an exception, the new promise is rejected with that exception.</li>
+</ul>
+
+<p>As mentioned at the beginning, promises can be in process, fulfilled or rejected:</p>
+
+<ol>
+  <li>Fulfilled, fulfillment handler returns a value: simple functional transformation</li>
+  <li>Fulfilled, fulfillment handler throws an exception: getting data, and throwing an exception in response to it</li>
+  <li>Rejected, rejection handler returns a value: a catch clause got the error and handled it</li>
+  <li>Rejected, rejection handler throws an exception: a catch clause got the error and re-threw it (or a new one)</li>
+</ol>
+
+<p>Without these transformations being applied, you lose all the power of the synchronous/asynchronous parallel, and your so-called "promises" become simple callback aggregators. This is the problem with jQuery's current "promises": they only support scenario 1 above, entirely omitting support for scenarios 2–4.</p>
+
+<p>See this beautiful kame-hame-ha:</p>
+
+<pre><code class="language-javascript">
+step1(function (value1) {
+    step2(value1, function(value2) {
+        step3(value2, function(value3) {
+            step4(value3, function(value4) {
+                // Do something with value4
+            });
+        });
+    });
+});
+</code></pre>
+
+<p>Instead of doing this, your functions should return a promise, which can do one of two things:</p>
+
+<ul>
+  <li>Become fulfilled by a value</li>
+  <li>Become rejected with an exception</li>
+</ul>
+
+<h2>Promises in jQuery</h2>
+
+<p>This is how you would do it in jQuery, until native promises are supported in all browsers:</p>
+
+<pre><code class="language-javascript">
+function getData(url) {
+  return $.get(url).promise();
+}
+
+function ifSuccess(userData, reposData) {
+  user = userData;
+  repos = reposData;
+}
+
+function ifFailure() {
+  user = {};
+  repos = {};
+}
+
+connection.get = function(userURL, reposURL) {
+  $.when(
+    getData(userURL),
+    getData(reposURL)
+  ).then(ifSuccess, ifFailure);
+
+  return [user, repos];
+};
+</code></pre>
+
+<p>If you have several promises, you can handle them in an array and wait until all promises are fullfiled:</p>
+
+<pre><code class="language-javascript">
+var callback = function(results) {
+  console.log(results);
+}
+
+var error = function() {
+  console.log('There was an error');
+}
+
+$.when.all(requests).done(callback, error);
+</code></pre>
+
+<p>The beauty of a promise is that it is an encapsulated representation of an async operation in process which can be returned from functions, passed to functions, stored in a queue, etc. A promise separates the async code from the callback.</p>
+
+<h2>Promises in node</h2>
+
+<p>You can use promises today if you are using node with the <a href="https://www.npmjs.com/package/promise">promise</a> library:</p>
+
+<pre><code class="language-javascript">
+var Promise = require('promise');
+</code></pre>
+
+<p>The "promise" library also provides a couple of really useful extensions for interacting with node.js:</p>
+
+<pre><code class="language-javascript">
+var readFile = Promise.denodeify(require('fs').readFile);
+// now `readFile` will return a promise rather than expecting a callback
+
+function readJSON(filename, callback){
+  // If a callback is provided, call it with error as the first argument
+  // and result as the second argument, then return `undefined`.
+  // If no callback is provided, just return the promise.
+
+  return readFile(filename, 'utf8').then(JSON.parse).nodeify(callback);
+}
+</code></pre>
+
+<h2>More patterns</h2>
+
+<p>You can find more promise patterns at <a href="https://www.promisejs.org/patterns/">the promisejs site</a>.</p>

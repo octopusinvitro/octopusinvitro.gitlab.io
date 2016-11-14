@@ -1,0 +1,96 @@
+---
+layout: post
+title: Loss function and learning rate
+date: 2019-03-09 12:23:47.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+author:
+  display_name: Octopus in vitro
+---
+
+<h2>Loss function</h2>
+
+<p>The loss function is <a href="/blog/machine-learning/training-and-learning#training">what SGD is attempting to minimize</a> by iteratively updating the weights in the network. It is basically the error of our prediction:</p>
+
+<pre><code class="language-plaintext">
+error = prediction - actual value
+</code></pre>
+
+<p>In each epoch, the error is calculated for every output and accumulated across all the individual outputs. For example, the Mean Squared Error (MSE) is calculated like this:</p>
+
+<pre><code class="language-plaintext">
+MSE(input) = (output - label) * (output - label) = e_input^2
+
+MSE = ( e1^2 + e2^2 + ... eN^2 ) / N
+</code></pre>
+
+<ul>
+  <li>
+    If we passed <strong>our entire training set</strong> to the model at once (<code class="language-plaintext">batch_size = 1</code>), then the loss would be calculated at the end of each epoch during training.
+  </li>
+
+  <li>If we <strong>split our training set into batches</strong>, and passed batches one at a time to our model, then the loss would be calculated on each batch.
+  </li>
+</ul>
+
+<p>In Keras you can specify the loss function when you compile the model:</p>
+
+<pre><code class="language-python">
+model.compile(
+    optimizer = Adam(learning_rate = 0.0001),
+    loss = 'sparse_categorical_crossentropy',
+    metrics = ['accuracy']
+)
+</code></pre>
+
+<p>or independently:</p>
+
+<pre><code class="language-python">
+&gt; model.loss = 'sparse_categorical_crossentropy'
+&gt; model.loss
+=&gt; 'sparse_categorical_crossentropy'
+</code></pre>
+
+<p>Here is <a href="https://keras.io/api/losses/">a list of the available loss functions in Keras</a>.</p>
+
+<h2>Learning rate</h2>
+
+<p>The objective during training is for SGD to minimize the loss between the actual output and the predicted output. This is done in steps, and we can think of the learning rate of our model as <strong>the step size</strong>, the size of the adjustments made to the weights.</p>
+
+<p>After the loss is calculated for our inputs, the gradient of that loss is then calculated with respect to each of the weights in our model. Once we have the value of these gradients, they will get multiplied by the learning rate and subtracted from each of the old weights to get their updated value.</p>
+
+<pre><code class="language-plaintext">
+new weight = old weight - (learning rate * gradient)
+</code></pre>
+
+<p>The value we choose for the learning rate is going to require some testing. The learning rate is another one of those <em>hyperparameters</em> that we have to test and tune with each model before we know exactly where we want to set it, but as mentioned earlier, a typical guideline is to set it somewhere <strong>between 0.01 and 0.0001</strong>.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2019/03/learning-rate.png" width="1235" height="479" alt="Learning rate plot." />
+  <img src="<%= image_host %>/images/uploads/2019/03/learning-rate-finder.png" width="947" height="487" alt="Learning rate finder  plot." />
+  <figcaption>Learning rate. From <a href="https://www.jeremyjordan.me/nn-learning-rate/">a post</a> by J. Jordan.</figcaption>
+</figure>
+
+<p>Each optimizer in Keras has its own default learning rate value, but you can change it. You can specify the learning rate when you choose the optimizer:</p>
+
+<pre><code class="language-python">
+model.compile(
+    optimizer = Adam(learning_rate = 0.0001),
+    loss = 'sparse_categorical_crossentropy',
+    metrics = ['accuracy']
+)
+</code></pre>
+
+<p>or directly in the optimizer, (after compiling the model):</p>
+
+<pre><code class="language-python">
+model.optimizer.lr = 0.0001
+
+model.optimizer.lr
+=&gt; 0.0001
+</code></pre>

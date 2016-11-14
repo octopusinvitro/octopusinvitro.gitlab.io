@@ -1,0 +1,368 @@
+---
+layout: post
+title: Python cheatsheet
+date: 2016-11-21 17:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Python
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>From today on, I have new tasks and responsibilites at work, for which I need to learn Python and Django. Very timely, this weekend was <a href="https://www.codeschool.com/free-weekend">CodeSchool's free weekend</a>, something I saw for the first time in February this year. It's a weekend where all their courses and screencasts are FREE.</p>
+
+<p>So just as the previous free weekend, I literally locked myself up at home and followed four of their courses: <a href="https://www.codeschool.com/courses/try-python">Try Python</a>, <a href="https://www.codeschool.com/courses/flying-through-python">Flying through Python</a>, <a href="https://www.codeschool.com/courses/try-django">Try Django</a> and <a href="https://www.codeschool.com/courses/digging-into-django">Digging into Django</a>, as well as the related screencasts.</p>
+
+<p>Of course two days is not enough to master a new programming language and a new web framework, but I did absorb a lot and was able to make contributions at work from the first moment, first through pairing, and then alone. So I am very proud of myself!</p>
+
+<p>This post is to compile my notes of the Python courses so that I can reference them in the future, as some sort of cheat-sheet.</p>
+
+<h2>"Try Python" - notes</h2>
+
+<p>First I checked if I had python installed:</p>
+
+<pre><code class="language-">
+$ python
+Python 2.7.6 (default, Oct 26 2016, 20:30:19)
+[GCC 4.8.4] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> quit()
+</code></pre>
+
+<p>This command also works kind of like irb in Ruby.</p>
+
+<p>Next, I checked which versions I have installed:</p>
+
+<pre><code class="language-bash">
+$ which python
+/usr/bin/python
+$ ls /usr/bin/python*
+python            python2.7         python2-config    python3.3
+python3.4         python3m          pythontex         python2
+python2.7-config  python3           python3.3m        python3.4m
+python-config     pythontex3
+</code></pre>
+
+<p>So, to run a script:</p>
+<pre><code class="language-bash">
+$ python filename.py
+</code></pre>
+
+<p>...or:</p>
+<pre><code class="language-bash">
+$ python3.4 filename.py
+</code></pre>
+
+<p>Some concepts:</p>
+<ul>
+  <li>PEMDAS = Parenthesees, Exponent, etc. Refers to the order of evaluation of expressions.</li>
+  <li>exponent:
+    <pre><code class="language-python">variable_name = 4.1 ** 2</code></pre>
+  </li>
+  <li>Print prints a line:
+<pre><code class="language-python">
+print str(4/2)  # 2.0 (not in Python 2, where they are the same)
+print str(4//2) # 2   (not in Python 2, where they are the same)
+</code></pre>
+  </li>
+  <li>Importing modules
+<pre><code class="language-python">
+import math
+x = math.ceil(variable_name)
+</code></pre>
+  </li>
+  <li>Strings:
+<pre><code class="language-python">
+first_name = 'Monty'
+last_name = 'Python'
+full_name = first_name + ' ' + last_name
+
+print(first_name, last_name)
+# ('Monty', 'Python')
+
+print full_name # (Python 2+)
+# Monty Python
+
+year = 1969
+print 'They started in ' + str(year)
+# They started in 1969
+print('this is another way, but remove parentheses!', year)
+# ('this is another way, but remove parentheses!', 1969)
+print 'like this', year
+# like this 1969
+quotes = "foo' bar"
+print quotes
+# foo' bar
+
+famous_sketch1 = "\n\tHell's Grannies"
+famous_sketch2 = '\n\tThe dead Parrot'
+print 'Famous Work:', famous_sketch1, famous_sketch2
+# Famous Work:
+# 	Hell's Grannies
+# 	The dead Parrot
+
+# strings are arrays of letters
+foo = 'foobar'
+print foo[0]   # f
+print len(foo) # 6
+print foo[2:5] # oba (like two markers before |234|5)
+print foo[:3]  # foo
+</code></pre>
+  </li>
+  <li>Logical operators: same as Ruby, BUT:
+<pre><code class="language-python">
+foo = True
+bar = False
+</code></pre>
+  </li>
+  <li>Indentation: 4 spaces, or be consistent.</li>
+  <li><code class="language-python">if</code> has no parentheses, and no <code class="language-ruby">end</code>
+<pre><code class="language-python">
+x = 3
+if x <= 0:
+    print 'foo'
+elif x > 0 and x < 5:
+    print 'hahaha'
+else:
+    print 'bar'
+    print 'hey'
+
+if foo:
+    # foo is truthy or falsey
+</code></pre>
+  </li>
+  <li><code class="language-python">None</code> is like <code class="language-javascript">null</code> or <code class="language-ruby">nil</code>:
+<pre><code class="language-python">
+if user is not None:
+    # do something
+</code></pre>
+  </li>
+  <li>Standard input/output:
+<pre><code class="language-python">
+boo = input('Type something: ') # Needs quotes
+print 'You entered', boo
+boo = raw_input('Type something: ') # old versions of python
+print 'You entered', boo
+</code></pre>
+  </li>
+  <li>Casting:
+<pre><code class="language-python">
+int('9')
+</code></pre>
+    also, <code class="language-python">str(42)</code> works like a casting.
+  </li>
+</ul>
+
+<h2>"Fllying through Python" - notes</h2>
+
+<ul>
+  <li>Lists are arrays, and can mix types:
+    <pre><code class="language-python">
+x = [1, 'hey', True]
+</code></pre>
+  </li>
+  <li>You can make a lot of operations:
+    <pre><code class="language-python">
+print(x[2:]) # [True]
+print(x)     # [1, 'hey', True]
+
+x.append('foo')
+print(x)     # [1, 'hey', True, 'foo']
+x.remove(1)
+print(x)     # ['hey', True, 'foo']
+del x[0]
+print(x)     # [True, 'foo']
+</code></pre>
+  </li>
+  <li>Dictionaries are hashes:
+    <pre><code class="language-python">
+# the elements change order everytime you print them
+anything = {}
+anything = {10: 'hello', 2: 123.45}
+anything['knackered'] = 'tired'
+print(anything)
+# {10: 'hello', 2: 123.45, 'knackered': 'tired'}
+print(anything[10]) # hello
+# hello
+
+del anything[10]
+print(anything)
+# {2: 123.45, 'knackered': 'tired'}
+result = anything.get(10)
+print(result)
+# None
+</code></pre>
+  </li>
+  <li>Comaring lists: same values, same order, True, same values, not same order, True.</li>
+  <li>Looping through lists:
+      <pre><code class="language-python">
+list = ['item1', 'item2']
+for item in list:
+    print(item)
+</code></pre>
+    </li>
+    <li>Random library:
+        <pre><code class="language-python">
+import random
+fortunes = ['You will have very good luck today.',
+            'A secret admirer will soon show how they feel.',
+            "The more you give, the more you'll have.",
+            'Hard work pays off.',
+            "Don't give up."]
+fortune = random.choice(fortunes)
+</code></pre>
+  </li>
+  <li>Ranges:
+      <pre><code class="language-python">
+# From 0 to 9
+for i in range(10):
+    print('\t' + str(random.randint(1, 1000)))
+
+for i in range(2005, 2016, 2):
+    print(i)
+</code></pre>
+    </li>
+    <li>Looping through dictionaries:
+        <pre><code class="language-python">
+dictionary = {'key1': 1, 'key2': 2}
+for item in dictionary:
+    print(item)
+# key1
+# key2
+
+for key, value in dictionary.items():
+    print(key, ': $', format(value, '.2f'), sep='')
+# key1: $1.00
+# key2: $2.00
+</code></pre>
+    </li>
+    <li>Accessing keys and values:
+        <pre><code class="language-python">
+print(dictionary.keys())
+print(dictionary.values())
+# dict_keys(['key2', 'key1'])
+# dict_values([2, 1])
+</code></pre>
+    </li>
+    <li>While loop:
+        <pre><code class="language-python">
+x = 1
+while x != 3:
+    print('x is', x)
+    x = x + 1
+# x is 1
+# x is 2
+</code></pre>
+    </li>
+    <li>Standard input:
+        <pre><code class="language-python">
+menu   = {'spam': 1, 'more spam': 2}
+orders = []
+order  = input('Type your order: ')
+while (order.upper() != 'Q'):
+    found = menu.get(order)
+    if found:
+        orders.append(order)
+    else:
+        print('WUT')
+    order = input('Another? (q to quit): ')
+print(orders)
+</code></pre>
+    </li>
+    <li>Functions and scope:
+        <pre><code class="language-python">
+def average(prices):
+    total = 0
+    for price in prices:
+        total += price
+    return total/len(prices)
+
+def main():
+    prices = [29, 21, 55, 10]
+    print(average(prices))
+    print(global_var)
+    # print(global_but_out_of_main)
+
+global_var = 'foo'
+main()
+global_but_out_of_main = 'bar'
+
+# Also, Python doesn't like empty functions
+# but it provides a placeholder (pass):
+def empty_function():
+    pass
+</code></pre>
+    </li>
+    <li>Files:
+        <pre><code class="language-python">
+# 'w' write, 'r' read, 'a' append
+sales_log = open('spam_orders.txt', 'w')
+sales_log.write('foobar\n')
+sales_log.close()
+
+sales_log = open('spam_orders.txt', 'r')
+print(sales_log.read())
+sales_log.close()
+</code></pre>
+    </li>
+    <li>You can also handle files line by line:
+        <pre><code class="language-python">
+sales_log = open('try-python.py', 'r')
+print(sales_log.readline())
+print(sales_log.readline())
+print(sales_log.readline())
+sales_log.close()
+
+# Print all
+sales_log = open('python.py', 'r')
+for line in sales_log:
+    print(line.strip())
+sales_log.close()
+</code></pre>
+    </li>
+    <li>Pattern matching (kind of):
+        <pre><code class="language-python">
+foo = 'hey - bye'
+(first, last) = foo.split(' - ')
+print(first, last)
+</code></pre>
+    </li>
+    <li>Exceptions:
+        <pre><code class="language-python">
+price = input('Enter a word: ')
+try:
+    price = float(price)
+    print('Price =', price)
+except ValueError as err:
+    print('Not a number!')
+    print(err)
+</code></pre>
+      </li>
+      <li>Classes:
+          <pre><code class="language-python">
+class Foo:
+  def __init__(self, name):
+      self.name = name
+  def hi():
+      print('hi',name)
+
+foo = Foo('bar')
+foo.hi()
+</code></pre>
+    </li>
+    <li>Items in arrays always have a comma including the last one.</li>
+    <li>Methods inside a class are always called with self. and passed self as first arg.</li>
+</ul>
+
+<p>And that's all I got! There is also <a href="https://docs.python.org/3/tutorial/introduction.html">the official tutorial</a> in Ptython's website, and <a href="learnXinYmin.com/python3">Lear X in Y min</a>, which, as this post, works pretty much like a cheatsheet. Another recent discovery is <a href="http://docs.python-guide.org/en/latest/">The Hitchhiker’s Guide to Python!</a>.</p>
+
+
+<h2>Where do I go next?</h2>
+
+<p>Next, you may be interested in <a href="/blog/code-and-tech/virtual-environments-in-python">virtual environments in Python</a> or <a href="/blog/code-and-tech/django-cheatsheet">my Django cheatsheet</a>. I hope they are useful!</p>

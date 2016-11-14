@@ -1,0 +1,323 @@
+---
+layout: post
+title: My notes from the Rails tutorial
+date: 2016-04-16 21:56:46.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Rails
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>These are some notes I took some time ago while I was going through the <a href="https://www.railstutorial.org">Rails tutorial</a>. There are almost no notes for the first chapters, which I think is due to the fact that I was already familiar with the concepts. I talked about my first experience with Rails <a href="/blog/web-development/first-steps-with-rails/">here</a>. After that, I paired with other developers at my job to work in some huge Rails apps. But I still wanted to publish these notes because they came in handy.</p>
+
+<h2>Ok, here are my old notes</h2>
+<ul>
+<li>To run the Rails server in cloud 9 from the command line:
+<pre><code class="language-bash">
+$ rails server -b $IP -p $PORT
+</code></pre>
+</li>
+<li>We take the sqlite3 gem out of the way in the Gemfile, which prevents potential conflicts with the database used by Heroku (Heroku uses Postgres). To achieve that, we can use the <code class="language-ruby">group</code> reserved word:
+<pre><code class="language-ruby">
+group :development, :test do
+  gem 'sqlite3', '1.3.9'
+end
+
+group :production do
+  gem 'pg', '0.17.1'
+end
+</code></pre>
+<p>I'll probably use postgres in both my Rails project and Heroku, otherwise I think I'll find it confusing if errors happen, but I'll go with the book.</li>
+<li>I just learnt a new git way to undo changes! It is:
+<pre><code class="language-bash">
+$ git checkout -f
+</code></pre>
+<p>I would normally just use <code class="language-git">git stash</code> followed by <code class="language-git">git stash drop</code>. Good to know that I can do it in a single command!</li>
+<li>Type:
+<pre><code class="language-bash">
+$ bundle install --without production
+</code></pre>
+<p>to create the right Gemfile.lock, in this case the one to be used in development and tests.</li>
+<li>To install heroku in your local system (cloud 9 has it already installed) use <a href="https://toolbelt.heroku.com">Heroku Toolbelt</a>.</li>
+<li>This is a note to self: when you do <code class="language-bash">$ heroku create</code>, take note of the link. By the way, I love the default names Heroku associates to your sites, so far I've got "still brook" and "powerful sierra".</li>
+<li>Regarding the REST verbs PUT and PATCH, earlier versions of Rails used PUT for data updates, but PATCH is the more appropriate method according to the HTTP standard.</li>
+<li>I didn't know that you could have an <code class="language-bash">.irbrc</code> configuration file for irb, the Ruby interpreter, but if you think about it, it makes sense that you can. It's all in the <a href="http://ruby-doc.org/stdlib-2.0.0/libdoc/irb/rdoc/IRB.html">irb docs</a>. I normally prefer <a href="http://pryrepl.org/">pry</a> because I find it more powerfull, but this is good to know! Here is what I used at cloud 9:
+<pre><code class="language-bash">
+$ more ~/.irbrc
+IRB.conf[:PROMPT_MODE] = :SIMPLE
+IRB.conf[:AUTO_INDENT_MODE] = false
+</code></pre>
+</li>
+<li>You can do <code class="language-ruby">class Word &lt; String</code> to add new methods to a core Ruby class. Although I don't like the idea of modifying the core classes.</li>
+<li>Rails serves css, js, and img all from just "assets" <a href="http://guides.rubyonrails.org/layouts_and_rendering.html">(assets pipeline)</a>.</li>
+<li>This:
+<pre><code class="language-ruby">
+get 'help' =&gt; 'static_pages#help'
+</code></pre>
+<p>Creates:</p>
+<pre><code class="language-ruby">
+help_url  -&gt; 'http://www.example.com/help'
+help_path -&gt; '/help'
+</code></pre>
+</li>
+<li>You can generate an integration test which basically will create a new class that inherits from the right class.
+<pre><code class="language-bash">
+$ rails generate integration_test site_layout
+</code></pre>
+</li>
+<li>You can run <code class="language-bash">rake</code> only for integration tests adding the flag <code class="language-bash">test:integration</code>. But now that we talk about "flags", my favourite one is <code class="language-bash">TESTOPTS='--pride'</code>, which will change your way of running tests <em>forevah</em>:
+<pre><code class="language-bash">
+$ be rake test:integration TESTOPTS='--pride'
+</code></pre>
+<p>See it in action:</p>
+<div class="embedded-tweet">
+<blockquote class="twitter-tweet" data-lang="en-gb">
+<p dir="ltr" lang="en">I'm fabulous and I know it<br />
+✨ &#x1f308; &#x1f31f; <a href="https://t.co/jjxYG1beMk">pic.twitter.com/jjxYG1beMk</a></p>
+<p>— Octopus in vitro (@octopusinvitro) <a href="<%= twitter_url %>/status/718095496296927236">7 April 2016</a></p></blockquote>
+</div>
+<p><script src="//platform.twitter.com/widgets.js" async="" charset="utf-8"></script><br />
+I even went so far as to add an alias in my <code class="language-bash">.bash_aliases</code>. I called it <code class="language-bash">beproud</code>, lol:</p>
+<pre><code class="language-bash">
+alias beproud="be bin/rake test TESTOPTS='--pride'"
+</code></pre>
+</li>
+<li>If you don't want to make any changes in the database when you work with the console:
+<pre><code class="language-bash">
+$ rails console --sandbox
+</code></pre>
+</li>
+<li><code class="language-ruby">@user.update_attributes</code> and <code class="language-ruby">@user.update_attribute</code> save to the database, just as <code class="language-ruby">@user.update</code>. But <code class="language-ruby">@user.update</code> returns the resulting object whether it was saved successfully to the database or not. Therefore, <code class="language-ruby">User.update(@user.id, user_avatar_params)</code> does not update the <code class="language-ruby">@user</code> variable if you do not make the assignment. <code class="language-ruby">@user.update_attributes(user_avatar_params)</code> does change the <code class="language-ruby">@user</code> variable implicitly. Also, <code class="language-ruby">update_attributes</code> runs the validations but <code class="language-ruby">update_attribute</code> doesn't.</li>
+<li>You can use this command inside rails console to check the error messages:
+<pre><code class="language-bash">
+$ user.errors.full_messages
+</code></pre>
+</li>
+<li>Regex for emails: <a href="https://www.railstutorial.org/book/modeling_users#_table-valid_email_regex">https://www.railstutorial.org/book/modeling_users#_table-valid_email_regex</a></li>
+<li>The book users a gem called BCrypt to store passwords securely. To make the password digest, <code class="language-ruby">has_secure_password</code> uses a state-of-the-art hash function called bcrypt. It also automatically adds an <code class="language-ruby">authenticate</code> method to the corresponding model objects. This method determines if a given password is valid for a particular user by computing its digest and comparing the result to password_digest in the database.
+<pre><code class="language-ruby">
+user = User.find_by(email: "mhartl@example.com")
+user.authenticate("not_the_right_password")
+</code></pre>
+</li>
+<li>Don't forget to do this:
+<pre><code class="language-bash">
+$ heroku run rake db:migrate
+$ heroku run console --sandbox
+</code></pre>
+<p>and create a user in the heroku db.</li>
+<li>Extract:<br />
+<blockquote><p>by design, encryption is reversible; the ability to encrypt implies the ability to decrypt as well. In contrast, the whole point of calculating a password’s hash digest is to be irreversible, so that it is computationally intractable to infer the original password from the digest. By design, the bcrypt algorithm produces a salted hash, which protects against two important classes of attacks (dictionary attacks and rainbow table attacks).</p></blockquote>
+</li>
+</ul>
+<p><strong>ENVIRONMENTS</strong></p>
+<p>The default environment for the Rails console is development:</p>
+<pre><code class="language-bash">
+$ rails console
+  Loading development environment
+$ rails console test
+  Loading test environment
+</code></pre>
+<p>Development is the default environment for the Rails server:</p>
+<pre><code class="language-bash">
+$ rails server --environment production
+</code></pre>
+<p>If you view your app running in production, it won’t work without a production database, which we can create by running <code class="language-bash">$ rake db:migrate</code> in production:</p>
+<pre><code class="language-bash">
+$ bundle exec rake db:migrate RAILS_ENV=production
+</code></pre>
+<p>Naturally, since Heroku is a platform for production sites, it runs each application in a production environment.</p>
+<pre><code class="language-bash">
+$ heroku run console
+  &gt;&gt; Rails.env
+  =&gt; "production"
+</code></pre>
+<ul>
+<li>In order to make a user profile page, we need to have a user in the database, which introduces a chicken-and-egg problem: create it with the console (it will be the admin user):
+<pre><code class="language-bash">
+$ User.create(name: "admin", email: "admin@example.com", password: "foobar", password_confirmation: "foobar")
+</code></pre>
+</li>
+<li>Debugging can be done with byebug adding "debugger" (like pry.binding when using pry). It will open a debug console in the terminal where you are running the rails server. when you are finished, <kbd>Ctrl</kbd> + <kbd>D</kbd> and remove the line debugger.</li>
+<li>By default, methods defined in any helper file are automatically available in any view.</li>
+<li>To empty the development db: <code class="language-bash">bundle exec rake db:migrate:reset</code>.</li>
+<li>the <code class="language-ruby">form_for()</code> helper method takes in an Active Record object and constructs a form using the object’s attributes. So we have to:
+<pre><code class="language-ruby">
+  def new
+    @user = User.new  # &lt;-- this line
+  end
+</code></pre>
+</li>
+<li>Common Rails convention: using a dedicated <code class="language-bash">app/views/shared/</code> directory for partials expected to be used in views across multiple controllers.</li>
+<li><a href="http://stackoverflow.com/questions/941594/understanding-the-rails-authenticity-token">Understanging the Rails authenticity token</a>.</li>
+<li>Don't forget to add SSL (Secure Sockets Layer). In <code class="language-bash">config/environments/production.rb</code>:
+<pre><code class="language-ruby">
+Rails.application.configure do
+  # Force all access to the app over SSL, use Strict-Transport-Security,
+  # and use secure cookies.
+  config.force_ssl = true
+end
+</code></pre>
+</li>
+<li>Setting up a production site to use SSL involves purchasing and configuring an SSL certificate for your domain:<br />
+<a href="https://devcenter.heroku.com/articles/ssl-endpoint">https://devcenter.heroku.com/articles/ssl-endpoint</a></li>
+<li>WEBrick isn’t suitable for production use:<br />
+<a href="https://devcenter.heroku.com/articles/ruby-default-web-server">https://devcenter.heroku.com/articles/ruby-default-web-server</a><br />
+<a href="https://devcenter.heroku.com/articles/ruby-default-web-server">https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server</a></li>
+<li>Flash messages are shown in the <strong>next</strong> page. For example, in the create action:
+<pre><code class="language-ruby">
+flash[:success] = "Welcome to the Sample App!"
+redirect_to @user
+</code></pre>
+<p>will show the message in the show page.</li>
+<li>HTTP is stateless, so we use cookies. A session is a semi-permanent connection between two computers, and is RESTful (new, create, destroy, etc.)
+<p>- Forget user on browser close: session</p>
+<p>- Persist user on browser close: cookies</p>
+<p>- Choose to remember me: both</li>
+<li>Temporary sessions are encrypted, cookies are not and can be hijacked.</li>
+<li><code class="language-ruby">resources :users</code> creates EVERYTHING (new, create, etc.)</li>
+<li>If you have a model, active record provides errors (<code class="language-ruby">@modelname.errors</code>). If you don't have a model, use flash instead.
+<pre><code class="language-ruby">
+If we have a model: form_for(@user)
+If not:             form_for(:session, url: login_path)
+</code></pre>
+</li>
+<li>Run just one test file:
+<pre><code class="language-bash">
+$ bundle exec rake test TEST=test/integration/users_login_test.rb
+</code></pre>
+<p>Run one test method:</p>
+<pre><code class="language-bash">
+$ bundle exec rake test TEST=test/integration/users_login_test.rb TESTOPTS="--name test_login_with_valid_information"
+</code></pre>
+</li>
+<li><code class="language-ruby">User.find(session[:user_id])</code> raises an exception, but the user can surf the site not logged so: <code class="language-ruby">User.find_by(id: session[:user_id])</code> this just returns nil if not logged.</li>
+<li>Extract from 8.4.1:<br />
+<blockquote><p>There are four main ways to steal cookies:</p>
+<p>(1) using a packet sniffer to detect cookies being passed over insecure networks,15</p>
+<p>(2) compromising a database containing remember tokens,</p>
+<p>(3) using cross-site scripting (XSS), and</p>
+<p>(4) gaining physical access to a machine with a logged-in user.</p>
+<p>We prevented the first problem in Section 7.5 by using Secure Sockets Layer (SSL) site-wide, which protects network data from packet sniffers. We’ll prevent the second problem by storing a hash digest of the remember token instead of the token itself, in much the same way that we stored password digests instead of raw passwords in Section 6.3. Rails automatically prevents the third problem by escaping any content inserted into view templates. Finally, although there’s no iron-clad way to stop attackers who have physical access to a logged-in computer, we’ll minimize the fourth problem by changing tokens every time a user logs out and by taking care to cryptographically sign any potentially sensitive information we place on the browser.</p></blockquote>
+</li>
+<li>On a production site with significant traffic:
+<pre><code class="language-bash">
+$ heroku maintenance:on
+$ git push heroku
+$ heroku run rake db:migrate
+$ heroku maintenance:off
+</code></pre>
+<p>This arranges to show a standard error page during the deployment and migration.</li>
+<li>When constructing a form using <code class="language-ruby">form_for(@user)</code>, Rails uses POST if <code class="language-ruby">@user.new_record?</code> is true and PATCH if it is false.</li>
+<li>Quoting:<br />
+<blockquote><p>the use of target="_blank" in the Gravatar link is a neat trick to get the browser to open the page in a new window or tab, which is convenient behavior when linking to a third-party site.</p></blockquote>
+<p>I removed it <a href="https://css-tricks.com/use-target_blank/">because of this</a> (old knowledge).</li>
+<li>Still don't understand this: <a href="http://stackoverflow.com/questions/36575977/update-action-with-empty-password">http://stackoverflow.com/questions/36575977/update-action-with-empty-password</a></li>
+<li>Authentication allows us to identify users of our site. Authorization lets us control what they can do.</li>
+<li>Redirects don’t happen until an explicit return or the end of the method, so any code appearing after the redirect is still executed. MINDBLOWN.</li>
+<li>Clear the db and fill it with our seeds:
+<pre><code class="language-bash">
+$ bundle exec rake db:migrate:reset
+$ bundle exec rake db:seed
+</code></pre>
+<p>And in Heroku we need to do:</p>
+<pre><code class="language-bash">
+$ heroku pg:reset DATABASE
+$ heroku run rake db:migrate
+$ heroku run rake db:seed
+$ heroku restart
+</code></pre>
+</li>
+<li>Running <code class="language-ruby">render @users</code> automatically calls the <code class="language-bash">_user.html.erb</code> partial on each user in the collection.</li>
+<li><code class="language-ruby">user.toggle!(:admin)</code> swaps the boolean value of admin.</li>
+<li>Web browsers can’t send DELETE requests natively, so Rails fakes them with JavaScript. This means that the delete links won’t work if the user has JavaScript disabled. If you must support non-JavaScript-enabled browsers you can fake a DELETE request using a form and a POST request, which works even without JavaScript.</li>
+<li>To avoid anybody not admin to delete users:<br />
+- use permit so that they can't delete through the web<br />
+- use a before_action filter so that they can not delete through the command line</li>
+<li>The way to set a query parameter in Rails is to include a hash in the named route:
+<pre><code class="language-ruby">
+edit_account_activation_url(@user.activation_token, email: @user.email)
+</code></pre>
+<p>will produce:</p>
+<pre><code class="language-bash">
+account_activations/q5lt38hQDc_959PVoo6b7A/edit?email=foo%40example.com
+</code></pre>
+</li>
+<li>To run only the mailer tests:
+<pre><code class="language-bash">
+$ bundle exec rake test:mailers
+</code></pre>
+</li>
+<li>Use:
+<pre><code class="language-ruby">
+hidden_field_tag :email, @user.email
+</code></pre>
+<p>instead of:</p>
+<pre><code class="language-ruby">
+f.hidden_field :email, @user.email
+</code></pre>
+<p>because the reset link puts the email in <code class="language-ruby">params[:email]</code>, whereas the latter would put it in <code class="language-ruby">params[:user][:email]</code>.</li>
+<li>This:
+<pre><code class="language-ruby">
+update_attribute(:activated,    true)
+update_attribute(:activated_at, Time.zone.now)
+</code></pre>
+<p>can be</p>
+<pre><code class="language-ruby">
+update_columns(activated: true, activated_at: Time.zone.now)
+</code></pre>
+</li>
+<li>Instead of <code class="language-ruby">Micropost.create</code>, <code class="language-ruby">user.microposts.create</code> is the idiomatically correct way to make a micropost, namely, through its association with a user.</li>
+<li><code class="language-ruby">default_scope -&gt; { order(created_at: :desc) }</code> is the "stabby lambda" syntax for an object called a <code class="language-ruby">Proc</code> (procedure) or lambda, which is an anonymous function (a function created without a name). The stabby lambda <code class="language-ruby">-&gt;</code> takes in a block and returns a <code class="language-ruby">Proc</code>, which can then be evaluated with the call method. We can see how it works at the console:
+<pre><code class="language-bash">
+&gt;&gt; -&gt; { puts "foo" }
+=&gt; #&lt;Proc:0x007fab938d0108@(irb):1 (lambda)&gt;
+&gt;&gt; -&gt; { puts "foo" }.call
+foo
+=&gt; nil
+</code></pre>
+</li>
+<li><code class="language-ruby">create!</code> will raise an exception on failure, <code class="language-ruby">create</code> just returns false.</li>
+<li><code class="language-ruby">new</code> vs <code class="language-ruby">build</code>: If you're creating an object through an association, <code class="language-ruby">build</code> should be preferred over <code class="language-ruby">new</code> as <code class="language-ruby">build</code> keeps your in-memory object, user (in this case) in a consistent state even before any objects have been saved to the database.</li>
+<li>In <code class="language-ruby">Micropost.where("user_id = ?", id)</code> the question mark ensures that <code class="language-ruby">id</code> is properly escaped before being included in the underlying SQL query, thereby avoiding a serious security hole called SQL injection.</li>
+<li><code class="language-ruby">request.referrer || root_url</code> is closely related to the <code class="language-ruby">request.url</code> variable used in friendly forwarding, and is just the previous URL (in this case, the Home page). <code class="language-ruby">request.referrer</code> corresponds to HTTP_REFERER, as defined by the specification for HTTP. Note that "referer" is not a typo, the word is actually misspelled in the spec. Rails corrects this error by writing "referrer" instead. This is convenient because microposts appear on both the Home page and on the user’s profile page, so by using <code class="language-ruby">request.referrer</code> we arrange to redirect back to the page issuing the delete request in both cases.</li>
+<li>For image uploads:
+<pre><code class="language-ruby">
+&lt;%= form_for(@micropost, html: { multipart: true }) do |f| %&gt;
+</code></pre>
+</li>
+<li>In contrast to other model validations, file size validation doesn’t correspond to a built-in Rails validator. As a result, validating images requires defining a custom validation.</li>
+<li>The <code class="language-ruby">:validate</code> declaration is used for custom validation where as <code class="language-ruby">:validates</code> is used for generic validation like presence, uniqueness etc. on a field. <a href="http://stackoverflow.com/a/18141015">http://stackoverflow.com/a/18141015</a></li>
+<li>Note the use of the special <code class="language-ruby">fixture_file_upload</code> method for uploading files as fixtures inside tests.</li>
+<li><p>THE AUTHOR RECOMMENDED IMAGEMAGICK</p>
+<p>wait... WAIT...</p>
+<p>CarrierWave USES IMAGEMAGICK</p>
+<p>wait... WAIT...</p>
+<p>HEROKU USES IMAGEMAGIC BY DEFAULT</p>
+<p><a href="http://www.imagemagick.org/script/index.php">http://www.imagemagick.org/script/index.php</a></p>
+<p>head explodes</li>
+<li>Quote:<br />
+<blockquote><p>The image uploader we developed uses the local filesystem for storing the images, which isn’t a good practice in production. Instead, we’ll use a cloud storage service to store images separately from our application. file storage on Heroku is temporary, so uploaded images will be deleted every time you deploy. There are many choices for cloud storage, but we’ll use one of the most popular and well-supported, Amazon.com’s <a href="http://aws.amazon.com/s3/">Simple Storage Service (S3)</a>.</p></blockquote>
+</li>
+<li>Priceless quote:<br />
+<blockquote>
+<pre><code class="language-ruby">
+has_many :followeds, through: :active_relationships
+</code></pre>
+<p>Rails would see "followeds" and use the singular "followed", assembling a collection using the <code class="language-ruby">followed_id</code> in the relationships table. But, as noted in Section 12.1.1, <code class="language-ruby">user.followeds</code> is rather awkward, so we’ll write <code class="language-ruby">user.following</code> instead. Naturally, Rails allows us to override the default, in this case using the source parameter (as shown in Listing 12.8), which explicitly tells Rails that the source of the following array is the set of followed ids.</p>
+<pre><code class="language-ruby">
+has_many :following, through: :active_relationships, source: :followed</code></pre>
+</blockquote>
+</li>
+<li><code class="language-ruby"><br />
+following.include?(other_user)<br />
+</code> looks like it might have to pull all the followed users out of the database to apply the <code class="language-ruby">include?</code> method, but in fact for efficiency Rails arranges for the comparison to happen directly in the database. On the contrary, <code class="language-ruby">user.microposts.count</code> performs the count directly in the database.</li>
+<li>Just change <code class="language-ruby">form_for</code> to <code class="language-ruby">form_for ..., remote: true</code> and Rails automagically uses Ajax in tests. Also, use <code class="language-ruby">xhr :post, path</code> instead of <code class="language-ruby">post path</code>.</li>
+</ul>
+<p>Phew! That's it : )</p>

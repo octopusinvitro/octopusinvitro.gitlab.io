@@ -1,0 +1,135 @@
+---
+layout: post
+title: Custom WordPress plugins
+date: 2013-01-10 19:40:54.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- WordPress
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>Some of the WordPress official themes are certainly beautiful to the eye and have nice functionalities as well. But many times, we don't like parts of the design or have to change the colors to those of our brand. Other times we want to introduce new functionalities.</p>
+<p>What people usually do is, they edit the <code>functions.php</code> file, and overwrite stuff all over the place. Then, the theme has a new update and... Boom! all of your edits are gone. So it may be better to make a personal plugin.</p>
+<p>Another advantage of using a custom plugin is that, if you mess up, you can just deactivate the plugin, and everything will be back to normality instantly.</p>
+<p>But when people hear about plugins in WordPress, they think of their sites getting bloated or slower. That depends on what the plugin does really.</p>
+<p>For example, plugins that search all over your whole posts (like the one that checks for broken links) are going to spend a huge amount of resources. But that doesn't have to be the case always. Also, that may not have been a good example because you could have it deactivated and only activate it when you are going to use it. Then, after using it, you could deactivate it again! But you know what I mean.</p>
+<p>In this post I am going to show you how I make plugins for WordPress.</p>
+<h2>Set up</h2>
+<p>Recently I had to use a theme that made something like 60 http requests. I checked the code out and I discovered that it was loading all the css and js files separately. So the first thing I did was to add a custom plugin to deactivate the files (which where loaded in <code>functions.php</code>) and load those files concatenated and compressed.</p>
+<p>In this site I was using less, so I used <a href="https://prepros.io/">PrePros</a>, who can also concatenate your scripts. The latter requires that you add an "<code>app.js</code>" file to you <code>js</code> folder, then you add the js files that you want to concatenate like this:</p>
+<pre><code class="language-markup">
+//@prepros-append ../../../../somefile.js
+//@prepros-append someotherfile.js
+...
+</code></pre>
+<p>It will watch for changes in your <code>less</code> and <code>js</code> folders and recompile. If you don't see your last changes, just click on "<strong>Refresh project</strong>" followed by "<strong>Compile all files</strong>".</p>
+<p>Since I was using <a href="http://prismjs.com/">prism</a> and I wanted to load the scripts asynchronously, I had to leave <code>prism.js</code> out and load it separately.</p>
+<p>Now go to your <code>plugins</code> folder and create a new folder for your new custom plugin. For example, <code>custom</code>. Then, inside the <code>custom</code> folder, create a <code>custom.php</code> file. That would be your custom plugin.</p>
+<p>The first lines of the custom plugin are like the first lines of WordPress themes' main stylesheet: they tell WordPress that the file is a plugin:</p>
+<pre><code class="language-php">
+&lt;?php
+/**
+ * @package Custom
+ */
+/*
+Plugin Name: Custom
+Description: My custom settings
+Version: 1.0
+Author: Your name goes here
+License: MIT
+Text Domain: custom
+*/
+?&gt;
+</code></pre>
+<p>You can add more information if you want, check out your other plugins' headers.</p>
+<h2>Adding code</h2>
+<p>Since we wanted to unload the styles and scripts to load them again concatenated, we have to search our <code>functions.php</code> for something like this:</p>
+<pre><code class="language-php">
+wp_enqueue_style( 'unique-name', get_stylesheet_uri() );
+</code></pre>
+<p>Take note of the <code>'unique-name'</code> because you will use that to unload them. For the scripts, the call looks like this:</p>
+<pre><code class="language-php">
+wp_enqueue_script( 'unique-name', get_template_directory_uri() . '/js/filename.js', array(), '20140408', true );
+</code></pre>
+<p>Again, take note of the unique name. Once you have them all, you can unload them in your <code>custom.php</code> adding a function like this:</p>
+<pre><code class="language-php">
+/* ********************************************************
+ *   Remove Theme's fonts and scripts
+ * ******************************************************** */
+function my_deregister_styles() {
+    // STYLES
+    wp_deregister_style( 'unique-name' );
+    wp_deregister_style( 'another-unique-name' );
+    ...
+
+    // SCRIPTS
+    wp_deregister_script( 'unique-name');
+    ...
+
+}
+add_action( 'wp_enqueue_scripts', 'my_deregister_styles', 100 );
+</code></pre>
+<p>Now, to load the ones you want to load, you use another custom function:</p>
+<pre><code class="language-php">
+/* ********************************************************
+ *  Add custom fonts and concatenated and minified scripts
+ * ******************************************************** */
+function add_myfonts() {
+    // STYLES
+    wp_enqueue_style( 'my-unique-name', get_template_directory_uri() . '/css/main.css' );
+
+    // SCRIPTS
+    wp_enqueue_script( 'another-unique-name', get_template_directory_uri() . '/js/min/app.min.js',   array(), '', true );
+    wp_enqueue_script( 'prism-js'           , get_template_directory_uri() . '/js/min/prism.min.js', array(), '', true );
+}
+add_action( 'wp_enqueue_scripts', 'add_myfonts' );
+</code></pre>
+<p>If something goes wrong, you just deactivate your custom plugin and you get the theme's styles back again.</p>
+<h2>Other things you can put in your custom plugin</h2>
+<p>The other thing we wanted to do with out scripts was, to tell WordPress to load them asynchronously. You can also do that in your custom plugin:</p>
+<pre><code class="language-php">
+/* ********************************************************
+ *  Defer and async JavaScript files
+ * ******************************************************** */
+function make_script_async( $tag, $handle, $src ) {
+  // First, handle what we don't want deferred:
+    if ( is_admin()
+         || strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE 9.') !== false
+         || 'prism-js' == $handle
+  ) {
+    return $tag;
+  }
+
+  return str_replace( '&lt;script', '&lt;script defer async', $tag );
+}
+add_filter( 'script_loader_tag', 'make_script_async', 10, 3 );
+</code></pre>
+<p>Note how we are excluding prism, since it doesn't work when it's loaded asynchronously.</p>
+<p>You may want to hide the admin bar, something everybody adds to their <code>functions.php</code> file. Instead, you could use your custom plugin for that:</p>
+<pre><code class="language-php">
+/* ********************************************************
+ *  Remove the Admin Bar
+ * ******************************************************** */
+add_filter('show_admin_bar', '__return_false');
+</code></pre>
+<p>If you test your site's performance with <a href="http://&lt;">GTMetrix</a>, it would tell you to remove query strings from static resources. Those strings are there to tell your browser to fetch the resource if there has been a change on the file, because if the string changes, your browser takes it for a different file. But you can also control that from your <code>.htaccess</code> file.</p>
+<pre><code class="language-php">
+/* ********************************************************
+ *  Remove query strings from static resources
+ * ******************************************************** */
+function _remove_script_version( $src ){
+  $parts = explode( '?', $src );
+  return $parts[0];
+}
+add_filter( 'script_loader_src', '_remove_script_version', 15, 1 );
+add_filter( 'style_loader_src',  '_remove_script_version', 15, 1 );
+</code></pre>
+<p>You could add more stuff depending on your needs. </p>
+<h2>Making it permanent</h2>
+<p>If you find yourself repeating certain theme-independent things in your custom plugin for every WordPress theme that you install (for example, security functions and the like), you would probably prefer to make yet another separation of interests, and keep those as a separate kind of plugins, called "<a href="https://codex.wordpress.org/Must_Use_Plugins">must use plugins</a>". Those go in a different folder called <code>mu-plugins</code>, are always loaded, and can not be deactivated from the WordPress dashboard (although a list of them can be displayed from the <strong>Plugins</strong> section). The only way to deactivate those would be to delete them from the server.</p>

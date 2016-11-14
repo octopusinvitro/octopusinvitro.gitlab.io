@@ -1,0 +1,107 @@
+---
+layout: post
+title: How to install Ubuntu in dual boot with Windows 10
+date: 2017-03-16 15:32:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Linux
+- Windows
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>I have been using dual-booted systems with Windows and Ubuntu since I bought my first laptop around 2005. I need both systems because of reasons. But installing them alongside had never been a pain. Until now.</p>
+
+<p>What you normally do is, you install Windows first, and partition the disk from there. I usually have it use half the space for Windows and half the space for Ubuntu. You would also have already downloaded the ISO for Ubuntu and burnt it to a DVD (or created a bootable USB drive if you don't have a DVD reader). Finally, you restart and enter the BIOS to change the boot order so that the DVD reader is booted first and the installation is triggered. From there on you just press continue, continue, continue. Hopefully when you restart you will see the grub asking you to choose an operating system to load.</p>
+
+<p><a href="<%= image_host %>/images/uploads/2017/03/grub.png"><img src="<%= image_host %>/images/uploads/2017/03/grub.jpg" alt="Screenshot of the grub" width="640" height="480s" class="aligncenter" /></a></p>
+
+<p>If you buy a laptop these days, you will find a difference: <a href="https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface">the UEFI system</a>. It is supposed to have some improvements related with security, etc. but it may make it harder for you to install Ubuntu. Thankfully, <a href="https://help.ubuntu.com/community/UEFI">Ubuntu 16.04 is fully compatible with this feature</a>, so that's good news.</p>
+
+<p>This makes the installation process a bit more painful, though. In particular, it also depends on how hard the manufacturer of your device has made it for you to change stuff in the BIOS, etc. For example, my new laptop, an Acer Aspire V17 Nitro, came with the option to enter the BIOS disabled by default. So there I was pressing <kbd>F2</kbd> <kbd>F2</kbd> <kbd>F2</kbd> like there was no tomorrow, and it will just ignore me and boot into Windows. Which means that I had to enter the BIOS through Windows. Thankfully, there was an option in the BIOS to enable <kbd>F2</kbd>.</p>
+
+<h2>How to install Ubuntu 16.04 alongside Windows 10</h2>
+
+<p>The first part of the process is still the same: you need to have Windows 10 installed first, and do the partition from there. Usually all you need is to press <kbd>windows</kbd> + <kbd>X</kbd> and select the command prompt as administrator. Then type <code>diskmgmt.msc</code> to open the disk partition manager and shrink the unit where Windows is installed.</p>
+
+<p>After downloading Ubuntu 16.04 from the official site, and doing all the checksum stuff, either burn the ISO to a DVD or create a bootable USB.</p>
+
+<h3>The extra part</h3>
+
+<p>First let's recover our human dignity by enabling <kbd>F2</kbd> so that we can enter the BIOS on restart (in case you can't, if you can, then skip this). You have to press <kbd>windows</kbd> + <kbd>I</kbd> to open the settings window. Then go to Update &amp; recovery > Recovery > Advanced Startup and click "Restart now". Then click Troubleshoot > Advanced options > Start-up Settings. The system will restart and enter the BIOS automatically.</p>
+
+<p>OMG and it only took us, what, SIX CLICKS through different submenus!! And that's because we opened the settings window through <kbd>windows</kbd> + <kbd>I</kbd>, otherwise it would have been 8 clicks.</p>
+
+<p>OK, we are in the BIOS, now hopefully the option to enable <kbd>F2</kbd> is not missing or hiding behind another eight menus. I was lucky, it was in the first editable screen of my BIOS.</p>
+
+<p>Next you have to search for the boot mode. It should be set to UEFI (not Legacy!), because Ubuntu 16.04 can handle that. Acer support tried to convince me to turn it into Legacy. If you do that, then the boot won't recognize the Windows partition, only the Linux one. If you want to ever restart in Windows again, you would have to enter the BIOS each time and change it to UEFI again. Then it will recognize only the Windows partition. To start in Linux again you would have to go into the BIOS and change it back to Legacy. <strong>So please, don't listen to this advice</strong>. There is a better way to do this:</p>
+
+<p>As I said, leave it in UEFI and change the "Secure mode" option to "Disabled", so that you can restart from the DVD or the bootable USB. After Linux is installed you can change it back to "Enabled". This is needed so that the system will respect the boot order.</p>
+
+<p>Then you have to set a Supervisor password, and no password on boot. This step may not be needed in your case, I needed it.</p>
+
+<h3>The beautiful part</h3>
+
+<p>We are almost there! From here on the process is the same as it used to be:</p>
+
+<p>The next thing to do would be to change the boot order. Put the CDROM or USB depending on your case as the first bootable unit, and push the Windows boot Manager to the bottom. In my Acer, the list looked like this:</p>
+
+<pre><code class="language-">
+ATPI CDROM:
+HDD:
+USB HDD:
+USB FDD:
+Network Boot - IPV4
+USB CDROM:
+Network Boot IPV6
+Windows Boot Manager
+</code></pre>
+
+<p>Now enter the DVD or connect the bootable USB, press F10 to save the BIOS settings you just changed, and hopefully you will restart to the beautiful and shiny Ubuntu. Follow all the steps and let it finish installing, this could take some time.</p>
+
+<p>When it is finished and restarts again, press <kbd>F2</kbd> to enter the BIOS and change the "Secure mode" option back to "Disabled".</p>
+
+<h3>The ugly part</h3>
+
+<p>This is the part when I sweared at Microsoft and Acer for making my life miserable. I'll avoid you that by showing you what to do.</p>
+
+<p>After you have done all the previous steps, you will still not be able to see the grub and the boot manager will load Windows 10 in your face. Don't worry, even if you can't see it from Windows, your Ubuntu installation is there waiting for you (Windows is incapable of reading ext4-formatted units). What happens is that the only OS recognized by the UEFI firmware at this time is Windows.</p>
+
+<p>Take a deep breath and enter the BIOS again. Search for an option that says "Select an UEFI file as trusted for executing" and press Enter. The "Security" window in the BIOS will show HDD0 in white letters. It doesn't look like a menu, but that's what it is. Press the Enter key, and you will see another menu. My BIOS is showing  "EFI and Temp". Choose EFI and the next screen will show you a list of folders. Hopefully you see one called "ubuntu". Highlight it and press Enter. Another set of folders are listed, highlight "grubx64.efi" and press Enter.</p>
+
+<p>Once you do this, you will see a pop-up/modal window in the middle of the screen with the question: "<em>Do you wish to add this file to allowable database?</em>" In the "Boot Description" field, don't type "YES", which is what any rational human will do. Instead, type <strong>grubx64.efi</strong>, which makes no sense at all, but is the actual answer, and press Enter. Save these BIOS settings and restart</p>
+
+<p>Now that you have done this step, you have a new "trusted" source that the UEFI firmware is going to recognize and consider "not-harmful" for your system. However, you are not done yet.</p>
+
+<p>After restarting, enter the BIOS again. In the list of bootable devices, there is now a new shiny item surrounded by sparkles (at this point I had to drink some huge amounts of Whiskey to deal with all this crap so I may have had distorted vision):</p>
+
+<pre><code class="language-">
+  "EFI File Boot 0: grubx64efi."
+</code></pre>
+
+<p>For the love of all things pure and sacred, move it to the top and give an end to this pain and suffering.</p>
+
+<p>This is actually the only way to prevent the boot from ignoring all your hard work and booting Windows 10 as if it was the only installed OS.</p>
+
+
+<h2>Enjoy! Have a cookie!</h2>
+
+<p>You can leave drugs now, everything is fine and sunny, life is beautiful and the future is bright and promising. You can turn on your computer and be presented with the choice to choose the OS you want to start with. Do you want to load Ubuntu? Do you want to load Windows? Do you want to do some checks? The world is in your hands now.</p>
+
+<h2>Other things you can try</h2>
+
+<ul>
+  <li><strong>Boot Repair:</strong> Boot from the Ubuntu DVD/USB and install this program. It may or may not fix the grub. It didn't in my case, because I had to tell the BIOS about  the Ubuntu partition manually, as explained above.</li>
+  <li><strong>Boot Repair from the mounted partition:</strong> this is another option, also from the DVD/USB. Just find out which is the device where your Ubuntu partition is, mount it, enter it with <code>chroot</code> and run the boot repair from there.</li>
+  <li>When you use Boot Repair, you get a <strong>link to the repair log</strong>. If this software didn't solve your problem, you can ask in a dedicated forum and point people to that link so they can help you diagnose the problem.</li>
+  <li><strong>Tell Windows about it:</strong> In Windows, press <kbd>windows</kbd> + <kbd>X</kbd> and select the command prompt as administrator. Then type:</li>
+</ul>
+<pre><code class="language-bash">bcdedit /set {bootmgr} path \EFI\ubuntu\shimx64.efi</code></pre>
+
+<p>If these don't help you, Google is your only friend. Hope this was useful!</p>

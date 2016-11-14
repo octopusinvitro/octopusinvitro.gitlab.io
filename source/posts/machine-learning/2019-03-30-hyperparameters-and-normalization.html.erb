@@ -1,0 +1,108 @@
+---
+layout: post
+title: Hyperparameters and normalization
+date: 2019-03-30 09:10:11.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+author:
+  display_name: Octopus in vitro
+mathjax: true
+---
+
+<h2>Hyperparameters</h2>
+
+<p>There are many hyperparameters that we can fine-tune when training a model. In previous posts we have played with <a href="/blog/machine-learning/loss-function-and-learning-rate">the learning rate</a>, <a href="/blog/machine-learning/training-and-learning">the number, type and order of layers</a>, the number of nodes, etc. Let's talk about regularization and batch size.</p>
+
+<h3>Regularization</h3>
+
+<p>Regularization is a technique that helps reduce overfitting or reduce variance in our network by penalizing for complexity.</p>
+
+<p>To implement regularization we add a term to our loss function that penalizes for large weights.</p>
+
+<h4>L2 regularization parameter</h4>
+
+<p>The <strong>L2 regularization</strong> term is <math xmlns="http://www.w3.org/1998/Math/MathML" title="\sum_{j=1}^{n} ||w_j||^2"><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mo>|</mo><mo>|</mo><msub><mi>w</mi><mi>j</mi></msub><mo>|</mo><msup><mo>|</mo><mn>2</mn></msup></math>, or the sum of the squared norms of the weight matrices, multiplied by a small constant <math xmlns="http://www.w3.org/1998/Math/MathML" title="\frac{\lambda}{2m}"><mfrac><mi>λ</mi><mrow><mn>2</mn><mi>m</mi></mrow></mfrac></math>:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="loss + x = loss + \left( \sum_{j=1}^{n} ||w_j||^2 \right)\frac{\lambda}{2m}"><mi>l</mi><mi>o</mi><mi>s</mi><mi>s</mi><mo>+</mo><mi>x</mi><mo>=</mo><mi>l</mi><mi>o</mi><mi>s</mi><mi>s</mi><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mo>|</mo><mo>|</mo><msub><mi>w</mi><mi>j</mi></msub><mo>|</mo><msup><mo>|</mo><mn>2</mn></msup></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mfrac><mi>λ</mi><mrow><mn>2</mn><mi>m</mi></mrow></mfrac></math>
+
+<p>where <strong>λ</strong> is the regularization parameter (a hyperparameter) and <strong>m</strong> is the number of inputs. If we make <strong>λ</strong> large, <a href="/blog/machine-learning/training-and-learning">SGD will make the weights small to minimize the loss</a>, so a percentage of nodes will be ignored. Conceptually, it simplifies the model.</p>
+
+<p>In Keras, we can pass the parameter <code class="language-plaintext">kernel_regularizer</code> to any layer. We can pass a <strong>λ</strong> of <code class="language-plaintext">0.01</code> as an argument to the L2 regularizer as shown below. <a href="https://keras.io/api/layers/regularizers/">Available regularizers can be found here</a>.</p>
+
+<pre><code class="language-python">
+Dense(units=32, activation='relu', kernel_regularizer=regularizers.l2(0.01)),
+</code></pre>
+
+<h3>Batch size</h3>
+
+<p>The larger the batch size, the quicker our model will complete each epoch during training. This is because our machine may be able to process much more than one single sample in parallel.</p>
+
+<p>However, the quality of the model may degrade if we set our batch too big and may cause the model to be unable to generalize well on data it hasn't seen before.</p>
+
+<ul>
+  <li><strong>mini-batch gradient descent:</strong> gradient descent algorithm where the gradient update will occur on a per-batch basis. Default in Keras.</li>
+  <li><strong>batch gradient descent:</strong> implements gradient updates per epoch.</li>
+  <li><strong>stochastic gradient descent:</strong> implements gradient updates per sample.</li>
+</ul>
+
+<h3>Bias</h3>
+
+<p>Each neuron can have its own bias term, which acts as a threshold that may affect if the neuron gets activated or not. This bias is added to the weighted sum of outputs from the previous layer before passing it through the activation function. During training, not only the weights will be updated, but also these biases.</p>
+
+<pre><code class="language-plaintext">
+node output = activation ( weighted sum of inputs + bias)
+            = activation ( a1w1 + a2w2 + ... + anwn + b)
+</code></pre>
+
+<h3>Learnable parameters</h3>
+
+<p>The number of learnable parameters for a densely connected layer in a neural network can be calculated as:</p>
+
+<pre><code class="language-plaintext">
+inputs * outputs + biases
+</code></pre>
+
+<p>We ignore the input layer in this calculations. A 3-layer network with 2, 3 and 2 nodes where the hidden and output layers have biases will have 17 learnable parameters (9 hidden + 8 output).</p>
+
+<p>For a convolutional layer the outputs are the number of filters multiplied by the size of the filters plus the number of biases (one per filter). A 3-layer network with 20x20 RGB images, 2 3x3 filters and 2 output nodes will have 1658 learnable parameters (3 channels <em> 3x3x2 + 2 (56) and 20x20x2 filters </em> 2 + 2 (1602)).</p>
+
+
+<h2>Transfer learning</h2>
+
+<p>There are so many hyperparameters to adjust that it can be overwhelming to fine tune them all. This is why we use transfer learning.</p>
+
+<p><strong>Transfer learning</strong> occurs when we use knowledge that was gained from solving one problem and apply it to a new but related problem. Fine-tuning takes a model that has already been trained for one given task and then tweaks the model to make it perform a second similar task.</p>
+
+<p>Layers at the end of a model may have learned features that are very <strong>specific</strong> to the original task, where as layers at the start of the model usually learn more <strong>general</strong> features like edges, shapes, and textures.</p>
+
+<p>Because of this, we could <strong>remove the last layer</strong> of the pre-trained model, when it was making predictions about a different problem, and add a new layer to train to make predictions on our problem. Depending on how different our problem is, we may remove or add more layers.</p>
+
+<p>Before training we should freeze the original layers, this means their weights won't be updated. Only the weights in our new layers will be updating when training.</p>
+
+<h2>Batch normalization</h2>
+
+<p><strong>Before training</strong> a model, we want to normalize or standardize our data as part of pre-processing.</p>
+
+<ul>
+  <li><strong>Normalization:</strong> Scaling data so it is all in the same scale (for example, scaling images to the same size or numbers to be between 0 and 1).</li>
+  <li><strong>Standarization:</strong> Substracting the mean and dividing by the deviation for each sample so that the data has a mean of 0 and a deviation of 1.</li>
+</ul>
+
+<p>If we don't normalize the data, we may get unstable gradients. We may also need more time to train the model.</p>
+
+<p>We can also apply <strong>batch normalization</strong> to any of the layers in our model so that their outputs are normalized <strong>during training</strong>. It normalizes the output from the activation function, and then multiplies it by some arbitrary parameter as well as adds an arbitrary parameter: <code class="language-plaintext">(output * g) + b</code>. These two new parameters are trainable, so they will be optimized like the weights and biases.</p>
+
+<p>This process occurs on a <strong>per-batch</strong> basis.</p>
+
+<p>In Keras:</p>
+
+<pre><code class="language-python">
+BatchNormalization(axis=1)
+</code></pre>
+
+<p>The <code class="language-plaintext">axis=1</code> is the features axis, and we can also specify the two trainable parameters with <code class="language-plaintext">beta_initializer</code> and <code class="language-plaintext">gamma_initializer</code>.</p>

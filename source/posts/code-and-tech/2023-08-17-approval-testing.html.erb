@@ -1,0 +1,421 @@
+---
+layout: post
+title: "Approval testing: Golden Master and seams"
+date: 2023-08-17 13:42:00.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- TDD
+author:
+  display_name: Octopus in vitro
+---
+
+
+<p>🏅 <strong>Approval testing</strong> is a tool that helps us put a piece of <strong>untested legacy code</strong> under a test harness in a speedy way, so that we can start refactoring it. We generate a text output from our code, usually called the &quot;<strong>Golden Master</strong>&quot;, using an explosion of <strong>inputs</strong> and data combinations, and compare the text <strong>output</strong> produced by the tests with that Golden Master. If we change the behavior while refactoring, the output of our tests would change, and a diff with the initial snapshot would be generated.</p>
+
+<blockquote>
+&quot;Golden Master&quot; is not a great name for the snapshot, as it implies that it will never change, and this is not always true. But everybody will understand what you mean! Other than that, you can use the term “Approval testing” to refer to the technique.
+</blockquote>
+
+
+<h2>Basics</h2>
+<p>We start by identifying the <strong>inputs and outputs</strong> of the system, then writing some approval tests based on that. Approval tests have a different way to write assertions. Instead of:</p>
+
+<pre><code class="language-python">assert(a == b)</code></pre>
+<p>we do:</p>
+<pre><code class="language-python">verify(a)</code></pre>
+
+<p>If no Golden Master exists when we run these tests, a snapshot of the current test results will be created, you can then &quot;<strong>approve it</strong>&quot; and use it as your Golden Master. Whenever our current results differ from it, we can examine the differences. Either we will <strong>update the master</strong> because we expected the changes and they are good, or we will go back to our code and update or <strong>roll back our changes</strong> to get our results back in line with the Golden Master.</p>
+<blockquote>
+The recommendation is to start with a Golden Master for the piece of code that is not covered by tests, and then use TDD to write proper unit tests as we refactor it.
+</blockquote>
+
+<p>Once we are done refactoring and have the suite of tests that we needed, it&#x27;s up to us to keep the approval tests or not. I don&#x27;t think they contribute much after we have the other tests in place, and they introduce extra maintenance load. What&#x27;s more, they are not super descriptive so they are bad at documenting behavior (which is one of the things we want our tests to do). Keeping them or not is more a matter of how paranoid we are and if the paranoia is big enough to justify the maintenance.</p>
+
+<p>In any case, <strong>they are no substitute for the other types of tests</strong>.</p>
+
+<h2>Code example, step by step</h2>
+<blockquote>
+I recommend you follow the steps below in your local machine as you read, to get a hang of how it works.
+</blockquote>
+
+<p>Let&#x27;s say we have this bit of ugly legacy code with no tests at all, and we want to put it in a test harness so that we can start refactoring it safely:</p>
+
+<pre><code class="language-python">
+# gilded_rose.py
+
+class Item:
+    def __init__(self, name, sell_in, quality):
+        self.name = name
+        self.sell_in = sell_in
+        self.quality = quality
+
+class GildedRose(object):
+    def __init__(self, items):
+        self.items = items
+
+    def update_quality(self):
+        for item in self.items:
+            if item.name != &quot;Aged Brie&quot; and item.name != &quot;Backstage passes to a TAFKAL80ETC concert&quot;:
+                if item.quality &gt; 0:
+                    if item.name != &quot;Sulfuras, Hand of Ragnaros&quot;:
+                        item.quality = item.quality - 1
+            else:
+                if item.quality &lt; 50:
+                    item.quality = item.quality + 1
+                    if item.name == &quot;Backstage passes to a TAFKAL80ETC concert&quot;:
+                        if item.sell_in &lt; 11:
+                            if item.quality &lt; 50:
+                                item.quality = item.quality + 1
+                        if item.sell_in &lt; 6:
+                            if item.quality &lt; 50:
+                                item.quality = item.quality + 1
+            if item.name != &quot;Sulfuras, Hand of Ragnaros&quot;:
+                item.sell_in = item.sell_in - 1
+            if item.sell_in &lt; 0:
+                if item.name != &quot;Aged Brie&quot;:
+                    if item.name != &quot;Backstage passes to a TAFKAL80ETC concert&quot;:
+                        if item.quality &gt; 0:
+                            if item.name != &quot;Sulfuras, Hand of Ragnaros&quot;:
+                                item.quality = item.quality - 1
+                    else:
+                        item.quality = item.quality - item.quality
+                else:
+                    if item.quality &lt; 50:
+                        item.quality = item.quality + 1
+</code></pre>
+
+<p>This is a great candidate for using approval testing. We need to create a Golden Master, so we identify that the <strong>input</strong> is the items that we pass in the constructor, and we don&#x27;t have any <strong>outputs</strong> at the moment but we can start asserting on the fields of the items.</p>
+
+<p>We will start with a simple approval test. We could manage this manually, but it is more comfortable to use <a href="https://github.com/approvals/ApprovalTests.Python">the <code class="language-python">approvaltests</code> library</a> (also check <a href="https://github.com/approvals/Approvals.NodeJS">the JavaScript version</a>) which will handle everything for us:</p>
+
+<pre><code class="language-bash">$ pip install approvaltests</code></pre>
+
+<p>Let&#x27;s write a simple approval test for the <code class="language-python">update_qualty</code> method of the class <code class="language-python">GildedRose</code>. A good name for our test class, following the convention <strong>TestClassNameMethodName</strong> is <code class="language-python">TestGildedRoseUpdateQuality</code>:</p>
+
+<pre><code class="language-python">
+import unittest
+
+from approvaltests.approvals import verify
+
+from app.gilded_rose import Item, GildedRose
+
+
+class TestGildedRoseUpdateQuality(unittest.TestCase):
+    def test_updates_quality(self):
+        items = [Item(&quot;name&quot;, 0, 0)]
+        gilded_rose = GildedRose(items)
+        gilded_rose.update_quality()
+        verify(gilded_rose.items[0].name)
+
+if __name__ == &#x27;__main__&#x27;:
+    unittest.main()</code></pre>
+
+<p>We can run this test and it will fail:</p>
+
+<pre><code class="language-bash">
+$ python3 -m unittest discover -v
+test_updates_quality (tests.test_gilded_rose.TestGildedRoseUpdateQuality) ... ERROR
+======================================================================
+ERROR: test_updates_quality (tests.test_gilded_rose.TestGildedRoseUpdateQuality)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+approvaltests.approval_exception.ApprovalException: Approval Mismatch, received != approved
+	Approved: /path/to/gilded_rose/tests/TestGildedRoseUpdateQuality.test_updates_quality.approved.txt
+	Received: /path/to/gilded_rose/tests/TestGildedRoseUpdateQuality.test_updates_quality.received.txt</code></pre>
+
+<p>It fails because we didn&#x27;t have an &quot;approved&quot; file, however it already created both an &quot;approved&quot; and a &quot;received&quot; file for us:</p>
+
+<pre><code class="language-plaintext">
+$ tree tests
+tests
+├── TestGildedRoseUpdateQuality.test_updates_quality.approved.txt
+├── TestGildedRoseUpdateQuality.test_updates_quality.received.txt
+├── __init__.py
+└── test_guilded_rose.py</code></pre>
+
+<p>The &quot;approved&quot; file is empty, because we didn&#x27;t have a file, the &quot;received&quot; one contains the output:</p>
+
+<pre><code class="language-bash">
+$ TestGildedRoseUpdateQuality.test_updates_quality.received.txt
+name</code></pre>
+
+<p>That is the output of <code class="language-python">gilded_rose.items[0].name</code>.</p>
+<p>If we rename that file so that instead of &quot;received&quot; it says &quot;approved&quot;:</p>
+
+<pre><code class="language-plaintext">
+$ mv tests/TestGildedRoseUpdateQuality.test_updates_quality.received.txt tests/TestGildedRoseUpdateQuality.test_updates_quality.approved.txt
+
+$ tree tests
+tests
+├── TestGildedRoseUpdateQuality.test_updates_quality.approved.txt
+├── __init__.py
+└── test_guilded_rose.py</code></pre>
+
+<p>And run the tests again:</p>
+
+<pre><code class="language-bash">
+$ python3 -m unittest discover -v
+test_updates_quality (tests.test_guilded_rose.TestGildedRoseUpdateQuality) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+OK</code></pre>
+
+<p>They pass.</p>
+
+<p>If the difference opens in our code editor, we can also just copy-paste the value on the left to the file on the right (or click the little arrow if you get one) and save. The library will remove the &quot;received&quot; file automatically the next time we run the tests:</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2023/08/diff.png" width="1027" height="143" alt="Difference between the contents of received.txt (name) and approved.txt (empty file)" />
+  <figcaption>How it looks like in VS Code.</figcaption>
+</figure>
+
+
+<p>If we change <code class="language-python">name</code> to <code class="language-python">foo</code> and run the tests, it will catch the error and show us the difference.</p>
+
+<h2>Getting the code into a test harness</h2>
+
+<p>Let&#x27;s cover all the paths of the code while we keep an eye on test coverage. First we need to produce a string that we can use as a better output to do assertions against. We will add to the <code class="language-python">Item</code> class a temporary <code class="language-python">__repr__</code> that we can remove later:</p>
+
+<pre><code class="language-python">
+class Item:
+    # ...
+    def __repr__(self):
+        return &quot;%s, %s, %s&quot; % (self.name, self.sell_in, self.quality)</code></pre>
+
+<p>So we can do this:</p>
+
+<pre><code class="language-python">
+class TestGildedRoseUpdateQuality(unittest.TestCase):
+    def test_updates_quality(self):
+        items = [Item(&quot;name&quot;, 0, 0)]
+        gilded_rose = GildedRose(items)
+        gilded_rose.update_quality()
+        verify(gilded_rose.items[0])</code></pre>
+
+<p>For the rest of this exercise, it is recommended to use our favorite coverage tool, for example:</p>
+
+<pre><code class="language-bash">$ pip install coverage</code></pre>
+
+<p>and run the tests with it so that it generates coverage stats:</p>
+
+<pre><code class="language-bash">$ coverage run -m unittest discover -v</code></pre>
+
+<p>If we generate an HTML report, we will see there are a lot of uncovered branches:</p>
+
+<pre><code class="language-bash">$ coverage html</code></pre>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2023/08/coverage.png" width="1243" height="933" alt="Screenshot of the coverage view of the python file, showing uncovered code lines in red backgorund." />
+  <figcaption>When we open <em>htmlcov/index.html</em> in a browser.</figcaption>
+</figure>
+
+<p>We can use a tool of the <code class="language-python">approvaltests</code> library called &quot;<a href="https://github.com/approvals/ApprovalTests.Python/blob/main/docs/how_to/test_combinations_of_inputs.md">Combination approvals</a>&quot; to test a variety of combinations of input values that will allow us to cover all the branches. For that, we extract the body of the test into a function that we can just pass values to, and we pass that function to <code class="language-python">verify_all_combinations</code>. We also create the arrays where we will put all the possible values for each argument:</p>
+
+<pre><code class="language-python">
+import unittest
+
+from approvaltests.combination_approvals import verify_all_combinations
+
+from app.gilded_rose import Item, GildedRose
+
+
+class TestGildedRoseUpdateQuality(unittest.TestCase):
+    def update_quality(self, name, sell_in, quality):
+        items = [Item(name, sell_in, quality)]
+        gilded_rose = GildedRose(items)
+        gilded_rose.update_quality()
+        return gilded_rose.items[0]
+
+    def test_updates_quality(self):
+        names = [&quot;name&quot;]
+        sell_ins = [0]
+        qualities = [0]
+
+        verify_all_combinations(
+            self.update_quality,
+            [names, sell_ins, qualities]
+       )
+</code></pre>
+
+<p>This update to the test will change the generated text output, so we will have a different Golden Master: The <code class="language-python">verify_all_combinations</code> method generates a Golden Master that contains the values of the inputs we provided to the left, and the output values our code produced to the right. This is great for debugging while refactoring:</p>
+
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2023/08/combinations.png" width="1031" height="124"
+    alt="Screenshot of the coverage view of the python file, showing uncovered code lines in red backgorund." />
+  <figcaption>After we approve this new output format, we are ready to start passing several inputs.</figcaption>
+</figure>
+
+<p>We can start looking at the code and adding all the input values that are interesting for our logic, while keeping an eye on the test coverage. When we reach 100% coverage we end up with a test that looks like this:</p>
+
+
+<pre><code class="language-python">
+    def test_updates_quality(self):
+        names = [
+            &quot;name&quot;,
+            &quot;Aged Brie&quot;,
+            &quot;Backstage passes to a TAFKAL80ETC concert&quot;,
+            &quot;Sulfuras, Hand of Ragnaros&quot;
+        ]
+        sell_ins = [-1, 0, 11]
+        qualities = [0, 1, 49, 50]
+
+        verify_all_combinations(
+            self.update_quality,
+            [names, sell_ins, qualities]
+        )</code></pre>
+
+<blockquote>
+As we can see, this kind of tests <strong>are not the most descriptive</strong>, which is why they shouldn&#x27;t be the only tests we have. Their purpose is just to get full test coverage fast for untested code so that we can start refactoring.
+</blockquote>
+
+<h2>Mutation testing</h2>
+
+<p>A 100% test coverage is not enough to trust in our approval tests, so we could combine it with another testing strategy called &quot;<strong>Mutation testing</strong>&quot;. It consists of changing some value slightly to check that the tests catch the change. For example, if we change line 10:</p>
+
+<pre><code class="language-diff">
+-item.quality = item.quality - 1
++item.quality = item.quality - 2</code></pre>
+
+<p>The tests are red, alerting us of the change 👍. However, if we change line 17:</p>
+
+<pre><code class="language-diff">
+-item.quality = item.quality + 1
++item.quality = item.quality + 2</code></pre>
+
+<p>The tests are green! 😱 They didn&#x27;t catch this change.</p>
+
+<p>The problem is that the tests are executing that line, hence making the coverage 100%, but then something else happens later on, which makes this change to not have any consequences for the result that the method returns. We could try adding a value in the middle for <code class="language-python">sell_ins</code>, as we don&#x27;t have anything in between 0 and 11, and looking at the code it looks like 6 is an interesting value. The same happens on line 20, which we can fix with any value in between 0 and 6. All other systematic changes are detected by the tests, so we end up with:</p>
+
+<pre><code class="language-python">sell_ins = [-1, 0, 2, 6, 11]</code></pre>
+
+<p>Now we have more confidence that all the branches are covered and hence these tests are going to catch any changes that we do to the behavior, so we can start refactoring (we can always add more values if we feel paranoid).</p>
+
+<h2>Refactoring with seams and TDD</h2>
+
+<p>When we have complex code that we don&#x27;t understand, we can start extracting a <em>seam</em>, which allows you to capture a specific execution path. We are going to extract the logic for <code class="language-python">&quot;Aged Brie&quot;</code> by creating a seam: a method called <code class="language-python">update_brie</code>.</p>
+
+<p>But before that, we have to create a new test class to group the tests for this seam. Again we follow the convention <strong>TestClassNameMethodName</strong> so <code class="language-python">TestGildedRoseUpdateBrie</code>. We can also create a helper method as before:</p>
+
+<pre><code class="language-python">
+class TestGildedRoseUpdateBrie(unittest.TestCase):
+    def update_brie(self, sell_in, quality):
+        items = [Item(&quot;Aged Brie&quot;, sell_in, quality)]
+        gilded_rose = GildedRose(items)
+        gilded_rose.update_quality()
+        return gilded_rose.items[0]</code></pre>
+
+<p>It's calling <code class="language-python">gilded_rose.update_quality()</code> as we are going to start first with the same setup as the approval tests (for now, but we’ll change it soon).</p>
+
+<p>Then we write a <strong>temporary</strong> smoke test to force us to create a seam:</p>
+
+<pre><code class="language-python">
+    def test_seam(self):
+        item = self.update_brie(0, 0)
+        self.assertEqual(item.sell_in, 0)
+        self.assertEqual(item.quality, 0)</code></pre>
+
+<p>To make this test pass, we extract a seam in the main method and bail:</p>
+
+<pre><code class="language-python">
+class GildedRose(object):
+    def update_quality(self):
+        for item in self.items:
+            if item.name == &quot;Aged Brie&quot;:
+                return</code></pre>
+
+<p>Our temporary unit test is green, but our Golden Master is telling us that all the combinations for &quot;Aged Brie&quot; failed. <strong>We have caught that execution path!</strong> 👍 (don&#x27;t worry, we will be back to green very fast).</p>
+
+<p>We can now replace the call to <code class="language-python">gilded_rose.update_quality()</code> with <code class="language-python">gilded_rose.update_brie()</code> in the helper method, and start unit testing. The <code class="language-python">update_quality</code> method is covered by the previous approval tests. Looking at the Golden Master we can see that for Aged Brie we always subtract 1 to <code class="language-python">sell_in</code>. So we update our smoke unit test to document that behavior:</p>
+
+<pre><code class="language-python">
+class TestGildedRoseUpdateBrie(unittest.TestCase):
+    def update_brie(self, sell_in, quality):
+        items = [Item(&quot;Aged Brie&quot;, sell_in, quality)]
+        gilded_rose = GildedRose(items)
+        gilded_rose.update_brie(gilded_rose.items[0])
+        return gilded_rose.items[0]
+
+    def test_decreases_sell_in_by_one(self):
+        item = self.update_brie(sell_in=0, quality=0)
+        self.assertEqual(item.sell_in, -1)</code></pre>
+
+<p>It feels weird to pass the item again to <code class="language-python">update_brie</code> when we already passed it to the constructor of the class, but this method is <strong>temporary</strong>, so it&#x27;s fine for now. The &quot;shameless green&quot; implementation is:</p>
+
+<pre><code class="language-python">
+class GildedRose(object):
+    def update_brie(self, item):
+        item.sell_in = item.sell_in - 1
+
+    def update_quality(self):
+        for item in self.items:
+            if item.name == &quot;Aged Brie&quot;:
+                return self.update_brie(item)</code></pre>
+
+<p>At this point five approval tests pass.</p>
+
+<p>Looking at our approval tests for Aged Brie again, it looks like when <code class="language-python">sell_in</code> is negative or zero, the quality increases by 2, and when it is positive, the quality increases by 1. However, the final value of the quality can never surpass an implicit maximum value of 50. Let&#x27;s write tests for this logic.</p>
+
+<pre><code class="language-python">
+class TestGildedRoseUpdateBrie(unittest.TestCase):
+    # ...
+
+    def test_increases_quality_by_two_for_negative_sell_in(self):
+        item = self.update_brie(sell_in=-1, quality=0)
+        self.assertEqual(item.quality, 2)
+
+    def test_increases_quality_by_two_for_zero_sell_in(self):
+        item = self.update_brie(sell_in=0, quality=0)
+        self.assertEqual(item.quality, 2)
+
+    def test_increases_quality_by_one_for_positive_sell_in(self):
+        item = self.update_brie(sell_in=1, quality=0)
+        self.assertEqual(item.quality, 1)
+
+    def test_does_not_increase_quality_beyond_limit_if_lower_than_limit(self):
+        item = self.update_brie(sell_in=0, quality=49)
+        self.assertEqual(item.quality, 50)
+
+    def test_does_not_increase_quality_beyond_limit_if_equal_to_limit(self):
+        item = self.update_brie(sell_in=1, quality=50)
+        self.assertEqual(item.quality, 50)
+
+    def test_leaves_quality_unchanged_if_bigger_than_limit(self):
+        item = self.update_brie(sell_in=1, quality=60)
+        self.assertEqual(item.quality, 60)</code></pre>
+
+<p>Shameless green:</p>
+
+<pre><code class="language-python">
+class GildedRose(object):
+    def update_brie(self, item):
+        item.sell_in = item.sell_in - 1
+        if item.quality &gt;= 50:
+            return
+
+        item.quality = item.quality + 1
+        if item.sell_in &lt; 0 and item.quality &lt; 50:
+            item.quality = item.quality + 1</code></pre>
+
+<p>At this point, both the unit tests and the approval tests for &quot;Aged Brie&quot; are green.</p>
+
+<ul>
+  <li style="list-style-type:disc">We don&#x27;t have nested conditionals in the seam. The structure is flat.</li>
+
+  <li style="list-style-type:disc">The test descriptions document what the expected behavior should be.</li>
+
+  <li style="list-style-type:disc">We have isolated the logic that is relevant for Aged Brie only, it’s not messed with everything else as before.</li>
+
+  <li style="list-style-type:disc">We now understand this part of the code, and can further refactor the <code class="language-python">update_brie</code> if needed, with unit tests in place to protect us.</li>
+</ul>
+
+<p>Our coverage tool is also telling us that the last path of <code class="language-python">update_quality</code> is not covered anymore. This is because that path was exclusive to &quot;Aged Brie&quot;, and we have now captured that execution path in our seam. It is dead code now, so it is safe to delete. Or we can delete the whole method when we are finished.</p>
+
+<p>We can repeat this process of creating seams for the other cases, &quot;Backstage passes...&quot;, &quot;Sulfuras...&quot; and &quot;name&quot; (or whatever string that is not the aforementioned). Once we have all the seams in place, the architecture design will emerge organically, and we can keep refactoring and moving the logic that is inside the seams to a better place, moving the tests with them. We can improve the test helper methods, which at the moment violate command-query separation. We can give the magic number 50 an intention-revealing name. We can extract the magic strings into an Enum… etc. etc.</p>
+<p>And when we are done we can decide to get rid of the approval tests or not, as we won&#x27;t need them anymore.</p>

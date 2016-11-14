@@ -1,0 +1,177 @@
+---
+layout: post
+title: Distributed systems part 1
+date: 2022-07-25 20:14:18.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- distributed systems
+author:
+display_name: Octopus in vitro
+first_name: ''
+last_name: ''
+---
+
+<p>I started the course by Martin Kleppmann on distributed systems and I already know it's going to take me ages to finish it. These are my notes for the first three lessons.</p>
+
+<p>The good things about this course is that it explains something very complex in an easy way. The slides and the explanations are very clear, and it covers a lot of material. I am definitely learning a lot!</p>
+
+<p>The bad thing for me personally is that the course is strictly theoretical. I would like to have expanded on real world examples of where to use one solution or another. It would also be nice if we could get some very basic hello-world working example, in any programming language, that you could go and run in your laptop and another computer, for example your friend's laptop or a Raspberry Pi, and see a distributed system in action.</p>
+
+<p>I did end up trying to build distributed systems of my own, to sink in the knowledge. <a href="/blog/code-and-tech/distributed-ping-pong">You can read here about the distributed ping-pong</a>, or <a href="/blog/code-and-tech/distributed-chat">here about the distributed chat</a>.
+
+<h2>Links</h2>
+
+<ul>
+  <li><p><a href="https://www.cl.cam.ac.uk/~mk428/">Dr Martin Kleppmann</a>: <a href="https://www.cl.cam.ac.uk/teaching/2122/ConcDisSys/dist-sys-notes.pdf">https://www.cl.cam.ac.uk/teaching/2122/ConcDisSys/dist-sys-notes.pdf</a></p></li>
+  <li><p>Dr Lindsey Kuper: <a href="https://www.youtube.com/c/lindseykuperwithasharpie/featured">https://www.youtube.com/c/lindseykuperwithasharpie/featured</a></p></li>
+  <li><p><a href="http://www.distributedsystemscourse.com/">http://www.distributedsystemscourse.com/</a></p></li>
+</ul>
+
+<h2>Reasons to go distributed</h2>
+
+<p>If you have two nodes, you have a distributed system (for example, two phones sending messages to each other)</p>
+
+<ul>
+  <li>Reliability: if one computer is down, you have another</li>
+  <li>Performance: nodes in different locations serve locally faster</li>
+  <li>Scaling: You can spread huge tasks into many computers (CERN grid)</li>
+</ul>
+
+<p>Distributed computing is more complex though. Dealing with faults is what makes it fundamentally different, and often harder, compared to programming a single computer.</p>
+
+<aside class="kitkat">
+  🚚 Sometimes it's faster to transfer loads of data… <a href="https://docs.aws.amazon.com/snowball/latest/ug/using-device.html">by van</a> 😂
+</aside>
+
+<p>RPC: Remote Procedure Call. "Location transparency": system hides where a resource is located.</p>
+
+<h2>Failure</h2>
+
+<ul>
+  <li><strong>Generals paradox (<em>messages are unreliable</em>):</strong> we need backup systems (for example, if payment fails, retry. If goods were not sent, refund)</li>
+  <li><strong>Byzantine generals paradox (<em>nodes are unreliable</em>):</strong> if <code class="language-plaintext">f</code> nodes fail, we need <code class="language-plaintext">3f + 1</code> total nodes. So <code class="language-plaintext">f &lt; 1/3</code>. Cryptography can make it a bit easier. Real distributed systems do often involve complex trust relationships.</li>
+</ul>
+
+<h2>System model</h2>
+
+<ul>
+  <li><strong>Network:</strong> can be reliable, fair-loss or arbitrary. Arbitrary turns into fair-loss with TLS, fair-loss turns into reliable with retry + de-duplicate (TCP + some other mechanism).</li>
+  <li><strong>Nodes:</strong> fail-stop, fail-recovery or fail-arbitrary (byzantine). We can not recover from one to the previous, algorithms to recover from one are very different from the others.</li>
+  <li><strong>Network and nodes (timing):</strong> Synchronous, partially synchronous, and asynchronous (the most robust).</li>
+</ul>
+
+<h2>Availability</h2>
+
+<figure>
+  <a href="<%= image_host %>/images/uploads/2022/07/availability.png"><img src="<%= image_host %>/images/uploads/2022/07/availability.png" alt="Martin Klepmann's slide about availability" width="803" height="601" class="aligncenter" /></a>
+  <figcaption>Availability is how long a service is working. Slide by Martin Kleppmann.</figcaption>
+</figure>
+
+
+<ul>
+  <li><strong>SLO (service-level objective):</strong> percentage of requests that need to return a correct response within a specified timeout, as measured by a certain client over a certain period of time.</li>
+  <li><strong>SLA (service-level agreement):</strong> contract that specifies some SLO, as well as the consequences if the SLO is not met</li>
+</ul>
+
+<p>In a partially synchronous system, a perfect failure detector does not exist.</p>
+
+<h2>Clocks</h2>
+
+<ul>
+  <li><strong>Physical clocks:</strong> measure seconds (quartz clocks, atomic cesium clocks or TAI, GPS clocks, astronomical time)</li>
+  <li><strong>Logical clocks:</strong> measure events</li>
+</ul>
+
+<h3>Physical clocks</h3>
+
+<p>UTC (coordinated Universal time) is based on atomic time with corrections from astronomical time (a day is not exactly 24 * 3600 seconds). Time zones and daylight savings are offsets.</p>
+
+<p><a href="http://leapsecond.com/notes/leap-watch.htm">Leap seconds</a> are added or subtracted every year on June and December. They make measurements of time elapsed be incorrect (if a second is inserted or removed while measuring). Unix timestamps (seconds since <em>epoch</em>) and POSIX <a href="https://www.somebits.com/weblog/tech/bad/leap-second-2012.html">ignore leap seconds</a>. ISO8601 has the format datetime plus offset: <code class="language-plaintext">YYYY-MM-DDThh:mm:ss+00:00</code></p>
+
+<p><strong>Smearing the leap second:</strong> rather than inserting or removing a second between <code class="language-plaintext">23:59:59</code> and <code class="language-plaintext">00:00:00</code>, the extra second is spread out by running the clocks slower or faster.</p>
+
+<p><strong>Monotonic time:</strong> Independent time. It starts when the computer was turned on, and it always moves forward. Monotonic timestamps are not comparable across nodes, so they can't be used to set absolute time. Because of these clock adjustments, monotonic time is used for elapsed times.</p>
+
+<p>Computers use quartz clocks, which get out of phase, but we can sync with a server. Protocols: NTP (Network Time Protocol) and PTP (Precision Time Protocol).</p>
+
+<ul>
+  <li>If time is skew, client will adjust the clock (<strong>slewing</strong>).</li>
+  <li>If this would take too much time, the client sets the clock according to server time (<strong>stepping</strong>).</li>
+  <li>If the skew is huge, <strong>panic mode</strong> triggers and clock is not adjusted.</li>
+</ul>
+
+<p>Just because a node is running NTP the clock won't be correct. It could get stuck in a panic state.</p>
+
+<h3>Logical clocks</h3>
+
+<p>They are used for ordering events in distributed systems. We could send the timestamp with the message, but NTP clock adjustments may still put them in the wrong order. So instead, we work with event ids.</p>
+
+<ul>
+  <li><strong>happens-before relation:</strong> each node has only a single thread of execution, so for any two execution steps of a node, it is clear which one happened first. We can include node id and a sequence number to avoid duplicates. This is a partial order, as events could be concurrent (did not necessarily happen at the same time, but are independent). It's a way of reasoning about causality.</li>
+</ul>
+
+<p><strong>Lamport clocks:</strong> Provide total order. Each node has its own variable <code class="language-plaintext">t</code> set to zero at start. When an event happens in the node, increment <code class="language-plaintext">t</code> by one, and send <code class="language-plaintext">t</code> and the message through the network. When a node receives <code class="language-plaintext">(t', m)</code> it sets its own time to <code class="language-plaintext">t = max(t, t') + 1</code> and sends the message to the app.</p>
+
+<p><strong>Vector clocks:</strong> Provide partial order. They allow us to know if two events are concurrent or one happened before the other. Lamport clocks can't tell you this. Similar to Lamport but every node has a vector with the times of all the other nodes. The <code class="language-plaintext">max</code> is taken element wise. From any vector we can reconstruct the events that happened in its past.</p>
+
+<h2>Broadcast protocols</h2>
+
+<p>Also known as multicast protocols (point-to-point: unicast). Assumes point-to-point, all nodes deliver and receive from all nodes. Delivery may be delayed if events need to be sent in order.</p>
+
+<p>Types of ordering:</p>
+
+<ul>
+  <li><strong>FIFO:</strong> messages sent by one node must be delivered in the same order. Messages sent by other nodes, the order doesn't matter.</li>
+  <li><strong>causal:</strong> causally related messages must be delivered in order. Concurrent messages, in any order.</li>
+  <li><strong>total:</strong> there is agreement between all nodes about the order in which the messages should be delivered. All nodes deliver in same order.</li>
+</ul>
+
+<h3>Broadcast algorithms</h3>
+
+<p>We need to ensure that the messages are delivered by every node, and that they do so in the right order.</p>
+
+<p>Delivered to every node:</p>
+
+<ul>
+  <li><strong>Eager reliable broadcast:</strong> the first time a node receives a message, sends it to all nodes, but this is <code class="language-plaintext">n²</code> expensive, where <code class="language-plaintext">n</code> is the number of nodes. Reliable links (retry + de-duplicate) may not be enough because a node may crash before all messages are received.</li>
+  <li><strong>Gossip protocols:</strong> the first time a node receives a message, sends it to a small number of random nodes. With the right parameters, they are very resilient to message loss and node crashes while also remaining efficient.</li>
+</ul>
+
+<p>Delivered in order:</p>
+
+<ul>
+  <li><strong>FIFO broadcast:</strong> we attach a sequence number to every broadcasted message.</li>
+  <li><strong>Casual broadcast:</strong> we attach a vector of integers to every broadcasted message. Sometimes it's called a “<em>vector clock algorithm</em>“, but the vector elements count the number of messages from each sender that have been delivered, rather than the number of events.</li>
+  <li><strong>Total order broadcast:</strong> Or “FIFO-total order”. Trickier and not fault-tolerant. “Single leader” (single point of failure), or “Lamport timestamps” (leaderless but the crash of one node stops the others from delivering).</li>
+</ul>
+
+<h2>Applied example: multiplayer network game</h2>
+
+<p>Client / server model: Each player/client sends a list of actions to the server, server receives from all clients and sends back to all clients, clients update their state.</p>
+
+<p>Problem: network lag of 200+ms. LAN or few players helps.</p>
+
+<p>Solution:</p>
+
+<ul>
+  <li><strong>Speculation in the client:</strong>. The client runs a local server that speculates what the next game state is and shows that to the player. Then it updates with what comes from the server. Weak consistency: client games are slightly different to the server game and among them too.</li>
+  <li><strong>Lag compensation on the server:</strong> Speculates state based on a guess of where the players where at <code class="language-plaintext">t - lag</code>.</li>
+</ul>
+
+<p>Another problem: ghost players, I was shot through a wall, because the server perspective was different to the clients perspective.</p>
+
+<p>Solution: Make the clients also send their actions to the other clients. Clients have half the lag among them (they don't have to go through the server), but will need more bandwidth <code class="language-plaintext">n²</code>. Also some players could cheat by sending different moves to different clients.</p>
+
+<p>Now we need to compare the client state with the server state. When we receive a keystroke, we need to know if it is fresh and when it happened in time. To check if it's fresh, we include all keystrokes from all players in every server snapshot, and the client checks against the previous ones to find the new ones. This makes the snapshot big and compromised by packet loss. We could tag them with time but time-sync is an illusion and not accurate enough for games. It's better to use a logical clock: we give each keystroke an id.</p>
+
+<p>Interesting reads on synchronizing several players through the network:</p>
+
+<ul>
+  <li>What Every Programmer Needs to Know About Game Networking: <a href="http://goo.gl/o7mc5f">http://goo.gl/o7mc5f</a></li>
+  <li>Source Multiplayer Networking: <a href="http://goo.gl/u9J9Ya">http://goo.gl/u9J9Ya</a></li>
+  <li>Animated explanation of the Raft algorithm: <a href="http://thesecretlivesofdata.com/">http://thesecretlivesofdata.com/</a></li>
+</ul>

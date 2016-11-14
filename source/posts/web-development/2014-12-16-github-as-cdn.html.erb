@@ -1,0 +1,38 @@
+---
+layout: post
+title: GitHub as CDN?
+date: 2014-12-16 11:02:46.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- git
+- servers
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>I have all my projects' sites hosted at GitHub pages, but I also have some sites outside GitHub, and I use a lot of files from GitHub as well, like <a href="https://github.com/necolas/normalize.css">normalize.css</a>, <a href="https://github.com/PrismJS/prism">prism.js</a> (a syntax highlighter by Lea Verou), etc. So at some point I thought:</p>
+<blockquote><p>Why not serve those files directly from their GitHub repos?</p></blockquote>
+<p>I could just link to the "raw" version of them. My hosting would breath, both in bandwidth and disk space, the file would be updated automatically and I would always serve the last version. What could possibly go wrong?</p>
+<p>This turned out to be A Bad Idea, for at least these reasons:</p>
+<ul>
+<li>What if the author decides to delete the file?</li>
+<li>What if the author decides to rename the file?</li>
+<li>What if the author rearranges the folder structure?</li>
+<li>What if GitHub wasn't created to be a file server, but, you know, a remote git repositories server? :-P</li>
+</ul>
+<p>The last one is really the clue. GitHub doesn't serve its "raw" files with a far-future expires header. Also, Another problem is that GitHub doesn't serve "raw" files with a content-type header that matches the file's actual MIME type. In IE9 (and perhaps other browsers/proxies/firewalls/etc), JavaScript files that aren't served with the correct content-type are blocked by default.</p>
+<h2>But there's RawGit!</h2>
+<p>Oh, yeah, there is <a href="https://rawgit.com">RawGit</a>. It serves raw files directly from GitHub with proper Content-Type headers. Problem solved! Let's link to RawGit as if there was no tomorrow!</p>
+<p>Well, not so fast.</p>
+<p>Requests to <a href="https://cdn.rawgit.com">https://cdn.rawgit.com</a> are routed through MaxCDN's content delivery network, and are cached permanently the first time they're loaded. This results in the best performance and reduces load on RawGit and on GitHub, but it means that reloading won't fetch new changes from GitHub.</p>
+<p>(From the FAQ: <a href="https://rawgit.com/faq">https://rawgit.com/faq</a>)</p>
+<p>So, instead of having an updated version, you will have to stick to a particular version of the file, that you can access using a URL like <code>https://cdn.rawgit.com/user/repo/tag/file</code> or <code>https://cdn.rawgit.com/user/repo/commit/file</code> instead of <code>https://cdn.rawgit.com/user/repo/branch/file</code>.</p>
+<h2>Will I use this?</h2>
+<p>I don't know. It's true that I'll benefit from the caching and all that... BUT.</p>
+<p>Most of the time I am concatenating and compressing my several css and js files. There is some discussion going on about this, since <strong>you should find a compromise</strong> between benefiting from caching some files but having more http requests, versus serving a huge uncached css or js file but making a single http request. I do serve files like prism.js which have to be served in a separate http request anyway, because they don't work if you use the <code>async</code> attribute on them. Those would be candidates for RawGit.</p>
+<p>So... I have to think about it!</p>

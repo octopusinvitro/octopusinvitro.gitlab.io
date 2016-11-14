@@ -1,0 +1,74 @@
+---
+layout: post
+title: Datasets and predictions
+date: 2019-03-10 01:23:42.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+author:
+  display_name: Octopus in vitro
+---
+
+
+<h2>Dataset types</h2>
+
+<p>The the training dataset is separate from both the validation dataset and the test dataset.</p>
+
+<h3>Train dataset</h3>
+
+<p>This is the <strong>labelled</strong> data that we pass to the model over and over again so that it learns from it. The weights <strong>will be updated</strong> in the model based on the loss calculated from the train data. That way we can deploy our model in production and have it accurately predict on new data that it’s never seen before.</p>
+
+<h3>Validation dataset</h3>
+
+<p>This is a set of <strong>labelled</strong> data that the model has never seen. In each epoch, each output will be classified and the loss will be calculated using the training data, then the same will happen with the validation data. The weights <strong>will not be updated</strong> in the model based on the loss calculated from the validation data.</p>
+
+<p>One of the major reasons we need a validation dataset is to <strong>ensure that our model is not overfitting</strong> to the data in the training set. If the results on the training data are really good, but the results on the validation data are lagging behind, then our model is overfitting. The validation dataset allows us to see how well the model is generalizing during training.</p>
+
+<h3>Test dataset</h3>
+
+<p>The test data is a set of <strong>unlabelled</strong> data that the model has never seen, which is used to test the model <strong>after</strong> the model has already been trained. The test data provides a final check that the model is generalizing well before deploying the model to production, where it will make predictions on unlabelled data it has never seen before.</p>
+
+<h3>Code</h3>
+
+<p>In Keras, we can either specify a percentage to split our train dataset into training and validation, or directly pass the validation set. The example below splits the train dataset into 20% validation data and 80% training data:</p>
+
+<pre><code class="language-python">
+model.fit(x=scaled_train_samples, y=train_labels, validation_split=0.20)
+</code></pre>
+
+<p>If we pass the validation dataset directly it should be a list of tuples:</p>
+
+<pre><code class="language-python">
+validation_dataset = numpy.array([(sample, label), (sample, label), ..., (sample, label)])
+
+model.fit(x=scaled_train_samples, y=train_labels, validation_data=validation_dataset)
+</code></pre>
+
+<p>If we pass a validation dataset to the fitting function, the output will not only display loss and accuracy, but also validation loss and validation accuracy.</p>
+
+<h2>Predicting</h2>
+
+<p>Predictions are based on what the model learned during training. During the prediction phase, we pass the model unlabelled test data or unlabelled real time data from our <strong>test</strong> dataset.</p>
+
+<p>This process will also tell us what our model has or hasn’t learned. If we trained the model with large dogs and we pass it small dogs, it won't work well. We need to make sure that our training and validation sets are representative of the actual data we want our model to be predicting on.</p>
+
+<p>We can do predictions in Keras like this:</p>
+
+<pre><code class="language-python">
+predictions = model.predict(x = scaled_test_samples, batch_size = 10, verbose = 0)
+
+for prediction in predictions:
+    print(prediction)
+
+=&gt; [
+[ 0.7410683  0.2589317]
+[ 0.14958295  0.85041702]
+...
+]
+</code></pre>
+
+<p>The output will show predictions for each class and test sample. In this case, we have two classes for every sample.</p>
