@@ -1,0 +1,73 @@
+---
+layout: post
+title: How to read data from magnetic tapes and playing the detective with octal dump - Part 1
+date: 2012-01-18 21:37:37.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+- C++
+- nostalgia
+- featured
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p><em>This post is part of a series of three posts. Check them out!:</em></p>
+<ul>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-2">How to read data from magnetic tapes and playing the detective with octal dump - Part 2</a></li>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-3">How to read data from magnetic tapes and playing the detective with octal dump - Part 3</a></li>
+</ul>
+<hr>
+<p>I believe that you learn faster when there is a purpose to what you are doing. Learning to work with very old magnetic tapes led me to learn about octal dump, a command I would have probably never used if not for these tapes.</p>
+<h2>A bit of context</h2>
+<p>For the first part of my thesis work, I had to analyze old GSI data (measurements from back in 1996 and 2000). At the time, they were using a VAX/VMS data acquisition and analysis system called GOOSY. There is a paper about it, "<a href="http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=277491"><em>GOOSY-VME: the data acquisition and analysis system at GSI</em></a>" if you're interested, and <a href="http://web-docs.gsi.de/~goofy/goosy/goosy.php">the old GOOSY pages</a> can be found in a time capsule for web pages at GSI. Finally, if you are interested in what the place where these measurements took place look like, check out the <a href="http://web-docs.gsi.de/~weick/frs/frs-steps.html">setup page of the FRS</a>, a fragment separator that was part of GSI, at Frankfurt, Germany. My favorite picture there is the panic button. Can you find it?</p>
+<p>So basically it was very important to store the data in a modern system, if possible, digital, since <strong>the data was stored in tapes</strong>. In MAGNETIC TAPES. Imagine! I'm a nostalgic though, so I had a lot of fun with it.</p>
+<p>To read the tapes we had a big gray box that looked like an old Nintendo NES, and you had to introduce the tapes (which were a <a href="https://en.wikipedia.org/wiki/Digital_Linear_Tape">TK50 model</a>, I think) as if it was a VHS. The driver was connected to my tower through a huge SCSI cable like those you used on ancient printers.</p>
+<p>Somebody posted a video on Youtube showing how this all looked like. For several months, this was my life, funny noises included:</p>
+<p><iframe class="aligncenter" width="853" height="480" src="https://www.youtube.com/embed/esqZZSxNd5o" frameborder="0" allowfullscreen></iframe></p>
+<p>The not-so-fun part of it was that our workstations were not really "owned" by each team member, but more like "servers" that were on 24/7 so that anybody could connect through <a href="http://man7.org/linux/man-pages/man1/ssh-agent.1.html"><code>ssh</code></a>. There was only one tape driver and it was the one attached to MY workstation, so I found myself receiving calls and emails from team members in other offices (or even countries), with requests like: "<em>Hey, when you are finished reading your tape, put this other tape with the alpha measurements</em>". And they manipulated the tape from the distance.</p>
+<h2>Instructions for manipulating TK-50 tapes</h2>
+<p>As shown in the video, when you introduced the tape in the driver, two leds started blinking. One of them was an indicator of an error, and it was the first thing you had to look at, because these tapes were very old and weren't kept in the best conditions. Many of them were damaged and you could not even mount them. In some of them the tape was acually sticked and merged together due to heat and humidity.</p>
+<p>If everything was OK though, I would start my tape-recovering duties using the <a href="https://www.mkssoftware.com/docs/man1/mt.1.asp"><code>mt</code></a> ("magnetic tape") command. My workflow looked more or less like this:</p>
+<ul>
+<li>Check the tape's <strong>status</strong>. For example, if the tape driver was mounted at <code>/dev/nst0</code>:
+<pre><code class="language-bash">
+mt -f /dev/nst0 stat
+</code></pre>
+</li>
+<li><strong>Read</strong> a file from the tape. The <a href="http://linux.die.net/man/1/dd"><code>dd</code></a> command was used for this task:
+<pre><code class="language-bash">
+dd if=/dev/nst0 of=you-name-it bs=16K
+</code></pre>
+<p>where <code>if</code> stands for "input file", <code>of</code> is "output file", and <code>bs</code> is the "block size".</p>
+<p>In my case, for each file I had to recover <em>three</em> files: a header file, the actual data, and the end of file. In VME/VMS the three were stored in one single file, but our version of Linux at the time (Scientific Linux touched by CERN touched by my research institute's tech department) broke that into three.</li>
+<li><strong>Jump</strong> a number of files (a tape drive provides <strong>sequential</strong> access storage). To jump 5 files forward:
+<pre><code class="language-bash">
+mt -f /dev/nst0 fsf 5
+</code></pre>
+<p>To jump 5 files backward:</p>
+<pre><code class="language-bash">
+mt -f /dev/nst0 bsf 5
+</code></pre>
+</li>
+<li>Before taking the tape out, ALWAYS <strong>rewind</strong> (just like VHS!):
+<pre><code class="language-bash">
+mt -f /dev/nst0 rewind
+</code></pre>
+<p>or you could also use the button in your driver, if your model comes with one.</li>
+</ul>
+<p>When you were finished dumping a tape's contents, you had to check with the VMS list that all the files were in there, and mark the files that were corrupt. Examples of corruption are: failure before the EOF, header or EOF missing, half of a file only and the other half unreadable (they were big files, 100-500 Mb), in/out general errors, etc.</p>
+<p>And that's pretty much what I did with the tapes. Now let's see why we needed octal dump. Wasn't it all written in a human friendly way? Couldn't I just open a file in my text editor or spreadsheet?</p>
+<p>HAHAHAHAHAHA... No.</p>
+
+<p>Find out in Part 2.</p>
+<hr>
+<ul>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-2">How to read data from magnetic tapes and playing the detective with octal dump - Part 2</a></li>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-3">How to read data from magnetic tapes and playing the detective with octal dump - Part 3</a></li>
+</ul>

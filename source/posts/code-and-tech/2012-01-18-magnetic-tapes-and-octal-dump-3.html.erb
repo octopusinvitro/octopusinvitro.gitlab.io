@@ -1,0 +1,438 @@
+---
+layout: post
+title: How to read data from magnetic tapes and playing the detective with octal dump - Part 3
+date: 2012-01-18 21:52:06.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+- C++
+- nostalgia
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p><em>This post is part of a series of three posts. Check them out!:</em></p>
+<ul>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-1">How to read data from magnetic tapes and playing the detective with octal dump - Part 1</a></li>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-2">How to read data from magnetic tapes and playing the detective with octal dump - Part 2</a></li>
+</ul>
+<hr>
+<h2 id="octaldump">Playing the detective with octal dump</h2>
+<p>Remember the sea of octals I mentioned before?</p>
+<p>Octal dump, or <a href="http://unixhelp.ed.ac.uk/CGI/man-cgi?od"><code>od</code></a>, is a very handy command that allows you to see through the entrails of your files. To illustrate this, let's create a file called <code>file</code>, containing the text <code>Hey, I'm an lmd file.</code>, and use octal dump on it:</p>
+<pre><code class="language-bash">
+$ od file
+0000000 062510 026171 044440 066447 060440 020156 066554 020144
+0000020 064546 062554 005056
+0000026
+</code></pre>
+<p>The numbers in the first column to the left are the number of bytes read. The other numbers are the contents of our file, in the default representation of octal dump, which is <strong>octal shorts</strong>. A <code>short</code> is two bytes long, but the smallest variable we have in our data is a <code>char</code>. Does octal dump have a representation that is 1 byte long? Yes, our good ol' friend ASCII:</p>
+<pre><code class="language-bash">
+$ od -c file
+0000000   H   e   y   ,       I   '   m       a   n       l   m   d
+0000020   f   i   l   e   .  \n
+0000026</code></pre>
+<p>The option <code>-c</code> tells octal dump to use ASCII characters. The <code>\n</code> is a carriage return. The first column (the number of bytes read) is still in octal shorts, the default representation of octal dump. The octal numbers in that column can be translated into decimal numbers using the <a href="https://en.wikipedia.org/wiki/Fundamental_theorem_of_arithmetic">Fundamental theorem of arithmetic</a>:</p>
+<ul>
+<li>20 = 2x8<sup>1</sup> + 0x8<sup>0</sup> = <strong>16</strong> bytes read in the first line, and</li>
+<li>26 = 2x8<sup>1</sup> + 6x8<sup>0</sup> = <strong>22</strong> bytes read in the second line.</li>
+</ul>
+<p>However, doing it this way would be impractical. To make things more human friendly, we can tell octal dump to print the first column directly in decimal format, adding the option <code>-A d</code>:</p>
+<pre><code class="language-bash">
+$ od -c -A d file
+0000000   H   e   y   ,       I   '   m       a   n       l   m   d
+0000016   f   i   l   e   .  \n
+0000022</code></pre>
+<p>But <em>our files are in another castle</em>! They were not saved in ASCII, they are raw data. So how can we take a look at the data one byte at a time but not in ASCII format? Remember; 1 byte is 8 bits, an octal. And of course, octal dump has an octal-bytes representation:</p>
+<pre><code class="language-bash">
+$ od -b -A d file
+0000000 110 145 171 054 040 111 047 155 040 141 156 040 154 155 144 040
+0000016 146 151 154 145 056 012
+0000022</code></pre>
+<p>The option <code>-b</code> prints each byte of our file in octal format; <code>110</code> is the octal representation of the letter <code>H</code>, <code>145</code> is the octal representation of the letter <code>e</code>, and so on. Now, we said we have to jump through headers or corrupted parts of a file. We can do that with the option <code>-j &lt;BYTES_TO_JUMP></code>, for example, to jump four bytes:</p>
+<pre><code class="language-bash">
+$ od -b -A d -j 4 file
+0000004 040 111 047 155 040 141 156 040 154 155 144 040 146 151 154 145
+0000020 056 012
+0000022</code></pre>
+<p>See how the first column is updated too? :D</p>
+
+<p>Finally, I had to handle files of hundreds of Mb. How do I check only an amount <code>N</code> of consecutive bytes? Using <code>-N &lt;BYTES_TO_SHOW></code>:</p>
+<pre><code class="language-bash">
+$ od -b -A d -j 4 -N 2 file
+0000004 040 111
+0000006</code></pre>
+<p>Now, let's take a look at a real <code>lmd</code> file containing real raw data and not ASCII characters.</p>
+<p>If we pick one file from the measurements made in 2000 (constant event length), all we have to do is to search for a <code>000 000 000 052</code>, which is a 42 in octal, written across four bytes. Remember that 42 is the number of signals we have in that experiment (the event length) and that the event length has a size of four bytes. Then comes a short (2 bytes) with the subtype, that is <code>000 001</code>, then comes a short with the type, or <code>000 012</code>, where 12 is 10 in octal, then another short with the trigger followed by a short that is zero or <code>000 000</code>, then, four bytes with the event counter. We can search the next event's counter and check that it is the same number plus one. When we are finished, we can check a file from 1996, where the event length was variable.</p>
+<p>In this image, you can see the contents of those files, with the help of octal dump. The first is from 1996 (variable length, CAMAC IDs and values) and the second from 2000 (fixed length, only CAMAC values). The header variables are broken down in the legends to the right, compare those to the tables I showed you before or the ones appearing in GOOSY manual:</p>
+<p><a href="<%= image_host %>/images/uploads/2012/01/octal-dump.png"><img src="<%= image_host %>/images/uploads/2012/01/octal-dump.png" alt="A picture showing the dump of two lmd files" width="834" height="1024" class="aligncenter" /></a></p>
+<p>In these two examples, we jump over the 16384 bytes file header. The dumps show the first 352 bytes of the files after this jump.</p>
+<h2>Translation program</h2>
+<p>Now that we have the structure of our files figured out, we can write that translation program. As mentioned before, the programing language I used was <code>C++</code>.</p>
+<p>We can start reading the type and subtype, since their values are known, and test that we obtain the right values. To read raw blocks of data of a fixed size from a stream, we can use the <a href="http://www.cplusplus.com/reference/cstdio/fread/"><code>fread()</code></a> function. We use two shorts to store what we read and print the results on the terminal:</p>
+<pre><code class="language-cpp">
+// Array of chars to save the filename
+char lmdfile[86] = "mylmdfile.lmd"
+
+// Pointer for reading
+FILE *readlmd = NULL;
+
+// Open lmd file for reading
+if ( (readlmd = fopen(lmdfile, "r")) == NULL ) {
+  printf("\nThe file couldn't be opened, exiting program\n\n");
+  exit(1);
+}
+
+// Jump the 16384 bytes file header
+int i = fseek(readlmd, 16384, SEEK_SET);
+
+// We want to read two shorts
+short subtype = 0;
+short type    = 0;
+
+// Reading the subtype with fread()
+fread (&amp;subtype, sizeof(short), 1, readlmd);
+printf("\n Subtype = %d", subtype);
+
+// Reading the type with fread()
+fread (&amp;type, sizeof(short), 1, readlmd);
+printf("\n Type = %d", type);
+</code></pre>
+<p>We obtain:</p>
+<pre><code class="language-bash">
+Subtype = 512
+Type = 5120
+</code></pre>
+<p>WAT.<br />
+.<br />
+.<br />
+.<br />
+.</p>
+<p><em>What's happening</em>?</p>
+<p>When we read raw data, we have to <strong>check if our architecture is swapping the bytes when we store them in variables of types that are bigger than 1 byte</strong>, as is the case for <code>short</code> and <code>int</code>. Check this article about <a href="https://betterexplained.com/articles/understanding-big-and-little-endian-byte-order/">big and little endian byte order</a> to see why this happens. In this case, we are not reading <code>000 001</code> and <code>000 012</code>, we are reading <code>001 000</code> and <code>012 000</code>. How to fix this?</p>
+<p>We need a swapping function, to swap the bytes after we have stored them in our variables. In our data file, we have variables of size <code>char</code> (1 byte), <code>short</code> (2 bytes) and <code>int</code> (4 bytes), so we will only need to swap for <code>short</code> and <code>int</code>:</p>
+<pre><code class="language-cpp">
+// SWAPING FUNCTION FOR 16 BITS VARIABLES ____________________
+static inline unsigned short bswap_16(unsigned short x) {
+  return (x&gt;&gt;8) | (x&lt;&lt;8);
+}
+
+// SWAPING FUNCTION FOR 32 BITS VARIABLES ____________________
+static inline unsigned int bswap_32(unsigned int x) {
+  return (bswap_16(x&amp;0xffff)&lt;&lt;16) | (bswap_16(x&gt;&gt;16));
+}
+
+// Reading the subtype with fread()
+fread (&amp;subtype, sizeof(short), 1, readlmd);
+subtype = bswap_16(subtype);
+printf("\n Subtype = %d", subtype);
+
+// Reading the type with fread()
+fread (&amp;type, sizeof(short), 1, readlmd);
+type = bswap_16(type);
+
+printf("\n Type = %d", type);
+</code></pre>
+<p>And now we obtain:</p>
+<pre><code class="language-bash">
+Subtype = 1
+Type = 10
+</code></pre>
+<p>I'm not going to go into too much detail, but <code>&gt;&gt;</code> is the arithmetic (or signed) right shift operator, and <code>&lt;&lt;</code> is the left shift operator, and meets the needs of both logical and arithmetic shifts. They are used to shift the positions of the bits of a number.</p>
+<p>The whole program is printed below, for the experiment of 2000 (fixed event length and only CAMAC values printed). Don't judge me too much, I wrote this in 2008 or 2009. I knew nothing about life, the universe or anything else ;-)</p>
+<pre><code class="language-cpp">
+/******************************************
+ How to run this program:
+ Just compile
+     $ gcc lmd2ascii_2000.cpp -o lmd2ascii_2000
+ or
+     $ g++ lmd2ascii_2000.cpp -o lmd2ascii_2000
+ and run
+     $ ./lmd2ascii_2000
+
+ Tested on:
+      gcc version egcs-2.91.66 (egcs-1.1.2 release)
+      gcc version 3.4.6 20060404 (Red Hat 3.4.6-8)
+******************************************************/
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;math.h&gt;
+
+// SWAPING FUNCTION FOR 16 BITS VARIABLES ________________________________________
+static inline unsigned short bswap_16(unsigned short x) {
+  return (x&gt;&gt;8) | (x&lt;&lt;8);
+}
+
+// SWAPING FUNCTION FOR 32 BITS VARIABLES ________________________________________
+static inline unsigned int bswap_32(unsigned int x) {
+  return (bswap_16(x&amp;0xffff)&lt;&lt;16) | (bswap_16(x&gt;&gt;16));
+}
+
+typedef union {
+  short semi[2];
+  int total;
+} scalers;
+
+int main() {
+// INPUT AND OUPUT FILES _________________________________________________________
+  char lmdfile[86];           // 86 = GOOSY maximun number of char.
+  char asciifile[86];         // ASCII formatted lmd file
+  char outfile[86];           // Error file
+  FILE *readlmd    = NULL;    // Pointer for reading
+  FILE *writeascii = NULL;    // Pointer for writing
+  FILE *writeout   = NULL;    // Pointer for writing
+
+  do {
+    printf("\n	Name of the lmd file to be read:			 ");
+    scanf("%s", lmdfile);
+
+    printf("	Type a name for the output ascii file: ");
+    scanf("%s", asciifile);
+
+    printf("	Type a name for the output errors file: ");
+    scanf("%s", outfile);
+
+  } while ( strcmp(lmdfile, asciifile) == 0);
+
+  // Open lmd file for reading
+  if ( (readlmd = fopen(lmdfile, "r")) == NULL ) {
+    printf("\nThe file couldn't be opened, exiting program\n\n");
+    exit(1);
+  }
+  printf("\n	Lmd file opened for reading...");
+
+  // Open ASCII file for writing
+  if ( (writeascii = fopen(asciifile, "w")) == NULL)	{
+    printf("\nThe file couldn't be opened, exiting program\n\n");
+    exit(1);
+  }
+  printf("\n	ASCII file opened for writing...\n");
+
+  // Open errors file for writing
+  if ( (writeout = fopen(outfile, "w")) == NULL)	{
+    printf("\nThe file couldn't be opened, exiting program\n\n");
+    exit(1);
+  }
+  printf("\n	ASCII file opened for writing...\n");
+
+  int wrote      = 0;
+  int oldcounter = 0;
+  short flag     = 0;
+
+// GOOSY VARIABLES **************************************************************
+  // Event Type 10, Subtype 1
+  int dlen      = 0;
+  short type    = 0;
+  short subtype = 0;
+  short dummy   = 0;
+  short trigger = 0;
+  int counter   = 0;
+
+  // Subevent Type 10, Subtype 1
+  int sdlen       = 0;
+  short procid    = 0;
+  char subcrate   = 0;
+  char control    = 0;
+  short value_aux = 0;
+
+  // There were 5 scalers with int values
+  scalers scaler;
+
+  // Other stuff
+  int signals   = 0;            // Signals counter
+  int dlen_max  = 74;           // Maximum event length
+  int sdlen_max = dlen_max - 8; // Maximum subevent length
+
+// READING THE FILE ______________________________________________________________
+  int desp    = 16384 + 48; // 16384 bytes is the size of the header 1287744
+  int nEvents = 0;          // Events counter
+  int nWrongs = 0;          // Bad events counter
+  int size    = 0;          // Lmd file size
+  int i = 0, j = 0, k = 0, N = 0, pointerPos = 0;
+
+  printf("\n	Number of events to read (-1 for all): ");
+  scanf("%d",  &amp;N);
+
+  i    = fseek(readlmd,0,SEEK_END); // Move pointer to the end of file
+  size = ftell(readlmd);
+  printf("\n	Lmd file size = %d bytes\n",  size);
+
+  i    = fseek(readlmd, desp, SEEK_SET);	// Move pointer "desp" bytes from begining
+  pointerPos = ftell(readlmd);
+
+// SEARCHING THE EVENT HEADER ***************************************************
+  // Loop on the N events
+  while ( (nEvents != N) &amp;&amp; (size - pointerPos &gt; 12) )	{
+    // Reading the first 4 bytes word
+    fread (&amp;dlen, sizeof(int), 1, readlmd);
+    dlen = bswap_32(dlen);
+
+    if ( (dlen &gt; dlen_max) || (dlen &lt; 0) ) {
+       pointerPos = ftell(readlmd);
+       flag = 1;
+       continue;
+    }
+    //printf("\n Event length = %d",  dlen);
+
+    fread (&amp;subtype, sizeof(short), 1, readlmd);
+    subtype = bswap_16(subtype);
+    //printf("\n Subtype = %d", subtype);
+
+    fread (&amp;type, sizeof(short), 1, readlmd);
+    type = bswap_16(type);
+    //printf("\n Type = %d", type);
+
+    fread (&amp;trigger, sizeof(short), 1, readlmd);
+    trigger = bswap_16(trigger);
+    //printf("\n Trigger = %d", trigger);
+
+    fread (&amp;dummy, sizeof(short), 1, readlmd);
+    dummy = bswap_16(dummy);
+    //printf("\n Dummy = %d", dummy);
+
+    fread (&amp;counter, sizeof(int), 1, readlmd);
+    counter = bswap_32(counter);
+    //printf("\n Counter %d\n",  counter);
+
+    // Detecting event header
+    if (subtype == 1 &amp;&amp; type == 10 &amp;&amp; trigger == 1 &amp;&amp; dummy == 0) {
+
+// READING THE SUBEVENT HEADER ***************************************************
+      fread (&amp;sdlen, sizeof(int), 1, readlmd);
+      sdlen = bswap_32(sdlen);
+
+      if ( (sdlen &gt; sdlen_max) || (sdlen &lt; 0) ) {
+        pointerPos = ftell(readlmd);
+        nWrongs ++;
+        flag = 1;
+        continue;
+      }
+      //printf("\n Subevent length = %d		",  sdlen);
+
+      fread (&amp;subtype, sizeof(short), 1, readlmd);
+      subtype = bswap_16(subtype);
+      //printf("\n Subtype = %d", subtype);
+
+      fread (&amp;type, sizeof(short), 1, readlmd);
+      type = bswap_16(type);
+      //printf("\n Type = %d", type);
+
+      // Checking subevent header
+      if ((dlen - sdlen != 8) || (type != 10) || (subtype !=1)) {
+        pointerPos = ftell(readlmd);
+        nWrongs ++;
+        flag = 1;
+        continue;
+      }
+
+      nEvents++;
+      if (flag == 1) {
+        flag=0;
+      }
+      //printf("\n	 ======== Event found =======	 \n");
+
+      fread (&amp;control, sizeof(char), 1, readlmd);
+      //printf("\n Control = %d", control);
+
+      fread (&amp;subcrate, sizeof(char), 1, readlmd);
+      //printf("\n Subcrate = %d", subcrate);
+
+      fread (&amp;procid, sizeof(short), 1, readlmd);
+      procid = bswap_16(procid);
+      //printf("\n Processor ID = %d", procid);
+
+      signals = sdlen - 2;  // Total number of signals
+
+      if (signals != 32)
+        printf("\n signals = %d",  signals);
+      signals = signals - 6;
+
+      // Creating array dinamically, once one has read the length of the event.
+      // There are 6 scalers of size = 2 shorts
+      int value[signals];
+
+      //Reading the scalers
+      for (i=0; i&lt;6; i++) {
+        scaler.total = 0;
+
+        fread (&amp;value_aux, sizeof(short), 1, readlmd); // LOW part
+        value_aux      = bswap_16(value_aux);
+        scaler.semi[0] = value_aux;
+
+        fread (&amp;value_aux, sizeof(short), 1, readlmd); // HIGH part
+        value_aux      = bswap_16(value_aux);
+        scaler.semi[1] = value_aux;
+
+        value[i] = scaler.total;
+      }
+
+      //Reading the rest of the data
+      for (i=6; i&lt;signals; i++) {
+        fread (&amp;value_aux, sizeof(short), 1, readlmd);
+        value[i] = bswap_16(value_aux);
+        //printf("\n CAMAC value = %d", value[i]);
+      }
+
+// WRITING THE FILE ______________________________________________________________
+      // Event header
+      fprintf(writeascii,"99999\n");
+      fprintf(writeascii, "%d\n", dlen);
+      fprintf(writeascii, "%d\n", subtype);
+      fprintf(writeascii, "%d\n", type);
+      fprintf(writeascii, "%d\n", trigger);
+      fprintf(writeascii, "%d\n", dummy);
+      fprintf(writeascii, "%d\n", counter);
+
+      // Subevent header
+      fprintf(writeascii, "%d\n", sdlen);
+      fprintf(writeascii, "%d\n", subtype);
+      fprintf(writeascii, "%d\n", type);
+      fprintf(writeascii, "%d\n", control);
+      fprintf(writeascii, "%d\n", subcrate);
+      fprintf(writeascii, "%d\n", procid);
+
+      for (j=0; j&lt;signals-6; j++)
+        fprintf(writeascii, "%d\n", value[j]);
+
+      wrote ++;
+
+      oldcounter = counter;
+      fprintf(writeout, "\t%d", counter);
+    }
+
+    // if not subtype == 1 &amp;&amp; type == 10 &amp;&amp; trigger == 1 &amp;&amp; dummy == 0
+    // Move pointer 12 bytes backwards
+    else
+      i = fseek(readlmd,-12,SEEK_CUR);
+
+      pointerPos = ftell(readlmd);
+  }
+
+  printf("\n Number of bytes read  = %d", pointerPos - desp );
+  printf("\n Number of events read = %d", nEvents);
+
+  if (nEvents != N)
+    printf(" (Reached end of file)");
+
+  printf("\n Number of bad events   = %d",   nWrongs);
+  printf("\n Number of wrote events = %d\n\n", wrote);
+
+  //Close files
+  fclose(readlmd);
+  fclose(writeascii);
+  fclose(writeout);
+
+  return 0;
+}</code></pre>
+<hr>
+<ul>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-1">How to read data from magnetic tapes and playing the detective with octal dump - Part 1</a></li>
+<li><a href="/blog/code-and-tech/magnetic-tapes-and-octal-dump-2">How to read data from magnetic tapes and playing the detective with octal dump - Part 2</a></li>
+</ul>

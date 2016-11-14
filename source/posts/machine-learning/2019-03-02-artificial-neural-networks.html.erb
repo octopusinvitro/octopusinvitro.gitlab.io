@@ -1,0 +1,63 @@
+---
+layout: post
+title: Artificial neural networks
+date: 2019-03-02 20:21:20.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+author:
+  display_name: Octopus in vitro
+---
+
+<p>An <strong>artificial neural network</strong> is a computing system that is comprised of a collection of connected units called neurons/nodes that are organized into what we call layers.</p>
+
+<p>We have a <strong>input</strong> layer, several <strong>hidden</strong> layers, and an <strong>output</strong> layer. Each node in the input layer of a neural network represents an individual feature of the input data. The number of nodes in the output layer depends on the number of prediction classes present in the training set. The number of nodes in the hidden layer is arbitrary.</p>
+
+<p>The most basic kind of layer is a <strong>dense</strong> layer, where each output of a layer is computed using every input to the layer, so <strong>each node in the a layer is connected to all nodes in the next layer</strong>.</p>
+
+<p>Other types of layers are <strong>convolutional</strong> layers, for image data, <strong>recurrent</strong> layers, for time series data, etc. They do different transformations to the inputs.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2019/03/neural-network.png" width="1397" height="588" alt="Illustration of a neural network." />
+  <figcaption>
+    Illustration of a neural network with an input layer which has two nodes (in red) one hidden layer (in green) and an output layer with two nodes (in orange).
+  </figcaption>
+</figure>
+
+
+<h2>Layer weights</h2>
+
+<p>Each connection between two nodes has an associated <strong>weight</strong>, which is just a number. The input will be multiplied by the weight assigned to that connection.</p>
+
+<p>For each node in the second layer, a weighted sum is then computed with each of the incoming connections. This sum is then passed to an <strong>activation function</strong>.</p>
+
+<pre><code class="language-plaintext">
+node output = activation ( weighted sum of inputs )
+            = activation ( a1w1 + a2w2 + ... + aNwN )
+</code></pre>
+
+<p><strong>Forward pass:</strong> Once we obtain the output for a given node, it is passed as input to the nodes in the next layer. The weights are updated as the net learns.</p>
+
+
+<h2>Activation function</h2>
+
+<p>In an artificial neural network, an activation function is a non-linear function that does some transformation on the weighted sum of a node's inputs. The result activates or deactivates the neuron / node. Pretty much like brain neurons work.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2019/03/activation-functions.png" width="603" height="1200" alt="Sigmoid and ReLU activation functions" />
+  <figcaption>
+    A Sigmoid activation function transforms negative or positive inputs into an ouput between zero and one. A ReLU (Rectified Linear Unit) cuts all values less than or equal to zero.
+  </figcaption>
+</figure>
+
+<p>If we only had linear transformations of our data values during a forward pass, the learned mapping in our network from input to output would also be linear. Having non-linear activation functions allows our neural networks to compute arbitrarily complex functions.</p>
+
+
+<h2>Resources:</h2>
+<ul>
+  <li><a href="https://towardsdatascience.com/activation-functions-neural-networks-1cbd9f8d91d6">Activation Functions in Neural Networks</a>, by Sagar Sharma</li>
+</ul>
