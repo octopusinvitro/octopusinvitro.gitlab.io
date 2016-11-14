@@ -1,0 +1,370 @@
+---
+layout: post
+title: Using RabbitMQ to power a chat app
+date: 2024-12-21 10:15:00.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- distributed systems
+author:
+  display_name: Octopus in vitro
+---
+
+<p>I've been wanting to give <a href="https://www.rabbitmq.com">RabbitMQ</a> a try for a while so this Xmas holidays I decided to sit down and go through <a href="https://www.rabbitmq.com/tutorials/tutorial-one-python">their tutorials</a>. My objective was to to fully understand how it works and familiarize with the concepts.<p>
+
+<p>After finishing the tutorials, I wanted to build my own project with it, and a chat sounded logical. I have built a chat before to practice distributed systems concepts, and I thought this would be a nice way to see the difference when using an actual tool for that.</p>
+
+<p>Finally, I feel like message brokers, event-driven systems, and the likes, all belong to the same category of distributed systems, so I'm adding this post to that tag.</p>
+
+
+<h2>Basic concepts</h2>
+
+
+<p>First, there are a lot of new words to familiarize myself with. To begin, sending is called &quot;producing&quot;, and receiving is called &quot;consuming&quot;. I'm not sure yet about the semantic reasoning for this rewording but at least it sounds logical.</p>
+
+<p>Then there is this glossary of new terms:</p>
+
+<ul>
+  <li><strong>Producer:</strong> The part of the codebase that sends a message.</li>
+  <li><strong>Consumer:</strong> The part of the codebase that receives that message.</li>
+  <li><strong>Queue:</strong> Buffer where the messages are put and then popped out.</li>
+  <li><strong>Routing key:</strong> A key which identifies which queue to send the message to.</li>
+  <li><strong>Binding key:</strong> The key given to a queue on creation.</li>
+  <li><strong>Exchange:</strong> A router that receives messages from the producer and puts them in one or more queues, depending on its type and specified keys. In RabbitMQ a message can never be sent directly from a producer to a queue, it always needs to go through an exchange.</li>
+</ul>
+
+
+<p>There are several types of exchanges:</p>
+
+<ul>
+  <li><strong>Default:</strong> (Nameless) Sends only to queues where the routing key matches the queue name.</li>
+  <li><strong>Direct:</strong> Sends only to queues where the routing key matches the binding key.</li>
+  <li><strong>Fanout:</strong> Ignores the routing key, and sends to all queues.</li>
+  <li><strong>Topic:</strong> Allows partial matches of keys, for example <code class="language-python">red.*</code> matches <code class="language-python">red.1</code> and <code class="language-python">red.2</code>
+  </li>
+  <li><strong>Headers:</strong> Uses the message header instead of the routing key.</li>
+</ul>
+
+<h3>Work queues</h3>
+
+<p>This is used when there are time-consuming tasks to perform. If a task takes long to complete, it can slow down the system, or the consumer may die before finishing. If a consumer dies, the message is lost, and so are the other messages sent to it. There are two more concepts here:</p>
+
+<ul>
+  <li><strong>Acknowledgement:</strong> If a consumer dies (or doesn't acknowledge that it received the message), the message will be sent to the next consumer using round-robin. This is done automatically but can also be done manually calling <code class="language-python">basic_ack</code> on the channel, which prevents losing messages.</li>
+  <li><strong>QOS:</strong> (Quality of Service, I guess?) Each consumer takes only one task at a time and doesn't receive a new one until it has finished and acknowledged. This allows to load-balance busy consumers. We achieve this with <code class="language-python">basic_qos(prefetch_count=1)</code>.</li>
+</ul>
+
+
+<h3>Persistence</h3>
+
+<p>While this is optional, you can have persistent queues and persistent messages if you need so:</p>
+
+<ul>
+  <li><strong>Persistent queues:</strong> Set <code class="language-python">durable=True</code> when creating the queue.</li>
+  <li><strong>Persistent messages:</strong> Set <code class="language-python">delivery_mode</code> to persistent when publishing.</li>
+</ul>
+
+<p class="kitkat">I have uploaded my own interpretation of the tutorials and some more explanations <a href="https://github.com/octopusinvitro/bunny">in this Github repository</a>, so that I can have code examples handy depending on what I want to do, since there are so many options on how to use RabbitMQ.</p>
+
+
+<h2>Code</h2>
+
+<p>OK now to building the chat.</p>
+
+<h3>Dependencies</h3>
+
+<p>There is a <a href="https://hub.docker.com/_/rabbitmq/">community Docker image for RabbitMQ</a>, which is always good news, so I used that to run the RabbitMQ server.</p>
+
+<p>I decided to build the chat in python, since I built the previous one in Ruby. The RabbitMQ SDK in python is offered through the <a href="https://pika.readthedocs.io/en/stable/">pika</a> library.</p>
+
+<p>Finally, I wanted this chat to have a user interface like <a href="https://octopusinvitro.gitlab.io/blog/code-and-tech/distributed-chat">my Ruby chat</a>. Back there I used the curses library to create a GUI on the terminal itself, this time I wanted a desktop GUI (i.e. with windows). As an Ubuntu user, I have used the python SDK of the GTK libraries before, for my <a href="https://github.com/octopusinvitro/galarm">alarms desktop app</a>. But that was intended to be an Ubuntu app specifically and intentionally. This time I wanted to try <code class="language-python">tkinter</code>, which apparently ships natively with python.</p>
+
+
+<h3>Testing</h3>
+
+<p>For testing, I used pytest, which I haven't used very often. I don't like the assertions, they are something like <code class="language-python">assert foo == bar</code>. I want more of a DSL (Domain-Specific Language) rather than low-level code in my tests. So I didn't enjoy it.</p>
+
+<p>I'd also love if the pika library provided a way to create a RabbitMQ connection with stubbed responses, like <a href="https://aws.amazon.com/blogs/developer/advanced-client-stubbing-in-the-aws-sdk-for-ruby-version-3/">the AWS S3 Ruby SDK</a>. Then you don't have to mock what you don't own (pika) or setup a test server (uugghh).</p>
+
+<p>Pika doesn't offer this unfortunately so I am mocking pika until I find a better way!
+If you have any ideas, lemme know!</p>
+
+
+
+<h3>Separation of concerns</h3>
+
+<p>The idea of this app is that I will launch it from the terminal, passing some options. That will start the GUI and the chat, which will have an exchange to broadcast its messages to all the other clients. Each app is then both a producer and a consumer. When the app is started, it opens a very simple GUI window with only two regions: the chat box, where all messages are displayed as they arrive, and the input, where new messages are sent.</p>
+
+<p>So there will be mainly three concerns in the app:</p>
+
+<ol>
+<li>The messaging logic with RabbitMQ and pika</li>
+<li>The GUI with <code class="language-python">tkinter</code></li>
+<li>The CLI logic, mostly parsing the terminal input.</li>
+</ol>
+
+<p>The app runs by running the code in the <code class="language-python">main.py</code> file, which creates instances of the relevant objects and wires everything up.</p>
+
+
+<h3>1. The messaging logic</h3>
+
+<p>Inside of the <code class="language-python">/queues</code> folder is the RabbitMQ logic. I created a custom connection object to encapsulate all the logic of handling the messages.</p>
+<p>In pika, you have to create a RabbitMQ connection, and from it you have to get a channel. The channel is the one object that has the implementation of Rabbit's messaging logic. So my connection object receives a pika channel from a <code class="language-python">ChannelFactory</code>. This dependency injection made it a bit easier to test.</p>
+
+
+<pre><code class="language-python">
+# queues/channel_factory.py
+
+class ChannelFactory:
+    @classmethod
+    def create(cls, hostname):
+        connection = pika.BlockingConnection(pika.ConnectionParameters(hostname))
+        return connection.channel()
+</code></pre>
+
+<pre><code class="language-python">
+# queues/connection.py
+
+class Connection:
+    # ...
+
+    def __init__(self, channel, parser, callback):
+        self._channel = channel
+</code></pre>
+
+<p>For every person joining the chat, the app runs two instances of this connection object: one acts as the producer, sending chat messages, and the other as the consumer, receiving chat messages. They both connect to the same hostname, passed through the CLI. The hostname is used by the <code class="language-python">ChannelFactory</code> when it creates the RabbitMQ connection. All the users who connect to the same hostname will be in the same chat conversation.</p>
+
+<p>Consumer and producer need each their own RabbitMQ connection. Also I need one of the connections to be in a thread, and RabbitMQ is not thread safe. That's why the <code class="language-python">ChannelFactory</code> creates a new RabbitMQ connection for each channel.</p>
+
+<p>At first I thought about creating one queue for every chat conversation, with a bunch of clients sending messages to it. BUT: by default, different messages sent to the <strong>same queue</strong> will be load-balanced between all consumers using round-robin. I want a chat where all the consumers receive all the messages, so I have to use a <strong>fanout exchange</strong>, AND also have each client start <strong>its own queue</strong>. This happens in the <code class="language-python">setup()</code> method, where I let RabbitMQ create a queue for me with an autogenerated name.</p>
+
+
+<pre><code class="language-python">
+# queues/connection.py
+
+class Connection:
+    EXCHANGE = 'chatroom'
+    TYPE = ExchangeTypes.FANOUT
+
+    # ...
+
+    def setup(self):
+        self._channel.exchange_declare(exchange=self.EXCHANGE, exchange_type=self.TYPE)
+        self._queue = self._channel.queue_declare(queue='', exclusive=True).method.queue
+        self._channel.queue_bind(exchange=self.EXCHANGE, queue=self._queue)
+</code></pre>
+
+
+<p>My custom connection also receives a parser through dependency injection. This parser is in charge of converting messages from the display representation to raw, "sendable" string data and viceversa. A message is basically a JSON object with two keys, the username and the message.</p>
+
+
+<pre><code class="language-python">
+# parser.py
+
+import json
+
+
+class Parser:
+    def __init__(self, username):
+        self._username = username
+
+    def to_body(self, message):
+        return json.dumps({
+            'username': self._username,
+            'message': message
+        })
+
+    def to_message(self, body):
+        data = json.loads(body.decode('utf-8'))
+        username = data.get('username') or ''
+        message = data.get('message') or ''
+
+        return f'{username}: {message}'
+</code></pre>
+
+<p>The parser is mostly used in the <code class="language-python">Connection().send()</code> and <code class="language-python">Connection().receive()</code> methods, which will be used or not depending on if the instance of the <code class="language-python">Connection</code> is running as a producer or a consumer:</p>
+
+<pre><code class="language-python">
+# queues/connection.py
+
+class Connection:
+    # ...
+
+    def __init__(self, channel, parser, callback):
+        self._channel = channel
+        self._parser = parser
+        self._callback = callback
+
+    # ...
+
+    def send(self, message):
+        body = self._parser.to_body(message)
+        self._channel.basic_publish(exchange=self.EXCHANGE, routing_key=self._queue, body=body)
+
+    def receive(self, channel, method, properties, body):
+        message = self._parser.to_message(body)
+        self._callback(message)
+</code></pre>
+
+<ul>
+<li>
+<p>The <code class="language-python">send()</code> method just broadcasts the message to all the queues through the exchange. I am not persisting the messages, so if the client of a chat user dies, the messages are lost. But I don't think it matters, because they will exist printed in everybody's GUI interface until they voluntarily leave the chat.</p>
+</li>
+<li>
+<p>The signature of the <code class="language-python">receive()</code> method is given by the pika library, I really only need the <code class="language-python">body</code> that is passed as an argument. This method will be called by the pika library everytime a new message arrives. This is the method that will run any logic that I want to run when the message is received. That logic lives in the callback function that I am also injecting in the constructor of the <code class="language-python">Connection()</code>.</p>
+</li>
+</ul>
+
+<p>Why inject this callback? Why not just write the logic in there? Well... separation of concerns. The <code class="language-python">Connection</code> couldn't care less about what you want to do with the messages. It only cares about setting up the pipes for sending them or receiving them. Also, in this case I want to show it in the GUI, and my GUI code is elsewhere, as it should!</p>
+
+<p>Finally, the instance of the <code class="language-python">Connection</code> object that is listening for messages is run in a thread, so that the GUI can run in the main thread. I guess I could have also done it the other way around, not sure which is better or if it matters at all. Inside of this thread, I run the <code class="language-python">wait_for_messages()</code> method, which is where pika will call my <code class="language-python">receive()</code> method when a message arrives. I am setting up the consumer to acknowledge the messages automatically using <code class="language-python">auto_ack=True</code></p>
+
+<pre><code class="language-python">
+class Connection:
+    # ...
+
+    def wait_for_messages(self):
+        self._channel.basic_consume(
+            queue=self._queue, on_message_callback=self.receive, auto_ack=True
+        )
+        self._channel.start_consuming()
+</code></pre>
+
+<pre><code class="language-python">
+  # main.py
+
+  def main():
+  # ...
+
+  user = Connection(ChannelFactory.create(options.hostname), parser, None)
+  server = Connection(ChannelFactory.create(options.hostname), parser, gui.display)
+  [connection.setup() for connection in (user, server)]
+
+  listener_thread = Thread(target=server.wait_for_messages, daemon=True)
+  listener_thread.start()
+
+  # ...
+</code></pre>
+
+
+<h3>2. The GUI</h3>
+
+<p>All the GUI logic lives in the <code class="language-python">/gui</code> folder. I created different classes for the different components: the input and the chatbox. There is also a main window that uses both the input and the chatbox.</p>
+<ul>
+<li>
+<strong>Input:</strong> I created a method to get what the user typed and a method to clear the input once the message is read and sent.</li>
+<li>
+<strong>Chatbox:</strong> It has a <code class="language-python">display()</code> method to show messages as they arrive.</li>
+<li>
+<strong>MainGUI:</strong> I created a handy class method to produce an instance of the main window that injects the <code class="language-python">Input</code> and the <code class="language-python">Chatbox</code>. The <code class="language-python">start()</code> method takes a user, which is the connection instance that acts as the producer. We need this user in order to tell RabbitMQ to send the message that we get from the input. The <code class="language-python">display()</code> method is what we pass to the connection as a callback function.</li>
+</ul>
+
+
+<pre><code class="language-python">
+# gui/input.py
+
+import tkinter
+
+
+class Input:
+    def __init__(self, root):
+        self._input = tkinter.Entry(root, width=50)
+
+    def bind(self, action):
+        self._input.bind('<Return>', action)
+        self._input.pack(padx=10, pady=5)
+
+    def get(self):
+        return self._input.get()
+
+    def delete(self):
+        self._input.delete(0, tkinter.END)
+</code></pre>
+
+<pre><code class="language-python">
+# gui/chatbox.py
+
+import tkinter
+
+
+class Chatbox:
+    def __init__(self, root):
+        self._chatbox = tkinter.Text(root, width=50, height=20, wrap=tkinter.WORD)
+        self._chatbox.pack(padx=10, pady=10)
+        self._chatbox.config(state=tkinter.DISABLED)
+
+    def display(self, message):
+        self._chatbox.config(state=tkinter.NORMAL)
+        self._chatbox.insert(tkinter.END, f'{message}\n')
+        self._chatbox.config(state=tkinter.DISABLED)
+        self._chatbox.yview(tkinter.END)
+</code></pre>
+
+<pre><code class="language-python">
+# gui/main_gui.py
+
+import tkinter
+
+from .chatbox import Chatbox
+from .input import Input
+
+
+class MainGUI:
+    @classmethod
+    def create(cls, title, root=tkinter.Tk()):
+        root.title(title)
+        return cls(root, Chatbox(root), Input(root))
+
+    def __init__(self, root, chatbox, input):
+        self._root = root
+        self._chatbox = chatbox
+        self._input = input
+
+    def start(self, user):
+        self._user = user
+        self._input.bind(self._send)
+        self._root.mainloop()
+
+    def display(self, message):
+        self._chatbox.display(message)
+
+    def _send(self, event):
+        message = self._input.get()
+        self._user.send(message)
+        self._input.delete()
+</code></pre>
+
+<p>I don't like the fact that the GUI needs to know about the connection so that it can send the message to the queue on user interaction. But the way RabbitMQ works is that you define callbacks for when messages arrive, so the connection also needs to know about the GUI! I hope injecting the callback makes this a bit less of a circular dependency but I am not sure I achieved it.</p>
+
+
+<h3>3. The CLI</h3>
+
+<p>I decided to isolate the parsing of the CLI inputs in its own class, <code class="language-python">CLIOptions</code>, using python's native <code class="language-python">argparse</code>. Basically it allows you to pass username and hostname when launching the app in the terminal.</p>
+
+
+<p>The full main:</p>
+
+<pre><code class="language-python">
+# main.py
+
+def main():
+    options = CLIOptions(sys.argv[1:])
+
+    gui = MainGUI.create(options.username)
+    parser = Parser(options.username)
+
+    user = Connection(ChannelFactory.create(options.hostname), parser, None)
+    server = Connection(ChannelFactory.create(options.hostname), parser, gui.display)
+    [connection.setup() for connection in (user, server)]
+
+    listener_thread = Thread(target=server.wait_for_messages, daemon=True)
+    listener_thread.start()
+
+    gui.start(user)
+</code></pre>
+
+
+<p class="kitkat">I have talked a bit about this project <a href="https://bsky.app/profile/octopusinvitro.bsky.social/post/3le5a6lo6i22u">in BlueSky</a>, in case you wanna join the conversation.</p>

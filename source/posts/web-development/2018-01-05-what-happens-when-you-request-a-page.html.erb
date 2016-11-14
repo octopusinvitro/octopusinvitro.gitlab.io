@@ -1,0 +1,143 @@
+---
+layout: post
+title: What happens when you request a page?
+date: 2018-01-05 20:00:00.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags: []
+author:
+display_name: Octopus in vitro
+---
+
+
+<p>This is a question that I ask my students often as it can come up in interviews for developers of any level. One of my students went through an interview at Gitlab and they asked exactly that. So I thought I would do a writedown that they can use to prepare for interviews.</p>
+
+<p>Sadly I couldn't avoid adding some opinionated rants to it... oh well 😂.</p>
+
+<h2>Question 1</h2>
+
+<p><strong>Being a pretty standard Rails application, GitLab is built using the MVC design pattern. Please describe in as much detail as you think is appropriate what the responsibilities of the Model, View, and Controller are, both in general and in Rails specifically, and what the benefits of this separation are. Also touch on how the Concern and Service patterns fit into this.</strong></p>
+
+<h3>Responsibilities</h3>
+
+<p>The MVC architecture was one of the first ideas regarding separation of concerns in an application, and has inspired other similar architectures along the years.</p>
+
+<p>MVC stands for &quot;Model, View, Controller&quot;. The models represent the domain of the application and handle business rules. The views represent the part that the user interacts with. The controllers are in charge of routing requests and they may make changes to the model, which later on can update the view.</p>
+
+<h3>Benefits</h3>
+
+<p>MVC architecture makes it easy to keep changes in one area of the application isolated from the other parts of the application. Organizing the code into smaller parts with defined responsibilities makes it easier to reuse in several parts of the codebase. This, together with dependency injection, results in a decoupled application. Decoupled applications allow to make changes and add features in a way that impacts only the code being changed, rather than changes having cascading effects that break things in unrelated parts of the codebase. You can separate what changes often from what changes less often, or group parts of the code that change for the same reasons.</p>
+
+<p>Regarding Rails in particular, it is widely known that there are some phylosophical problems with the way Rails implements the MVC pattern:</p>
+<ul>
+<li>
+
+<p>Models, views and controllers are kept in different directories, making the whole application a huge <strong>three-bucket entity</strong>. This makes it difficult to know what the app is about by looking at the file structure. MVC was intended to be used per concept. Hence, according to the MVC architecture, rather that having a book model in the models folder, a book controller in the controllers folder and a book view in the views folder,  you would actually have a book folder containing the book's model, view and controller.</p>
+</li>
+<li>
+
+<p>Models are supposed to represent domain logic and business rules, yet <strong>in Rails they also represent the presistance layer</strong>. This goes against the concept that objects represent behavior, and they are like a black box, where the data they contain is hidden. On the other hand, data structures do expose data and have no behavior. ORMs like Active Record do a 1:1 mapping table-object, exposing the object's fields, and reducing objects to data structures. However, developers can also add behavior to them.</p>
+</li>
+<li>
+
+<p><strong>Ideally views have no logic</strong>, yet in Rails there are a lot of helpers that couple the views to the framework, and nothing stops you from adding custom ruby logic in an erb file. This means that you have to test the views, which means you have to load the framework, which means you will test the application through the views, which means your tests will be slow, which means you may be tempted to avoid testing, etc.</p>
+</li>
+<li>
+
+<p><strong>It's difficult to do dependency injection</strong>, hence you are not only coupled to the framework, but also to your own code (unless you use service objects). One of the biggest problems of Rails is how much you can be coupled to the framework if you don't intentionally watch out.</p>
+</li>
+</ul>
+
+<p>These and other factors are the reason why people nowadays is prefering a different solution to Rails, more aligned with what is called the <a href="https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html">clean architecture</a>. An example of framework using the clean architecture is <a href="http://hanamirb.org/guides/1.1/">Hanami</a>. For example, it separates domain business logic from persistance, spliting models into entities and repositories. However, there are ways to achieve a clean architecture in Rails.</p>
+
+<h3>Concern and Service patterns</h3>
+
+<p>As people's applications started to grow more and more, it became very obvious that the Rails way was not very scalable and that having three buckets to put everything was not enough. As a result, models, controllers and views started to grow as people threw more and more code at them, increasing the complexity and coupling.</p>
+
+<p>The solution is to have very thin views, models and controllers, and <strong>extract all business logic out of them and into service objects</strong>. A service object is a plain Ruby object that contains domain rules, follows the SOLID principles and uses design patterns. The result is that everything strictly related to the framework is left in the models and controllers, and everything else is separated into service objects.</p>
+
+<p>The first benefit of this is that now it is much easier to test your application, and you can use inversion of control and dependency injection to decouple the code. Also, you don't have to load the Rails framework for all tests, only for the tests related to the framework, making the tests much faster. You can achieve this by spliting your test helper in two: a <code class="language-plaintext">test_helper</code>, for the service objects, and a <code class="language-plaintext">rails_helper</code>, for the tests that need to load Rails.</p>
+
+<p>Using this architecture, you can extract all logic from your models, leaving only persistance-related code, you can reduce your controller actions code to a method call on a plain, well tested object, leaving controllers to be just a request router, and you can leave all code out of the views into presenter objects, hence not having to test the views at all.</p>
+
+<h2>Q2</h2>
+
+<p><strong>A user browses to <a href="https://gitlab.com/gitlab-org/gitlab-ce">https://gitlab.com/gitlab-org/gitlab-ce</a> in their browser. Please describe in as much detail as you think is appropriate the lifecycle of this request and what happens in the browser, over the network, on GitLab servers, and in the GitLab Rails application before the request completes.</strong></p>
+
+<p>Several things happen on the browser, the network, the server, and the Rails app itself.</p>
+
+<h3>Browser</h3>
+
+<p>Different things happen at the browser level when sending and receiving data.</p>
+
+<h4>Sending</h4>
+
+<p>Usually the browser will take the domain that the human can type and parse it to find protocol, host, port and path, which the network can use. In the particular case of a user requesting a gitlab page, the protocol is <code class="language-plaintext">HTTPS</code>, the host is <code class="language-plaintext">gitlab.com</code>, the port is probably <code class="language-plaintext">443</code> (TLS), and the path is <code class="language-plaintext">/gitlab-org/gitlab-ce</code>.</p>
+
+<p>Once the browser has this information, it <strong>translates the host to an IP number</strong>. If you had requested this URL before, the browser may already know the IP, otherwise it will ask a DNS server to do a DNS lookup. If the site is hosted in a server configured to use something like Cloudflare, the user may enjoy the benefits of load balancing and have the request served from a server that is closer to them geographically.</p>
+
+<p>The user may also have <strong>session cookies</strong> stored that will be sent together with other information, headers, etc. So, for example, if the user was logged into Gitlab, they will receive a slightly different HTML page based on that.</p>
+
+<p>At this point, if someone was trying to do some harm, they could use a network sniffer tool, to allow them to see or even change the request before it's sent to the server. Which is why serving pages encrypted through HTTPS is a good idea.</p>
+
+<p>If the page has been visited before, it is possible that most of it is <strong>served from the browser's cache</strong>, hence avoiding making any requests. If the site was a progressive web app, it would be even more  cache-friendly, allowing requests to work even when offline, as they will be served from the app's cache.</p>
+
+<h4>Receiving</h4>
+
+<p>When the browser gets the response, it typically parses it and renders it. In this case, an HTML page is sent to the user. If you were using an API, you may receive JSON, XML, etc.</p>
+
+<p>The browser <strong>builds the DOM</strong>. If the HTML or the CSS is broken or not supported, it will just be ignored. If the JavaScript is broken, there will probably be an error in the console. Then, for every image, stylesheet, javascript file, font, etc., in that HTML file, the browser will repeat this process to make one request per resource, unless they are already cached or you are using HTTP2.</p>
+
+<p>Once the stylesheets are received, they will be parsed, and if they link to other resources, like images, they will be requested as well following the same process. JavaScript not only needs to be parsed, but it also needs to be executed. After this is finished, the browser will render the page.</p>
+
+<p>If there is any raw javascript in the HTML file, the browser will wait until it is parsed and executed. So it is a best practice to load all javascript at the bottom of the page with the <code class="language-markup">async</code> or <code class="language-markup">defer</code> attibutes. There may be a need for a snippet in the middle of the page, but it would better be small and execute fast to avoid slowing down pageload.</p>
+
+<p>This will all improve with HTTP2, as all requests would be handled in parallel in a single TCP connection.</p>
+
+<h3>Network</h3>
+
+<p>Once the IP associated with a domain is found, a TCP connection will be opened from the visitor's computer to that IP address on port <code class="language-plaintext">443</code>. Then it will send a GET request over HTTPS, and Gitlab will send back a certificate with its public key and other security information, so that the connection actually happens over HTTPS.</p>
+
+<p>The visitor's browser will <strong>check Gitlab's certificate</strong> and depending if it can be verified or not, it will show them a warning or agree to connect through HTTPS. If everything is fine, the visitor's browser generates a random key to be sent to Gitlab in every connection, and encrypts it using Gitlab's public key, which means the connection will be encrypted.</p>
+
+<p>Back in Gitlab, the key sent by the visitor will be decrypted using Gitlab's private key, and from there on, the visitor's browser and Gitlab will use this key to communicate. Only the visitor's browser and Gitlab will know about the visitor's key, so a network sniffer won't be able to make sense out of any data sent between Gitlab and the visitor.</p>
+
+<p>For every resource the visitor requests, a new TCP connection will be opened (unless cached or using HTTP2). The connection will be encrypted using the visitor's key, and Gitlab will send resources encrypted with the visitor's key.</p>
+
+<h3>Gitlab servers</h3>
+
+<p>When the Gitlab host receives a request, it will send it to the Gitlab servers. They would have some software running on them. For example, a typical install will be on GNU/Linux, with an Nginx configuration used to proxy pass a Unicorn web server. This would be listening through a TCP connection for incoming requests on port <code class="language-plaintext">80</code> or <code class="language-plaintext">443</code>.</p>
+
+<p>Once the request arrives, it may serve the resource back if it is static, or in the case of a dynamic content app, through some kind of cache. For everything that is not static or cached, the request will be parsed by the application software, in this case Rails, to generate the content dynamically, for example fetching from a database, etc.</p>
+
+<p>According to Gitlab's documentation:</p>
+<blockquote>
+
+<p>By default, communication between Unicorn and the front end is via a Unix domain socket but forwarding requests via TCP is also supported. The web front end accesses /home/git/gitlab/public bypassing the Unicorn server to serve static pages, uploads (e.g. avatar images or attachments), and precompiled assets. GitLab serves web pages and a GitLab API using the Unicorn web server. It uses Sidekiq as a job queue which, in turn, uses redis as a non-persistent database backend for job information, meta data, and incoming jobs.</p>
+
+<p>The GitLab web app uses MySQL or PostgreSQL for persistent database information (e.g. users, permissions, issues, other meta data). GitLab stores the bare git repositories it serves in /home/git/repositories by default. It also keeps default branch and hook information with the bare repository.</p>
+
+<p>When serving repositories over HTTP/HTTPS GitLab utilizes the GitLab API to resolve authorization and access as well as serving git objects.</p>
+
+<p>The add-on component gitlab-shell serves repositories over SSH. It manages the SSH keys within /home/git/.ssh/authorized_keys which should not be manually edited. gitlab-shell accesses the bare repositories through Gitaly to serve git objects and communicates with redis to submit jobs to Sidekiq for GitLab to process. gitlab-shell queries the GitLab API to determine authorization and access.</p>
+
+<p>Gitaly executes git operations from gitlab-shell and the GitLab web app, and provides an API to the GitLab web app to get attributes from git (e.g. title, branches, tags, other meta data), and to get blobs (e.g. diffs, commits, files).</p>
+</blockquote>
+
+<p>Finally, a response will be generated with a status code, a status text, the relevant headers, and a resource that will be sent back to the browser.</p>
+
+<p>If the resource is found, the server will respond with a status of 200 OK + headers + HTML.
+If the resource is not found, the server will respond with a status of 404 not found, etc.
+If the browser sent an ETag, the server may send a 304 Not Modified and no payload if the cached version is the same as the server version.
+There may be redirects in place as well, etc.</p>
+
+<h3>Rails app</h3>
+
+<p>Rails will parse the path and go search in its routes if it correspond with any defined action in a controller. If it is, it will execute the code defined in the action and probably render some view, which will become the body of the response. It's possible that the action needs to access the database, in the case of Gitlab, Postgres and Redis. It is also possible that after the path, some parameters had been sent. These may come from a form that was submited, for example submitting an issue in a repository. They may be used as values to enter the database, or values to search in the database, etc.</p>
+
+<p>The Rails app has protection against cross-site scripting, SQL injection, command line injection and other attacks.</p>
+
+<p>Rails will add meta data like headers, etc. to the rendered view to build the response, and will send it through the network.</p>

@@ -1,0 +1,131 @@
+---
+layout: post
+title: Freeing space in Windows
+date: 2014-07-12 23:25:38.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Linux
+- Windows
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>Oh, heya! This is a post about "Things I learned trying to gain some space in Windows"</p>
+<p>I'm a happy Linux user, specially Ubuntu, which I love. But for some stuff I'm stuck with Windows-only applications. Those are:</p>
+<ul>
+<li><strong>Photoshop:</strong> I use it heavily for photo-edition as well as for my illustrations and design in general. <a href="http://www.gimp.org/">Gimp</a> is cool and great, but some of the things I do in PS can not be done yet in Gimp, sadly. I keep checking often, though. The moment these capabilities appear in Gimp, this is one app. less I'll need Windows for. Somebody told me once that I could do a Pull Request to Gimp as it is open-source. If only I had that much available extra free time...</li>
+<li><strong>Almost all the other image editing software</strong> I use is Windows-only or Windows and Mac only. That includes <a href="http://www.nikonusa.com/en/Nikon-Products/Product/Imaging-Software/ViewNX-2.html">ViewNX 2</a>, the program I use to pre-process the RAW images from my Nikon D60 and produce something that Photoshop can understand, since the PS RAW plugin doesn't interpret Nikon colors very well. <a href="http://my.smithmicro.com/manga-studio-5.html">Comic Studio</a>, which I use mainly for comic edition, <a href="http://www.hyperionics.com/hc/">HyperCam</a>, a simple and lightweight program to record myself drawing, <a href="http://original.livestream.com/userguide/index.php?title=Main_Page&amp;title=Procaster">LiveStream Procaster</a>, which I use to stream my screen while drawing, and <a href="http://windows.microsoft.com/en-us/windows-live/movie-maker">MovieMaker</a>, a very silly MS software I use to cut and paste the screenings I record with HyperCam and to produce videos that are ready to be uploaded to YouTube. I probably could find Ubuntu alternatives for HyperCam, Procaster and MovieMaker, but the problem is that I use them to record my art as I work on it, and I do all my art stuff with Photoshop and Comic Studio anyway, so I have to do it on Windows. If I find an equivalent of PS for Ubuntu, and Comic Studio launches a Linux version, I would probably move all these programs and workflow to Ubuntu.</li>
+<li><strong>Skype:</strong> Sadly again, the Linux version of Skype sucks a bit (of course, since Skype was bought by Microsoft :-P ). I use it not only for personal stuff but for podcast recording and interviewing my guests.</li>
+<li><strong>MS Office:</strong> We all know how <a href="https://www.openoffice.org/">Open Office</a> doesn't really interpret MS Office documents quite well, to the point of sometimes breaking documents completely. I don't have problems to use it to <em>produce</em> new documents, but if I have to <em>open</em> MSWord documents, I'm stuck with Microsoft.</li>
+<li><strong>Visual Studio:</strong> That app. that takes like 4 Gb of space in my computer. To be fair I'm more into Android development at this moment, though, and for that I use Eclipse in Ubuntu (waiting for Android Studio to be stable). But I still enjoy building WPF apps, so I'm stuck again. I'm looking forward to learning more about <a href="http://www.monodevelop.com/">MonoDevelop</a>, though, and they have a Linux version. If I can develop my C# apps there, then this would be another app. less in my Windows-only list.</li>
+</ul>
+<p>If it wasn't for these apps, I think I probably wouldn't use Windows at all. In the meanwhile, I use a dual-boot Win/Linux in a 120Gb SSD, where each O.S lives in a 60Gb partition. I use this disk to store the O.S and programs, while my data files live in an HDD.</p>
+<p>I have a test computer where I go crazy installing things, but I only install the crucial apps. in my workstation, to keep it clean and tidy and performant. <strong>You would think that 60Gb is more than enough for an O.S and its programs to live happily ever after, specially when you are so conservative with what you install. </strong>But that's not the case :-(. After only 1 year of use and only the very-needed programs, all of them installed just after I bought my laptop, Windows went from 16Gb to 57Gb, while Ubuntu is just 34Gb with loads of garbage in it. How did that happen?</p>
+<h2>Searching for the culprit</h2>
+<p>Using <a href="https://help.ubuntu.com/community/Baobab">Baobab</a> (a disk analyzer that comes installed with Ubuntu) to analyze my disk space, this is what I found:</p>
+<ul>
+<li><code>Windows/winsxs</code>: <strong>7.9Gb</strong>. When I'm on Windows it tells me it's 12Gb, because it's mainly full of hard links and Windows counts those files twice.</li>
+<li><code>Windows/System32</code>: <strong>7.5Gb</strong>, with <code>DriverStore</code> taking 4.7Gb. This folder contains all of your drivers.</li>
+<li><code>Windows/Installer</code>: <strong>4.0Gb</strong>, contains information of the programs you installed.</li>
+<li><code>Program Files (x86)</code>: <strong>9.1Gb</strong>, with MS Visual Studio taking a good piece of the cake.</li>
+<li><code>Program Files</code>: <strong>5.9Gb</strong>. Here, my graphic card software takes 3.2Gb, followed by my antivirus (you don't need antivirus in Linux, by the way, mwe hehe he)</li>
+<li><code>ProgramData</code>: <strong>6.3Gb</strong>. The <code>Microsoft</code> and <code>Package cache</code> (Visual Studio) folders take more than half of the space (3.8Gb).</li>
+<li><code>System Volume Information</code>: <strong>7.2Gb</strong>. These 7Gb come from a single file with a weird name that is full of zeros. I suspect this is my first restore point. Since I disabled restore points and a bunch of other things to avoid bloating my SSD, I think I can move this to another place.</li>
+</ul>
+<p>The first thing I see people recommend as a solution is "uninstall your programs! Make space for Windows!" or even "install your programs in another drive!". Not only the idea of letting everything out of your disk so that your O.S. can fit is ridiculous, but more importantly, the stuff that uses the most space in my program folders is either basic software for my hardware or Microsoft stuff.</p>
+<p><strong>I have all my programs configured to move their default working directories, cache directories, temporary files, etc. to a folder of my data disk</strong>, so that I don't add more garbage to my real SSD. I also have the system configured to avoid creating hibernation files, restore points, virtual memory dumps, etc. The other reason I do this is to increase my SSD life by protecting it from a lot of writing/erasing. Even by taking these steps, I still have these fat folders here.</p>
+<p>What's your situation? Are you in a similar picture? Let's go through all these one by one.</p>
+<h2>Winsxs folder</h2>
+<p>A long-time hated folder, by users from all around the world, for loads and loads of years. The reason? It grows fast with every Windows update, and it can not be deleted, moved, compressed, or have its folders selectively erased. If you decide to disable Windows updates, then you are exposed to vulnerabilities. There is no solution for this folder, sorry. It was created to avoid DLL hell. It's a core Windows folder. I would almost say, "<em>this folder IS your Windows installation</em>" (I do think it's an example of <strong>bad design</strong>, though). But if you search heavily, there are a zrillion posts of users complaining about it since the beginning of times. The answers are always the same:</p>
+<ul>
+<li><strong>Buy a larger disk:</strong> But then, that one will be filled again, and you'll have to buy a larger one again.</li>
+<li><strong>Delete something else:</strong> I can't, since I'm already using the minimal. Also, what's the point of having a personal computer if you can't install apps.? And as the previous point, there will be a moment where it's all Windows and no programs at all, because "<em>this disk is too small for the two of us</em>".</li>
+<li><strong>There is an</strong> <a href="https://support.microsoft.com/en-us/kb/2852386">update</a> that, after installed, allows you to open the disk cleaner and delete some of the folders in there. Don't be too happy though, it only gets rid of 1-2Gb (I went from 7.9Gb to 7Gb). And anyway, you will recover that in the next Windows update, mwahwahwahahaha....</li>
+<li><strong>There is also a console command</strong>, <code>dism</code>. Check it out, because there are several options you can add to it depending on your Windows version. It also opens the cleaner with some extra check boxes (or the same as in the previous point, I don't remember). Anyway, again, just 1-2Gb.</li>
+<li>Looks like, if you decide to <strong>format the partition and make a clean install</strong> of Windows from zero, the moment the first update is installed, you will recover those Gigas again, so you will be exactly where you were before.</li>
+</ul>
+<p>To be honest: I know what this folder is for, I now it contains Windows core files. But if your O.S. core files are going to start growing and suddenly taking 30Gb of your disk, that's not an O.S. I would like to use: that's a cancer.</p>
+<p>I'm telling you. It's a conspiracy to keep you buying hardware :-D.<br />
+OR... to keep you buying the next version of Windows.</p>
+<p><strong>UPDATE:</strong> Looks like you can move the folder to another drive and create a filesystem junction with the <code>mlink</code> command. To your system, a filesystem junction looks like the folder you are referencing. But you have to move the files on startup before Windows is loaded, to be sure that the system is not using them. The instructions are <a href="http://aspoc.net/archives/2007/12/05/how-to-move-the-winsxs-directory-in-vista/">here</a>.</p>
+<p>However, use this as a desperate measure, since some of the contents of the winsxs folder are <a href="http://superuser.com/questions/347930/what-are-the-various-link-types-in-windows-how-do-i-create-them">hardlinks</a>, which, as opposed to symlinks, you can not move around and hope that they will keep working. So if you move the winsxs folder and make the junction, <a href="http://superuser.com/questions/930325/detailed-steps-for-creating-a-junction-for-winsxs-folder-in-windows-7">the symlinks will still work, but you will break the hardlinks</a>.</p>
+<h2>DriverStore folder</h2>
+<p>You have to be careful with this one. In a nutshell, the folder contains all the drivers that came with your laptop, plus the drivers for stuff you installed later. For example, USBs of your friends that you're not going to use any more.</p>
+<p>When you go to your device manager, and click on <strong>View &gt; Show hidden devices</strong>, it won't really show you the hidden devices. For that, you have to set a system variable called <code>DEVMGR_SHOW_NONPRESENT_DEVICES</code> to 1 (or true). You can do that on the command prompt by typing:</p>
+<pre><code class="language-bash">&gt; SET DEVMGR_SHOW_NONPRESENT_DEVICES=1</code></pre>
+<p>followed by:</p>
+<pre><code class="language-bash">&gt; devmgmt.msc</code></pre>
+<p>on the same command prompt, to open the device manager.</p>
+<p>Or, if you want to set it forever, right-click <strong>My Computer</strong>, and choose <strong>Properties &gt; Advanced &gt; Environment Variables</strong>, and then click "<strong>New...</strong>" in <strong>System variables</strong>. Then type <code>DEVMGR_SHOW_NONPRESENT_DEVICES</code> in the name field and 1 in the value field.</p>
+<p>Now you will be able to see the hidden devices by clicking <strong>View &gt; Show hidden devices</strong>. Right-click on the "ghost" devices and click <strong>Uninstall</strong>. Be careful though, and <strong><em>don't uninstall anything that is not-plug-and-play, or anything you are not sure about</em></strong>. It's a good idea to connect all your mice, USB drivers, etc, before starting to uninstall things, so that their controllers don't appear as "ghost" and you don't uninstall them by mistake.</p>
+<h2>Installer folder</h2>
+<p>This is where the uninstall files from some of your installed applications are stored (not all, though). Everybody will tell you "don't delete this files or you won't be able to uninstall your applications". This is true. But you can: 1) Install your programs in a folder on your data disk instead of the <code>Program files</code> folder (too late for me), or, 2) Move these files to another location and put them back whenever you want to uninstall something. If you do this, Some applications will uninstall correctly, some won't.</p>
+<p>There was an application called <code>msizap.exe</code>, offered by Microsoft to check for and delete orphan files in this folder, reducing its size. But you can no longer download it and instead they provide a "fix" utility. All this utility does is to ask you which program you want to uninstall. Thank you Microsoft, but I can manage.</p>
+<p>The only way to reduce this folder's size is to uninstall your applications.</p>
+<p><strong>UPDATE:</strong> There seems to be a solution: compressing the folder:</p>
+<ul>
+<li>Enable "Show system files" in Explorer options (your folder properties in the Control Panel).</li>
+<li>Right-click the <code>Windows/Installer</code> folder and click on <strong>Properties</strong>.</li>
+<li>Click the advanced options in the General tab.</li>
+<li>Tick the compress check-box and click OK.</li>
+<li>Apply for all files and folders.</li>
+</ul>
+<p><strong>UPDATE:</strong> Yet another solution is what we mentioned for the winsxs folder but later discarded: a junction.</p>
+<ul>
+<li>Copy <code>Windows\Installer</code> to another disk, e.g., <code>D:\SSD\Windows\Installer</code> using Windows explorer (<strong>note:</strong> <code>Windows\Installer</code> is a system folder, and thus invisible. You have to tweak your folder properties to make it visible so that you can use Explorer to make the copy).</li>
+<li>Make a backup copy of <code>Windows\Installer</code></li>
+<li>Type the following commands in a command prompt running as Administrator:
+<pre><code class="language-bash">
+$ rmdir /s /q C:\Windows\Installer
+$ mklink /D C:\Windows\Installer D:\SSD\Windows\Installer
+</code></pre>
+</li>
+</ul>
+<h2>Program Files folders</h2>
+<p>I can't do anything in this section, but maybe you have programs that you don't use. Uninstall all those to get a bit of extra space.</p>
+<h2>ProgramData</h2>
+<p>There is a Visual Studio folder in there that grows as well, that's the <code>Package cache</code>. Fortunately, it can be moved to another place. In my case, I moved it to my <code>SSD</code> folder inside my HDD data drive. Then you can make a junction (remember, a link to the folder that every application in your system, and your O.S as well, can understand). Do it like this:</p>
+<pre><code class="language-bash">mklink /J oldpath newpath</code></pre>
+<p>If you use absolute paths, you will be able to move the folders around. The credit for this solution goes to <a href="http://superuser.com/questions/455853/can-i-delete-the-the-folder-c-programdata-package-cache">superuser</a>.</p>
+<h2>System Volume Information</h2>
+<p>For some reason, when I'm on Windows, this folder appears with 0 bytes, however Explorer is telling me that C has just 5 Gb free, so it is seeing those 7Gb coming from the file containing my restore point. I think it has to do with the fact that I have restore points disabled, or maybe it is an ownership problem (access denied because I don't have privileges).</p>
+<p>While on Ubuntu, I had copied the folder to my <code>SSD</code> folder in my data drive (where I store all the Windows garbage so it doesn't bloat my actual SSD). You won't be able to do it in Windows due to permissions. The admin user can not access a system folder, only SYSTEM can. So either you log in as SYSTEM, or you do it in Ubuntu.</p>
+<p>To delete the huge file (of which I have a copy in my HDD drive), I do it from Windows, following these steps:</p>
+<ul>
+<li>Enable restore points again (<strong>My Computer &gt; Properties &gt; System Protection &gt; click your disk &gt; Configure...</strong>).</li>
+<li>Delete all previous restore points from that window</li>
+<li>Disable restore points again.</li>
+</ul>
+<p>Remember to do it as Administrator, or it won't delete anything (right click on <strong>Window Explorer</strong> and choose "Open as Administrator"). After doing this, the huge file disappeared. However, a huge file will keep appearing from time to time (I still don't know why, since I have restore points disabled). So, if you find your available space shrinking again for no reason, check this folder. After cleaning, I found a file of 1.3Gb, and then one month later a 3Gb file appeared again, without me doing anything special on the system, installing new software or changing anything.</p>
+<h2>The graphic card</h2>
+<p>In my case, it's NVIDIA. And it amounts to up to four Gb or maybe more of space. The good news is that there are several related folders that you can get rid of here:</p>
+<pre><code class="language-bash">C:\Program Files\NVIDIA Corporation\Installer2</code></pre>
+<p>You can safely delete all the contents in this folder, but not the folder itself.</p>
+<pre><code class="language-bash">C:\ProgramData\NVIDIA Corporation\NetService</code></pre>
+<p>First you have to open the <strong>Services </strong>window and stop "NVIDIA Network Service". Then delete the contents of this folder and restart Windows.</p>
+<pre><code class="language-bash">C:\NVIDIA</code></pre>
+<p>If you have that one, delete it too. I didn't have it.</p>
+<p>Also, check out this link from <a href="http://nvidia.custhelp.com/app/answers/detail/a_id/3333/~/disk-space-used-when-installing-nvidia-drivers">the NVIDIA help site</a>.</p>
+<h2>The end</h2>
+<p>So, lets see how much I gained:</p>
+<ul>
+<li><code>Windows/winsxs</code>: From 7.9Gb to 7Gb.</li>
+<li><code>Windows/System32</code>: Stays in 7.5Gb.</li>
+<li><code>Windows/Installer</code>: Stays in 4.0Gb.</li>
+<li><code>Program Files (x86)</code>: Stays in 9.1Gb.</li>
+<li><code>Program Files</code>: From 5.9Gb to 2.64Gb</li>
+<li><code>ProgramData</code>: From 6.3Gb to 5.41Gb.</li>
+<li><code>System Volume Information</code>: From 7.2Gb to 26.9Mb.</li>
+</ul>
+<p>47.9 to 36.57, 11,33 Gb less. Not bad!</p>
+<p>Now, don't forget to run the cleaner from time to time. Or even better, <a href="https://www.piriform.com/ccleaner/download">CCleaner</a>.</p>
+<h2>Linux</h2>
+<p>Wonder what's the situation like for Linux? I'm not as conservative on my Ubuntu as I am on my Windows, so I have plenty of garbage. And yet, that partition is half empty. My biggest folder is Eclipse's <code>sdk</code>, because I downloaded a lot of stuff, to play with it and experiment in my Android applications. That folder is half of my occupied space. So Linux takes a quarter of the partition's capacity. The next super big folder is <code>usr</code> which is around 8Gb, followed by <code>home</code> (4Gb) and <code>lib</code> (3Gb). The rest of the system folders are just around megabytes. Now compare that to the other numbers.</p>
+<p>Ubuntu also starts faster that Windows. Even after running msconfig and being very selective with the programs that run at startup. Which says a lot, because the disk is an SSD, so you wouldn't notice the difference unless it was huge. Also, the last version of Ubuntu runs in my old laptop, the one that I use for experiments. The same where the latest Windows version it can run is WinXP (that's how old it is, he he).</p>
+<p>I think this is how it should be... non? Your O.S. keeping itself in the background, leaving you room for your stuff, letting you enough space to install your programs, libraries, do your experiments, BREATH? Is Windows too full of itself? Why does it act like a cancer replicating itself like that? Should we buy more hardware just "because we can"? Isn't it enough to have just what we need (or, as the Swedish would say, "<em>Lagom</em>", or "just enough")?</p>
+<p>I guess I'm gonna be patient and wait until I find an equivalent in Ubuntu for all the programs I use on Windows. Meanwhile, I'll have to come to this post from time to time. I have some illustrations and comics to do, and some photos to edit :-) :-( :-) :-(</p>
