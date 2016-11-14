@@ -1,0 +1,68 @@
+---
+layout: post
+title: Property-based testing
+date: 2017-10-25 15:32:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- TDD
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p><strong>2019 update:</strong> It's still difficult to find information about property-based testing, but I found <a href="https://propertesting.com/book_shrinking.html">this talk</a>!</p>
+
+<p>With unit tests you usually you do the following cases, from the simplest to the most involved:</p>
+
+<ul>
+  <li>test for nothing <code class="language-plaintext">[] -&gt; []</code></li>
+  <li>test for one <code class="language-plaintext">[1] -&gt; [1]</code></li>
+  <li>test for many <code class="language-plaintext">[1,2] -&gt; [1,2]</code></li>
+  <li>test the unhappy path (errors, exceptions, explosions...)</li>
+</ul>
+
+<p>This way of testing is very input-based, however, when you have a lot of combinations and you can't come up with examples of inputs, <strong>property-based testing</strong> is useful.</p>
+
+<p>For this kind of testing you need a framework to generate the inputs. Since this technique is only about 5 years old at the moment of writing this, the tools are not there yet. Haskell does have tools like <a href="https://hackage.haskell.org/package/QuickCheck">Quickcheck</a> which are more mature, since they were the ones who started the property-based approach.</p>
+
+<p>With this type of testing, you don't provide the input, you assert on properties. For example:</p>
+
+<ul>
+  <li>symmetry,</li>
+  <li>size,</li>
+  <li>multiple paths,</li>
+  <li>induction,</li>
+  <li>consistency,</li>
+  <li>idempotence,</li>
+</ul>
+
+<p>It's often better to mix both approaches though. And you can write your own generator if the framework runs out of inputs.</p>
+
+<p>The idea with this approach is to think of the general rules and then choose the simplest to start with.</p>
+
+<p>Property based tests end up being more mathematical sounding, something like this:</p>
+
+<pre><code class="language-ruby">
+it 'output has one more element than input' do
+it 'last element of output equals pushed element' do
+it 'input has one less element after pop' do
+it 'output equals last element of input' do
+it 'the order of operations does not matter' do   # --&gt; pop push, push pop
+</code></pre>
+
+<p>Some tests that can be useful are those where you give them the minimun input to see which breaks the test, which makes your property invalid. These are called shrinker tests (<a href="https://propertesting.com/book_shrinking.html">explained here in Erlang</a>). You can also do &quot;arbitraries&quot; with a generator and a shirnker, but you should consider writing your shirnker if you write your generator.</p>
+
+<p>In retrospective, property-based testing may give you:</p>
+
+<ul>
+  <li>better documentation</li>
+  <li>acceptance tests to test inputs like those from APIs</li>
+  <li>can be exploratory or used as a sanity check for the missing cases</li>
+</ul>
+
+<p>To learn more, there is a nice blog post here: <a href="https://hypothesis.works/articles/what-is-property-based-testing/">what is property based testing?</a>.</p>

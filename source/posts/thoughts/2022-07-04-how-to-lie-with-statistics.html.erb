@@ -1,0 +1,180 @@
+---
+layout: post
+title: How to lie with statistics
+date: 2022-07-04 20:00:00.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Thoughts
+tags:
+- books
+author:
+display_name: Octopus in vitro
+---
+
+<p>This is a book written by Darrell Huff in 1954. It's like an introduction to statistics for the general reader. The author was not a statistician though, but a journalist.</p>
+
+<p>This book is been in my list to read for a long time. Now that I have finally read it, my favourite thing is how many examples from real life it has, although pretty dated by now, but illustrative anyway.</p>
+
+<p>These are my reading notes. I mostly wanted to capture the real world examples.</p>
+
+<h2>Bias</h2>
+
+<p>The result of a sampling study is not better than the sample it is based on. We must use a <strong>representative</strong> sample, where bias has been removed.</p>
+
+<p>You can take a sample big and varied enough of the universe and the predictions will be similar to the whole.</p>
+
+<p>Examples of the contrary:</p>
+
+<ul>
+  <li>Do you like to answer polls poll: those who don’t like polls won’t answer it, skewing your data.</li>
+  <li>A small sample of clergymen replied to a poll about Christian to Protestant conversion rates (2K out of 25K polled). Projecting these results to the whole country as 4 million was wrong, because the 90% who didn’t answer the poll probably had no conversions. So if 25K out of 181K reported 51K conversions, 181 would have reported 370K conversions, not 4 million.</li>
+  <li>People may lie in polls, to show off or to hide things.</li>
+  <li>People who can afford subscriptions or anything needed to participate in the poll will be of a certain demographic, spoiling your results.</li>
+  <li>“All kinds of people can be found in a railroad station” not mothers of small children.</li>
+</ul>
+
+<p><strong>The test of the random sample:</strong> Does every item in the universe have a chance to be in the sample. Random samples are difficult to achieve, so we use “<strong>stratified random sampling</strong>”.</p>
+
+<h2>Average</h2>
+
+<p>What do we mean by average? Take these definitions:</p>
+
+<ul>
+  <li><strong>Mean:</strong> Sum divided by count</li>
+  <li><strong>Median:</strong> Half the universe has more than this value, half has less</li>
+  <li><strong>Mode:</strong> Most frequent value in the universe</li>
+</ul>
+
+<p>Only a Gaussian (normal distribution) has these 3 of the same value. If you have, say, a Poisson distribution, the mean and the median would be very different.</p>
+
+<figure>
+  <img src="<%= image_host %>/images/uploads/2022/07/mean-median-mode.jpg" width="971" height="400" alt="Three plots showing the difference between mean, median and mode">
+  <figcaption>Only for normal distributions (center) are mean, median and mode equivalent. When the distribution is skewed, they differ.</figcaption>
+</figure>
+
+<p>If you say that the average pay in a neighborhood is a high number in order to sell a house, what may be happening is 95% will have a salary below average, and the 3 millionaires in the neighborhood will be above average.</p>
+
+<p>If you work part time one year and full time the next year, your company can’t say they increased salaries a 107% on average.</p>
+
+<h2>Missing figures</h2>
+
+<p>Results that are not indicative of anything can be produced by pure chance. Only a substantial number of trials makes an average a useful description or prediction.</p>
+
+<p>Examples:</p>
+
+<ul>
+  <li>Toss a coin 10 times, get 80% of tails. But if you toss 1000 times, you get 50% of tails.</li>
+  <li>“23% less cavities with this toothpaste”
+    They had a small sample (12 people). For 6 months, they count their cavities and then they switch to this toothpaste. If they get more or same amount, repeat again, until they get a group for which they got less cavities with said toothpaste. If the sample was bigger, they would get only like 2%, and that’s not too much for marketing.
+  </li>
+  <li>X % of farmers have power “available” to them. Sounds good, but the power lines may pass near them but they don’t have access to that power.
+  </li>
+  <li>Showing a graph with an increasing trend but with no numbers. It is increasing in one unit at a time, or 1000?
+  </li>
+</ul>
+
+<p><strong>How many is enough?</strong> Depends on size and variability of system.</p>
+
+<ul>
+  <li>A test for polio had groups of 450 vaccinated and 680 unvaccinated, but only 2 cases were expected in a group this size and they saw none. You need 30 times more people.</li>
+  <li>2 bedroom houses surplus, but 4 person families are only 45%, 35% are 1-2 person, and 20% more than 4.</li>
+  <li>how tall your kid will grow, if based on average of a group of kids, is a worthless number, because kids grow differently and you are interested in one height at a time. Comparing with parents and grandparents is less precise but more accurate.</li>
+</ul>
+
+<h2>Much ado about nothing</h2>
+
+<p>Probable error and standard error.</p>
+
+<ul>
+  <li><strong>Probable error:</strong> 50% of time you were off by +3 out of 100 and 50% by -3. Your error is 3 in 100 or 3%, the measure is 100 ± 3.</li>
+  <li><strong>Standard error:</strong> σ / √N. how different the population mean is from the sample mean. Helps you estimate how well your sample data represents the whole population.</li>
+</ul>
+
+<p>Comparisons between figures with small differences are meaningless. You have to think in ranges.</p>
+
+<p>Examples:</p>
+
+<ul>
+  <li>IQ test. Standford-Binet has a 3% error, with 100 being the center, someone with 98 and 101 IQs are actually in the same region, because the center is really a range from 90 to 110 and their IQ is really 98 ± 3 and 101 ± 3.</li>
+  <li>Magazine: article read by 40% men and another by 35% women, let’s write more like the first! But if the magazine appeals to men, the number of women in the sample may be small. The percentages are too similar and the error is too big.</li>
+  <li>Nicotine measurements in several cigarette brands demonstrated differences in amount were negligible. But marketing people took the one with the less amount and sold it as the healthier.</li>
+</ul>
+
+<h2>The Gee-Whiz graph</h2>
+
+<p>If you truncate a graph to show just the area with data in it, it may look more exaggerated than it is.</p>
+
+<p>A line plot that shows a slow trend up can look like a fast escalation when you stretch it vertically.</p>
+
+<h2>The one-dimensional picture</h2>
+
+<p>Truncation effects also apply to bar charts. When you use illustrations to demonstrate numbers, make sure their volumes represent those numbers. If you represent money with money bags, double the amount means double tall, but not double tall and double wide. Then you are dramatizing.</p>
+
+<h2>The semi-attached figure</h2>
+
+<p>When you present a result as something that it is not.</p>
+
+<p>Something kills many germs in a short time… in a test tube. You don’t know if it would work the same in humans, or if the germ is even the one causing the issue.</p>
+
+<p>Poll: do black people have the same job opportunities as white. The more racist the person the better they will say black people have it. By careful use of a semi-attached figure, the worse things get, the better the poll makes them look.</p>
+
+<p>Be careful with figures that are suspiciously precise or meaningless. “27% of the best physicians smoke this brand” (so what?) “juice extractor extracts 26% more juice” (more than what?)</p>
+
+<p>Another one: “clear weather is more dangerous than foggy weather”, but there is more clear than foggy weather. “more people killed by aeroplanes now than 10 years ago” modern planes aren’t more dangerous, there is just more people flying. “4000 people killed in trains, use more cars” but most where people on cars who crashed with a train. Change global for relative numbers. A better number is number of fatalities per million passengers.</p>
+
+<p>Semi -attached figures coming from inconsistent reporting: a group of illnesses confined to three states: is because they are the only ones reporting them.</p>
+
+<p>Figures that appear attached but are not: we raised salaries from 900 to 2500. But you are not saying that 900 was the minimum in rural areas and 2500 is the maximum in new York. The raise could be thanks to you or not at all. You proved nothing but looks like you have. Before and after, like shampoo or wall coat ads.</p>
+
+<h2>Post hoc rides again</h2>
+
+<p>An association of two factors does not mean that one caused the other. If B follows A, then A has not necessarily caused B.</p>
+
+<p>Example: smoking causes low grades. But we could also say that low grades causes people to smoke, as there is enough evidence of both. But the first one sells better. However there is probably other factors, many in fact, that explain this. You don’t get to choose your favourite as the true one.</p>
+
+<p>Negative correlation. More water makes plants grow more. But if it rains too much, they may die too. Taller people weight more than shorter people, but there are exceptions to this rule.</p>
+
+<p>If you attend college you will earn more money. If you are in college you are either smart (and then going to college or not will make no difference in how much you make) or you are rich (and you would continue to be rich if you didn't go to college).</p>
+
+<h2>How to statisticulate</h2>
+
+<p>You can deceive with decimals and percentages because they sound so precise but they often mean nothing.</p>
+
+<p>Examples of adding together things that don't add up but seem so:</p>
+
+<ul>
+  <li>50% discount and 20% off list is not 70% discount, (50 + 20) but rather 60% discount; that is, 20% applied after the 50%.</li>
+  <li>Cheap rabbit sandwiches: I mix them with horse meat 50-50: 1 rabbit, 1 horse. The last anecdote is how I was introduced to this book and what made me read it.</li>
+</ul>
+
+<p>Change of prices for milk and bread from last year to this year:<br>
+  milk 10p -> 5p<br>
+  bread 10p -> 20p
+</p>
+
+<p>What would you like to prove, cost of living up? down? no change?</p>
+
+<ul>
+  <li><strong>Cost up:</strong> Last year is the base period. Milk went from 100 to 50%, bread went from 100% to 200%. Arithmetic average of 50% and 200% is 125%. Prices have gone up 25%.</li>
+  <li><strong>Cost down:</strong> This year is the base period. Milk was 200% more and bread was 50% less. Prices used to be 25% higher than now.</li>
+  <li><strong>No change:</strong> Use the geometric mean: multiply all and take the root. You can take any year as base. With last year as base: root of 100% * 100% = 100%, and this year: root of 50% * 200% = 100%. No change! Same if you take this year as base.</li>
+</ul>
+
+<h2>How to talk back to a statistic</h2>
+
+<p>Look for bias everywhere, a lab with something to prove, a newspaper who wants a good story.</p>
+
+<ul>
+  <li><strong>Conscious bias:</strong> Mistatements, ambiguous statements, a mean where a median would be more informative.</li>
+  <li><strong>Unconscious bias:</strong> Predictions that produce remarkable things, evidence that statistically support fake statements.</li>
+</ul>
+
+<p>Check who-says-so, the "OK-name". Medical professions, science labs, universities, are all "OK-names". While the data comes from an OK-name, the conclusions are coming from the reporter, making it look liike "OK-name" says...</p>
+
+<p>Check how-do-they-know, 9% said yes, 5% said no, 86% didn't reply. This is a biased sample, is not large enough.</p>
+
+<p>Check what's missing, how many cases? if this is missing in an interested result, suspect. Correlations without an error bar, missing comparisons (is this value in the expected range or out of range?) 33.3% of women married a faculty man: there were only 3 women and 1 married. 16 people hold 60 degrees and 18 kids: 2 people had most of the titles and kids. 3003 people have 660 shares each on average: 3 men held 3/4 of stock and 3000 held the rest.</p>
+
+<p>Check if they are changing the subject. A switch between the raw figure and the conclusion. Reported cases of a disease is not more cases .</p>

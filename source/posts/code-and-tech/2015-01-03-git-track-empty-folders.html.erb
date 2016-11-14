@@ -1,0 +1,36 @@
+---
+layout: post
+title: Telling git to track an empty folder
+date: 2015-01-03 20:12:35.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- git
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>I'm working on a new personal project, were I'll share my C&#35; snippets. As all my personal projects, it started as a reference I wanted to keep for myself, he he. </p>
+<p>There is this one snippet that is about creating a console file server, and the server listens to files appearing in a folder called <code>queue</code>.</p>
+<p>To ship this snippet, I would like to do it <em>including</em> the <code>queue</code> folder, even though it would be empty. I want to show you the folder structure without having to add "<em>remember to create a queue folder here</em>" in the tutorial. Call me silly! It just seems more elegant to me to give you the whole thing in one pack.
+<p>But hadn't I wanted to do things like this, I wouldn't have learned a new thing today, which is what I want to share below.</p>
+<h2>Git doesn't track empty folders</h2>
+<p>The problem is that git won't track an empty folder, <a href="http://markmail.org/message/4eqjxx73opiswfis">for very reasonable reasons explained very clearly by Linus himself</a>.</p>
+<p>Basically (I quote):</p>
+<ul>
+<li>"<em>You cannot (and should not) track directories the same way as you track a file</em>".</li>
+<li>"<em>When you track an empty file, you very much track the *content* of that file, and "empty" just happens to be a very valid content</em>".</li>
+<li>"<em>When you track a "directory", you don't actually track its content at all, you track it's *existence*, which is a very very very different thing</em>".</li>
+</ul>
+<h2>How to track an empty folder, then?</h2>
+<p>There are several ways:</p>
+<ul>
+<li>You could add a <code>.gitignore</code> file, where you include the folder. But using the ignore to not ignore feels weird.</li>
+<li>You could add an empty <code>README</code> file. But why add files to your repo that you don't need?</li>
+<li>You could add a <code>.keep</code> file. This is my favorite, because it's still a hidden file, but its name is more in line with what it actually does: to tell git to keep it.</li>
+</ul>
+<p>So, from now on, every time I want to tell git to track an empty folder, I'll throw a <code>.keep</code> file in, and <a href="https://www.youtube.com/watch?v=zcSqG2v-MZQ">play a violin chord</a>.</p>
