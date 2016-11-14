@@ -1,0 +1,108 @@
+---
+layout: post
+title: Making a widget region from zero in WordPress
+date: 2012-02-07 22:39:18.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- PHP
+- WordPress
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>If you start off with a blank theme and you don't have any widget areas defined on your template, you will get a message like this when you go to <strong>Appearance &gt; Widgets</strong>:</p>
+<blockquote><p>The theme you are currently using isn't widget-aware, meaning that it has no sidebars that you are able to change. For information on making your theme widget-aware, please <a href="https://codex.wordpress.org/Widgetizing_Themes">follow these instructions</a>.</p></blockquote>
+<p>This happens when a template doesn't have widget support. It takes only <strong>two steps</strong> to enable it: define the widget area, and make the call where you want the widget.</p>
+<h2>Adding one widget area</h2>
+<p>To <strong>define a widget area</strong>, for example, a sidebar, we can use the WordPress function <a href="http://codex.wordpress.org/Function_Reference/register_sidebar"><code class="language-php">register_sidebar()</code></a> in our <code>functions.php</code> file. For example:</p>
+<pre><code class="language-php">
+if ( function_exists('register_sidebar') ) {
+
+  register_sidebar( array(
+    'name'          =&gt; 'Right Sidebar', // This is the title of the sidebar area, appears in your admin panel
+    'before_widget' =&gt; '&lt;div id="%1$s" class="widget %2$s"&gt;', // div that goes before the widget
+    'after_widget'  =&gt; '&lt;/div&gt;',                              // closes the previous div
+    'before_title'  =&gt; '&lt;h3 class="widget-title"&gt;',           // this goes before the widget title
+    'after_title'   =&gt; '&lt;/h3&gt;',                               // this goes after the widget title
+  ));
+}</code></pre>
+<p>Let's see what those are:</p>
+<ul>
+<li><code class="language-php">name</code>: Name of the sidebar (this name is what you see in the admin panel).</li>
+<li><code class="language-php">before_widget</code>: HTML enclosing the widget.</li>
+<li><code class="language-php">after_widget</code>: HTML after the widget.</li>
+<li><code class="language-php">before_title</code>: HTML enclosing the title.</li>
+<li><code class="language-php">after_title</code>: HTML after the title.</li>
+</ul>
+<p>This is all you need to enable widget support in your template. Now you have to <strong>make the call where you want the widgets to appear</strong>.</p>
+<p>For this we create a file called <code>sidebar.php</code> in the template and add the following lines:</p>
+<pre><code class="language-php">
+&lt;!-- sidebar -->
+&lt;aside id="sidebar" role="complementary">
+  &lt;?php if ( !function_exists( 'dynamic_sidebar' ) || !dynamic_sidebar('Right Sidebar') ) ?>
+&lt;/aside>
+&lt;!-- /sidebar --></code></pre>
+<p>The function <a href="http://codex.wordpress.org/Function_Reference/dynamic_sidebar"><code class="language-php">dynamic_sidebar()</code></a> calls the the sidebar we just registered in our <code>functions.php</code> file. We can pass it the name or the id that we used when we registered it, but it's recommended to use the name to increase readability of the code. We didn't define an <code>id</code> for our sidebar neither. In this case, the name of the sidebar is <code>Right Sidebar</code>.</p>
+<p>You can add code directly to your sidebar, in the file <code>sidebar.php</code>, or you can add widgets from the widget area in the WordPress dashboard. The widgets that you add in the widget area will always overwrite the ones that you add directly through code.</p>
+<p>This is the simplest way to add a widget to your template, but there are many other ways, remember to check the code of other templates and visit the WordPress codex if you have any doubts:</p>
+<ul>
+<li><em><a class="arti_link" href="http://codex.wordpress.org/Function_Reference/dynamic_sidebar#Return_Value">dynamic sidebar:</a></em> to add your widget dynamically.</li>
+<li><em><a class="arti_link" href="http://codex.wordpress.org/Function_Reference/register_sidebar">register sidebar:</a></em> to register a widget area for your template.</li>
+<li><em><a class="arti_link" href="http://codex.wordpress.org/Function_Reference/register_sidebars">register sidebars:</a></em> when you want to have several sidebars or widget areas. However, calling <code class="language-php">register_sidebar()</code> multiple times to register a number of sidebars is preferable to using <code class="language-php">register_sidebars()</code> to create a bunch in one go, because it allows you to assign a unique name to each sidebar.</li>
+<li><em><a class="arti_link" href="http://codex.wordpress.org/Function_Reference/is_dynamic_sidebar">is dynamic sidebar:</a></em> Checks if there are any active widgets in the sidebar. You could use it to show some default content in case there are no widgets.</li>
+</ul>
+<h2>Adding two widget areas</h2>
+<p>Let's see an example <strong>adding two widget areas</strong>. In our <code>functions.php</code> file, we add the code for our two sidebars just as we did for our single sidebar:</p>
+<pre><code class="language-php">
+// If Dynamic Sidebar Exists
+if (function_exists('register_sidebar')) {
+
+  // Define Sidebar Widget Area 1
+  register_sidebar(array(
+    'name'          =&gt; __('Widget Area 1', 'widget1'),
+    'description'   =&gt; __('Description for this widget-area...', 'widget'),
+    'id'            =&gt; 'widget-area-1',
+    'before_widget' =&gt; '&lt;div id="%1$s" class="%2$s"&gt;',
+    'after_widget'  =&gt; '&lt;/div&gt;',
+    'before_title'  =&gt; '&lt;h3&gt;',
+    'after_title'   =&gt; '&lt;/h3&gt;'
+  ));
+
+  // Define Sidebar Widget Area 2
+  register_sidebar(array(
+    'name'          =&gt; __('Widget Area 2', 'widget2'),
+    'description'   =&gt; __('Description for this widget-area...', 'widget'),
+    'id'            =&gt; 'widget-area-2',
+    'before_widget' =&gt; '&lt;div id="%1$s" class="%2$s"&gt;',
+    'after_widget'  =&gt; '&lt;/div&gt;',
+    'before_title'  =&gt; '&lt;h3&gt;',
+    'after_title'   =&gt; '&lt;/h3&gt;'
+  ));
+}</code></pre>
+<p>We added two new variables here:</p>
+<ul>
+<li><code class="language-php">description:</code> A short description, the default is empty.</li>
+<li><code class="language-php">id:</code> Must be all in lowercase, with no spaces.</li>
+</ul>
+<p>And then, in our <code>sidebar.php</code>, we add:</p>
+<pre><code class="language-php">
+&lt;!-- sidebar --&gt;
+&lt;aside class="sidebar" role="complementary"&gt;
+
+  &lt;div class="sidebar-widget"&gt;
+    &lt;?php if(!function_exists('dynamic_sidebar') || !dynamic_sidebar('widget-area-1')) ?&gt;
+  &lt;/div&gt;
+
+  &lt;div class="sidebar-widget"&gt;
+    &lt;?php if(!function_exists('dynamic_sidebar') || !dynamic_sidebar('widget-area-2')) ?&gt;
+  &lt;/div&gt;
+
+&lt;/aside&gt;
+&lt;!-- /sidebar --&gt;</code></pre>
+<p>In this example, we used the <code>id</code> and not the <code>name</code> to refer to the widgets. As you see, it's pretty much what we did to add a single widget area.</p>
+<p>That's all... now try and add something to your sidebar!</p>

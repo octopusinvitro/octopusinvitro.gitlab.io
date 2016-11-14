@@ -1,0 +1,64 @@
+---
+layout: post
+title: How to install Phantom in Ubuntu 14
+date: 2015-01-16 11:02:46.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Bash
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>I recently wanted to try out Phantom as a headless browser for JavaScript tests. Up until now I had been using the Jasmine standalone version in the browser and wanted to check how to run them on a terminal environment so that I can run them in the CI too. Seems like phantomjs might helpt with that!</p>
+
+<p>I first downloaded a tar with a version of Phantom from their official web. I had to
+check that I had <code class="language-plaintext">fontconfig</code> or <code class="language-plaintext">libfontconfig</code>, <code class="language-plaintext">GLIBCXX_3.4.9</code> and <code class="language-plaintext">GLIBC_2.7</code>. Then I copied the files under <code class="language-plaintext">/opt</code>, which is the path under which I normaly install these things.</p>
+
+<p>It didn't work so I tried also <a href="https://gist.github.com/julionc/7476620">a gist that I found on GitHub</a>.</p>
+
+<p>It didn't work either, so I decided to use the not-recommended way, which is <a href="http://phantomjs.org/build.html">building it from source</a>. It recommends to install the
+<code class="language-plaintext">ttf-mscorefonts-installer</code> package, which you can find in synaptics or the Ubuntu Software Center.</p>
+
+<p>For the record, the <code class="language-bash">git clone</code> command took a while, and it downloaded 130MB of files. The
+<code class="language-bash">git submodule update</code> command took long as well.</p>
+
+<div class="kitkat">
+In case you want to use it as an npm package, there is <a href="https://www.npmjs.com/package/phantomjs-prebuilt">phantomjs-prebuilt</a> as well, and <a href="https://github.com/dflynn15/gulp-jasmine-phantom">a gulp plugin for the combination Jasmine-Phantom</a>.
+</div>
+
+<p>I moved all the stuff to <code class="language-plaintext">/opt</code>, then I added this line to my <code class="language-plaintext">.bashrc</code> (add it to  <code class="language-plaintext">.bash_profile</code> instead if you are in OSX):</p>
+
+<pre><code class="language-bash">
+export PATH=&quot;/opt/phantomjs/bin/:$PATH&quot;
+</code></pre>
+
+<p>Then you can run it with <code class="language-plaintext">./bin/phantom</code>.</p>
+
+<h2>Other things I tried</h2>
+
+<ul>
+  <li>I tried the <code class="language-plaintext">gulp-jasmine-phantom</code> plugin, but for some reason it didn't find the tests.</li>
+  <li>I also installed <a href="https://github.com/jcarver989/phantom-jasmine">phantom-jasmine</a>, another npm package, and ran:
+  <pre><code class="language-bash">
+phantom-jasmine js/specrunner.html
+phantom-jasmine http://localhost:4000/test/specrunner.html
+</code></pre>
+  (<code class="language-plaintext">specrunner.html</code> is my Jasmine running file) All of them gave me an error, and it made a <code class="language-plaintext">runner.html</code> file in the local directory.
+  </li>
+</ul>
+
+
+
+<p>However, <a href="https://github.com/testem/testem">testem</a> with a config file works. Both <code class="language-plaintext">testem</code> and <code class="language-plaintext">testem ci</code> work.</p>
+
+<p>The <code class="language-plaintext">testem ci</code> command generates a Jasmine page for you. So if you want to add divs to the <code class="language-plaintext">specrunner.html</code> file, you have to tell the <code class="language-plaintext">testem.json</code> file and then add <code class="language-plaintext">/testem.js</code> to the specrunner scripts.</p>
+
+<p>If you have to use <code class="language-plaintext">mock-ajax</code>, <code class="language-plaintext">jquery</code> and <code class="language-plaintext">jquery-jasmine</code>, you also have to add those to the <code class="language-plaintext">testem.json</code>. These days I am not too queen on jQuery anymore, so I don't use it in new projects.</p>
+
+<p>Finally, there is <a href="https://www.npmjs.com/package/gulp-testem">gulp-testem</a> but at the moment of writing this, it's 2 years since the last commit, and it didn't work. It asked for <a href="https://www.npmjs.com/package/gulp-util">gulp-util</a>. Also I didn't like the server setup in the readme.</p>

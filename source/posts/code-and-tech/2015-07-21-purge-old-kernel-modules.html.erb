@@ -1,0 +1,27 @@
+---
+layout: post
+title: Purge old kernel modules
+date: 2015-07-21 22:34:03.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+- Linux
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>The other day for the first time I received a message of "<em>disk out of space</em>" while in Ubuntu, and I was really surprised.</p>
+<p>No problem! I used Baobab to identify the offender: the <code class="language-bash">/lib/modules</code> folder was full of old kernel versions that were not even accessible from the grub, and that I totally won't use.</p>
+<p>Apparently these old folders can use more than 6 Gb of space, and that was the case here. Ubuntu 14.04 with all my software installed uses around 10 Gb of space, plus around 20Gb of space used by the Android SDK. My Ubuntu partition has 54 Gb of space, which is more than enough for the 30Gb that my system files take!</p>
+<p>So in order to safely purge these old kernel versions, I just had to type:</p>
+<pre><code class="language-bash">
+$ dpkg -l 'linux-*' | sed '/^ii/!d;/'"$(uname -r | sed "s/\(.*\)-\([^0-9]\)//")"'/d;s/^[^ ]* [^ ]* \([^ ]*\).*//;/[0-9]/!d' | xargs sudo apt-get -y purge
+</code></pre>
+<p>Job done!</p>
+<p>Now compare that to <a href="https://octopusinvitro.tk/code/gain-space-in-windows/">freeing up some space in Windows</a>.</p>
+<p><strong>Update:</strong> There is <a href="http://askubuntu.com/questions/2793/how-do-i-remove-old-kernel-versions-to-clean-up-the-boot-menu">an old question in ask ubuntu</a> that contains many other interesting options. Some with screenshots!</p>

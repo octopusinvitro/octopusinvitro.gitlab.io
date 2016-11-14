@@ -1,0 +1,128 @@
+---
+layout: post
+title: How to install Ubuntu in dual boot with Windows 8
+date: 2017-07-23 15:32:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Linux
+- Windows
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>Recently I tried to install Ubuntu 16.04 in a new Lenovo Yoga 3 which came with Windows 8 pre-installed. The problem was that nobody knew the password to enter Windows, and the partition was in an unstable state, so it was unreadable from Linux.</p>
+
+<p>When Windows 8 shuts down, it really does not shut down but hibernates, so that it can start faster. This is a setting that can be disabled in the BIOS.</p>
+
+<p>The solution was to reset the laptop to factory settings, and make a recovery disk for Windows. Then rearrange the partitions to install Ubuntu alongside Windows. Nobody had used this Windows partition, since the laptop was there just to test sites in Internet Explorer, so it was ok to do this.</p>
+
+<p>I would have loved to wipe out Windows completely, but I prefer to be conservative, since these days the manufacturers entangle the devices to Windows so deeply (see for example <a href="/blog/code-and-tech/how-to-install-ubuntu-dual-boot-windows10">the combination Acer + Windows10</a>), and I am not an expert but just a normal user. Thankfully, this experience was much more straight-forward than for Acer-Windows 10, it worked without too much fiddling. Also, this Lenovo BIOS was simpler than my Acer's.</p>
+
+<h2 id="resettofactorysettings">Reset to factory settings</h2>
+
+<ul>
+    <li>Press <kbd>Shift</kbd> + Restart, then press <kbd>F1</kbd> when the Lenovo logo appears</li>
+
+    <li>Reset laptop to factory settings. This took about half an hour</li>
+
+    <li>Setup. Jumped the Microsoft account creation by providing a gmail email and clicking on "<em>Continue without a Microsoft account</em>".</li>
+</ul>
+
+<h2 id="lenovopartitions">Lenovo partitions</h2>
+
+<p>If you type <code class="language-bash">diskpart</code> on the prompt, then <code class="language-bash">select disk 0</code> and <code class="language-bash">list part</code> to see all partitions, the Lenovo Yoga 3 will display:</p>
+
+<pre><code class="language-bash">
+1 Recovery   1000MB WINRE_DRV   UEFI/GPT
+2 EFI System  260MB SYSTEM_DRV  UEFI/GPT
+3 OEM        1000MB LRS_ESP     One Key Recovery button
+4 Reserved    128MB MSR         UEFI/GPT
+5 Primary     196GB Windows8_OS C: (used: 31.58GB)
+6 Primary      25GB LENOVO      D: (used: 60.00MB)
+7 Recovery     14GB PBR_DRV     Used by One Key, but can be burned to a USB
+</code></pre>
+
+<p>Partitions 1, 2 and 4 should be kept, and they are compatible with dual booting (UEFI/GPT). In particular, the second is the one that both Windows and Linux use to boot the laptop. Partition 7 can be moved to an external bootable USB to free some space on disk. You can learn more in this post about <a href="http://www.lionhack.com/2013/12/25/lenovo-yoga-2-pro-partitions/">Lenovo Yoga partitions</a>.</p>
+
+<h2 id="makethebiosabletobootfromusb">Make the BIOS able to boot from USB</h2>
+
+<p>Before we continue is good to check if we can boot from USB because we will need it from now on.</p>
+
+<ul>
+    <li><p>In Windows, press <kbd>windows</kbd> + <kbd>I</kbd> > Update and recovery > Recovery > Advanced Sartup > Restart now. Then click Troubleshoot > Advanced options > UEFI Firmware Settings. The system will restart and enter the BIOS automatically.</p></li>
+
+    <li><p>Change boot order like this:
+        <pre><code class="language-bash">
+USB FDD
+USB CD
+USB HDD
+ATA HDD
+Windows Boot Manager</code></pre>
+    </p></li>
+
+    <li><p>While we are here, we can also disable <strong>Secure Boot</strong>. This will allow us to boot from the USB as well as install Ubuntu and all the third party software it needs.</p></li>
+
+    <li><p>Just in case, I would also disable <strong>Fast Boot</strong>. If we don't do this, after we install Ubuntu we may be able to boot from the grub once, but the next time we choose to start in Windows, we won't be able to load the grub anymore, i.e., it will skip the grub and go directly to Windows. This is due to the fast-start shenanigan I mentioned at the top.</p></li>
+</ul>
+
+<h2 id="createrecoveryfromwindows">Create recovery from Windows</h2>
+
+<p>Since we are going to delete partition 7, we must save a recovery USB so that we can go back to factory if anything weird happens.</p>
+
+<ul>
+    <li><p>Connect an empty USB drive with at least 32GB capacity. Open the search and type "<em>create recovery drive</em>". Follow the instructions to create a bootable device. This will format the USB and create a 32GB FAT partition. If the disk is bigger than that, the rest of the space will be unallocated for you to format as you wish.</p></li>
+
+    <li><p>When the recovery is finished, it asks you to delete the recovery partition, the 14GB one. Say yes.</p></li>
+
+    <li><p>Check that the recovery works by connecting the recovery USB you just created and restarting. Since we changed the boot order, it should boot into the recovery USB. Select shut-down to leave.</p></li>
+</ul>
+
+<h2 id="prepareapartitionforlinux">Prepare a partition for Linux</h2>
+
+<p>This laptop came with a 200GB partition for Windows and a 25GB partition for data. I think 200 is too much for Windows and 25 is too little for data, and there still needs to be some space for Ubuntu!</p>
+
+<p>I reserved about 30GB for the Ubuntu partition. This will be split in two by the Ubuntu installer, which will partition 8GB for swap and the rest for the OS. Once installed, Ubuntu takes about 5GB of space.</p>
+
+<p>The data partition is so that you have a partition that is accessible both from Windows and from Ubuntu.</p>
+
+<ul>
+    <li><p>Open the prompt as admin (press <kbd>windows</kbd> + <kbd>X</kbd> and choose it from the pop-up menu), then type <code class="language-bash">diskmgmt.msc</code>.</p></li>
+
+    <li><p>Arrange your partitions so that you shrink the windows partition, make a bigger partition for data, and reserve 30GB for Ubuntu. Don't touch partitions 1, 2, 3, and 4 listed above.</p></li>
+
+    <li><p>Restart in Windows once, this is needed for Windows to finish the partitioning properly so that it is not in an unstable state when you try to read it from Ubuntu Live.</p></li>
+</ul>
+
+<h2 id="installubuntu1604">Install Ubuntu 16.04</h2>
+
+<ul>
+    <li><p>You need to make a bootable USB with Ubuntu 16.04. Once you have it, connect it and then restart the laptop.</p></li>
+
+    <li><p>Choose "<em>Install Ubuntu</em>" and then "<em>Install Ubuntu alongside Windows</em>". Follow the instructions and you will be done.</p></li>
+
+    <li><p>It will ask you to restart, and it will load the grub. Select "system setup". This will enter the BIOS. Check that the first item in the boot order is now "<em>1. ubuntu</em>" and exit the BIOS.</p></li>
+
+    <li><p>Restart and log into Ubuntu again. Check that you have the directory <code class="language-bash">/sys/firmware/efi</code> and open the disks utility to confirm that partition 2 is mounted at <code class="language-bash">/boot/efi</code>.</p></li>
+
+
+    <li><p>Click on all the disks and check that they mount correctly. You should see:
+        <pre><code class="language-bash">
+LRS_ESP     - 3 OEM (Lenovo Recovery System)
+Windows8_OS - 5 Windows partition
+LENOVO      - 6 Data partition</code></pre>
+    </p></li>
+
+    <li>Check that you can log into Windows and then back to Linux. If not, you may have forgotten to disable fast boot in the BIOS.</li>
+</ul>
+
+<h2 id="done">Done!</h2>
+
+<p>This was much easier than before! I guess different manufacturers have different degrees of assholery towards their end users.</p>
+
+<p>The recovery disk I used was needed also for Ubuntu backup copies, so I created a partition from the unused space and formatted it as encrypted (LUKS) using the disks utility in Ubuntu.</p>
