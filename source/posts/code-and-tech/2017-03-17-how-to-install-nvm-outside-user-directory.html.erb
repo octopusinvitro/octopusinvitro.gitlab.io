@@ -1,0 +1,125 @@
+---
+layout: post
+title: How to install nvm outside the user directory
+date: 2017-03-17 17:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- node
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<h2>A bit of context</h2>
+
+<p>You can install node in Ubuntu with the <code class="language-">apt-get</code> manager (or <code class="language-">apt</code> from 16.04 on), but it will give you an old version of node . Also, it will install node in a directory that needs root permissions. This means that all your future npm packages will be installed as root.</p>
+
+<p>Node packages are scripts made by who knows whom, running freely in your system. Because anybody can create and publish a node module! That's why Isaac Z. Schlueter, the founder and CEO of npm, <a href="https://gist.github.com/isaacs/579814">has been discouraging people from installing node as root</a> for this and other reasons.</p>
+
+<p>The other thing that you don't get with node (well, now you do!) is being able to install different versions of node alongside each other. Node has <code class="language-">npm</code> to handle package installation and <code class="language-">package.json</code> to handle package versions, but there was nothing to handle node versions. If you ever used Ruby, you've been spoiled. Ruby has several version managers to choose from (I use <a href="https://cbednarski.com/articles/installing-ruby/">rbenv</a>) as well as a convenient way to handle gem versions (mainly through <a href="http://bundler.io/">bundler</a>). So I did some research and I discovered that <a href="https://github.com/creationix/nvm"><code class="language-">nvm</code></a> exists for node. It allows you to install several different versions of node and switch from one to the other depending on your  project's requirements, very easily. So I decided that I had to give it a try.</p>
+
+<h2>nvm</h2>
+
+<p>If you read the <a href="https://github.com/creationix/nvm/blob/master/README.markdown">README</a> in the official repository, you will see that there are several ways you can install it, including manually. The easiest way and the one you will find in every tutorial is just using <code class="language-">curl</code> and running the <code class="language-">install.sh</code> file:</p>
+
+<pre><code class="language-bash">
+curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh | bash
+</code></pre>
+
+<p>Boom. Done. BUT: this will install nvm in your home directory, creating an <code class="language-">~/.nvm</code> folder inside of which the different node versions will be installed, in a very similar way as how <code class="language-">rbenv</code> works. It's a clean install, to uninstall you just have to remove that folder.</p>
+
+<p>However, I didn't want to install it in my home directory, but in <code class="language-">/opt</code>. The path to the home directory is kind of hardcoded in the install script, but you can jump over it if you set the <code class="language-">NVM_DIR</code> variable in your enviroment before doing the installation. But then the installation process is a bit different.</p>
+
+<h2>Installing in a different directory</h2>
+
+<p>I decided to choose the manual install, which is easy and keeps you updated because it's just a git repository that you can <code class="language-">git pull</code> at anytime. This is what I did:</p>
+
+<h3>Download code from official repo</h3>
+
+<p>Use a directory that you don't have to edit with root persmissions. I created an <code class="language-">nvm</code> directory inside of <code class="language-">/opt</code> that is owned by my user. Following the official instructions for a manual installation:</p>
+
+<pre><code class="language-bash">
+git clone git@github.com:creationix/nvm.git /opt/nvm
+cd nvm
+git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" origin`
+</code></pre>
+
+<p>In this repo you will find the <code class="language-">install.sh</code> and <code class="language-">nvm.sh</code> files. If you want to do the usual installation (in the home folder) just run <code class="language-">install.sh</code>. If not, keep reading.</p>
+
+<h3>Install in another folder</h3>
+
+<p>I want to install nvm in the <code class="language-">/opt/nvm</code> folder that I just cloned, so:</p>
+
+<pre><code class="language-bash">
+export NVM_DIR=/opt/nvm
+source $NVM_DIR/nvm.sh
+nvm
+</code></pre>
+
+<p>And that's it! You have installed nvm.</p>
+
+<div class="kit-kat">
+  <p>Having the cloned repo is also cool because it's all written in bash, so you can contribute bugfixes! and it also has a nice test suite (I didn't know there was a test framework for bash but I am nicely surprised!)</p>
+</div>
+
+<h3>Make it permanent</h3>
+
+<p>You have been doing this in the current terminal window, so if you close it, the definition of <code class="language-">NVM_DIR</code> will be lost.</p>
+
+<p>Fix that by adding this to your <code class="language-">.bashrc</code>:</p>
+
+<pre><code class="language-bash">
+# nvm
+export NVM_DIR=/opt/nvm
+[ -s "$NVM_DIR/nvm.sh" ] &amp:&amp: . "$NVM_DIR/nvm.sh"
+</code></pre>
+
+<h3>Uninstall</h3>
+
+<p>If you want to uninstall it, you just have to remove the <code class="language-">.nvm</code> folder inside <code class="language-">/opt</code>.</p>
+
+<h2>node</h2>
+
+<p>So this section is what we are here for. We wanted to install several versions of node and be able to switch between them easily. The documentation on how to use nvm to manage node installations is in <a href="https://github.com/creationix/nvm/blob/master/README.markdown#usage">the official README</a>.</p>
+
+<p>At first, if you ask nvm for the available node packages, you will get:</p>
+
+<pre><code class="language-bash">
+$ nvm ls
+           N/A
+node -> stable (-> N/A) (default)
+iojs -> N/A (default)
+</code></pre>
+
+<p>So I decided to choose the first:</p>
+
+<pre><code class="language-bash">
+$ nvm install node
+</code></pre>
+
+<p>This will add these three folders to the directory.</p>
+
+<pre><code class="language-bash">
+$ ls -al /opt/nvm
+total 20
+drwxrwxr-x 5 ubuntu ubuntu 4096 Mar 17 22:07 .
+drwxr-xr-x 6 ubuntu ubuntu 4096 Mar 17 21:01 ..
+drwxrwxr-x 3 ubuntu ubuntu 4096 Mar 17 22:01 alias
+drwxrwxr-x 3 ubuntu ubuntu 4096 Mar 17 22:07 .cache
+drwxrwxr-x 3 ubuntu ubuntu 4096 Mar 17 22:07 versions
+...etc
+</code></pre>
+
+<p>Node versions will be installed in the <code class="language-">/opt/nvm/versions</code> directory. Sounds a lot like <code class="language-">rbenv</code>!</p>
+
+<pre><code class="language-bash">
+$ which node
+/opt/nvm/versions/node/v7.7.3/bin/node
+</code></pre>
+
+<p>As you can see, we have installed the latest stable version of node at the moment of writing this post, which is v7.7.3.</p>

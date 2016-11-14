@@ -1,0 +1,456 @@
+---
+layout: post
+title: Progressive webapps
+date: 2017-12-13 20:00:00.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- JavaScript
+- responsive
+author:
+display_name: Octopus in vitro
+---
+
+<p><strong>Native applications</strong> have the ability to start up fast and reliably. They can work offline, have push notifications, synchronisation and access to sensors and phone functionalities like the camera. On the other hand, <strong>the Web</strong> is safer and more respectful of privacy, but doesn't have those native features. The average user installs zero apps per month, yet mobile users visit around 100 sites per month.</p>
+
+<p><strong>Progressive Web Apps (PWA)</strong> have the best of both worlds</p>
+
+<p>Pros of PWA:</p>
+<ul>
+  <li>fast: better performance, loads faster because it loads from cache, faster iterations and deploys</li>
+  <li>reliable: works offline by pulling pages and assets from cache</li>
+  <li>engaging: you get push notifications even when app is not open, and you don't have to download it or install updates</li>
+  <li>it has it's own home icon, specified in it's manifest file. You can tap the icon to open in full screen, and show no browser UI (or show it if you want)
+  <li>it's linkable, shareable, discoverable, search-engine-indexable, etc.</li>
+</ul>
+
+<p>Cons of PWA:</p>
+<ul>
+  <li>cache invalidation is difficult</li>
+  <li>is a complex technology</li>
+</ul>
+
+<p>To move your website to a progressive web app you need, in order of appearance:</p>
+
+<ul>
+  <li>HTTPS, (because you'll need a service worker and they are HTTPS only)</li>
+  <li>caching, so that it works offline (the service worker takes care of this)</li>
+  <li>app shell architecture</li>
+  <li>a manifest file, so that you can add an icon to the homescreen</li>
+  <li>push notifications, payment API credentials API, etc.</li>
+</ul>
+
+
+<h2>Get responsive design right</h2>
+
+<p>PWAs are about user experience, in a way. So it's important to get progressive enhancement and responsiveness right.</p>
+
+<p>You could check my old post on <a href="/blog/web-development/responsive-responsible-development/">responsive design</a>, but to summarize, in order to be responsive you need the three technologies defined by Ethan Marcotte back in 2010:</p>
+<ul>
+  <li>Fluid grids</li>
+  <li>Flexible images (including art direction)</li>
+  <li>Media queries (remember to use a mobile-first approach and to <a href="http://bradfrost.com/blog/post/7-habits-of-highly-effective-media-queries/">let your content define the breakpoints</a>, maybe you just need one, or maybe you need twenty!)</li>
+</ul>
+
+<p>...and the viewport meta tag:</p>
+<pre><code class="language-markup">
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1">
+</code></pre>
+
+
+
+<h2>Service workers</h2>
+
+<p>Service Workers are the most impactful modern web technology since Ajax, and will probably replace it in the future.</p>
+
+<p>A service worker is a client side, programmable, network proxy; basically, a script that intercepts requests. The primary uses for a service worker are: act as a caching agent to handle network requests or store content for offline use, and handle push messaging. You can precache assets during installation and provide a fallback for offline access. Then you can get updated content when online again. The browser does not need to be open for the script to be active.</p>
+
+<p>Service workers are a type of <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API">web worker</a> (basically web workers allow you to have several threads):</p>
+
+<ul>
+  <li>they run in the background, separate from the main browser threads</li>
+  <li>they are event driven and promise based</li>
+  <li>they are https only, for security</li>
+</ul>
+
+<p>They use two APIs:</p>
+<ul>
+  <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Cache">Cache</a></li>
+  <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">Fetch</a></li>
+</ul>
+
+<p>The service worker becomes idle when not in use, and restarts when it's next needed.</p>
+
+
+<h2>Lifecycle of a service worker</h2>
+
+<p>Every service worker goes through three steps in its lifecycle:</p>
+<ul>
+  <li>Registration</li>
+  <li>Installation</li>
+  <li>Activation</li>
+</ul>
+
+<p>If debugging in Chrome, it is recommended to tick "Disable cache" in the Network tab, and "Update on reload" under Service Workers in the Application tab.</p>
+
+
+<h3>Registration</h3>
+
+<p>The browser will only complete the registration if the service worker is new or has been updated.</p>
+
+<p>The <strong>scope</strong> of the service worker determines from which path the service worker will intercept requests. A service worker cannot have a scope above its own path.</p>
+
+<p>For progressive enhancement, always do feature detection first:</p>
+
+<pre><code class="language-javascript">
+  // Progressive enhancement: checking browser support
+  if (!('serviceWorker' in navigator)) {
+    console.log('Service Worker not supported');
+    return;
+  }
+  navigator.serviceWorker.register('/service-worker.js', { scope: '/app/' })
+    .then(function(registration) {
+      console.log('service worker registered! Scope is:', registration.scope);
+    })
+    .catch(function(error) {
+      console.log('There was an error: ', error);
+    });
+</code></pre>
+
+
+<h3>Installation</h3>
+
+<p>Once the the browser registers a service worker, the install event can occur. It will trigger if the browser considers the service worker to be new, either because this is the first service worker encountered for this page, or because there is a byte difference between the current service worker and the previously installed one.</p>
+
+<pre><code class="language-javascript">
+  self.addEventListener('install', function(event) {
+    // The install event is a good time to do stuff like caching
+    // the App Shell or static assets using the Cache API
+    // Keep reading to learn how!
+  });
+</code></pre>
+
+
+<h3>Activation</h3>
+
+<p>If this is the first encounter of a service worker for this page, the service worker will install and, if successful, it will transition to the activation stage. Once activated, the service worker will control all pages that load within its scope, and intercept corresponding network requests.</p>
+
+<p>Only one version of the service worker is running at any given time for a given scope. All pages controlled by a service worker must be closed before a new service worker can take over, because there can only be one service worker controlling a page at any time. However, you can programmatically force the activation of the new service worker with <code class="language-javascript">self.skipWaiting()</code>, even if there is another service worker controlling the page.</p>
+
+
+<pre><code class="language-javascript">
+  self.addEventListener('activate', function(event) {
+    // The activate event is a good time to clean up old caches
+    // and anything else associated with a previous version of
+    // your service worker. Keep reading to know how!
+  });
+</code></pre>
+
+
+<h2>Service Worker Events</h2>
+
+<h3>Normal events</h3>
+<ul>
+  <li><code class="language-javascript">'install'</code>: Emitted when it's registered</li>
+  <li><code class="language-javascript">'activate'</code>: Emitted when it takes control of the page</li>
+  <li><code class="language-javascript">'message'</code>: Emitted when another service worker sends it a message</li>
+</ul>
+
+<p>The registration log may appear out of order with the other logs (installation and activation). The service worker runs concurrently with the page, so we can't guarantee the order of the logs (the registration log comes from the page, while the installation and activation logs come from the service worker). Installation, activation, and other service worker events occur in a defined order inside the service worker, however, and should always appear in the expected order.</p>
+
+<h3>Functional Events</h3>
+<p>These are events that the service worker can respond to: <code class="language-javascript">'fetch'</code>, <code class="language-javascript">'sync'</code>, and <code class="language-javascript">'push'</code>.</p>
+
+
+
+<h2>Fetching</h2>
+
+<p>A fetch event is fired every time a resource is requested. Listening for fetch events in the service worker is similar to listening to click events in the DOM. We could listen for fetch events and, for example, return cached content:</p>
+
+<pre><code class="language-javascript">
+  self.addEventListener('fetch', function(event) {
+    console.log('Fetching:', event.request.url);
+    event.respondWith(
+      caches.match(event.request)
+    );
+  });
+</code></pre>
+
+<p>The fetch event will only fire for pages inside the scope controlled by the service worker.</p>
+
+<p>The fetch API is going to replace Ajax (<code>XMLHttpRequest</code>). It comes integrated with web workers and it's promise based. It doesn't need HTTPS and supports CORS.</p>
+
+<pre><code class="language-javascript">
+  fetch('/examples/example.json')
+    .then(function(response) {
+      return response.json();
+    })
+    .catch(function(error) {
+      console.log('Fetch failed', error);
+    });
+
+  // ES6
+  fetch('animals.json')
+    .then(response =>; {
+      return response.json();
+    })
+    .then(json =>; {
+      console.log(json);
+    });
+</code></pre>
+
+
+
+
+<h2>Working offline</h2>
+
+<p>How could we make an existing site work off-line? You might use the browser cache, but it's not quite good enough. It will fail if the browser is off-line. You might use the older AppCache and a list of URLs to cache; it will work, but often has problems.
+The recommended way is to use a Service Worker.</p>
+
+<ol>
+  <li>You write a small script that fetches and stores the files via the Cache API.</li>
+  <li>The same script intercepts fetch events (inside the service worker) and retrieves the file from the cache.</li>
+  <li>If you ever need to, you can update files via the Cache API</li>
+</ol>
+
+<p>There are three steps to achive working offline smoothly: storing, retrieving and deleting.</p>
+
+<h3>Storing</h3>
+
+<p>Storage is basically disk space, and it's per origin not per API. In other words, local storage, session storage, service worker cache and IndexedDB all share the same space. The Cache API lets you set up multiple caches, shown as collections of files.</p>
+
+<p>It is recommended to not cache a lot of stuff during install. Cache only the strictly needed, like the application shell. Never cache the manifest file.</p>
+
+<p>Use the Cache API for URL addressable resources. If there is a lot of information that you need to persist and reuse across restarts, use an IndexedDB database instead.</p>
+
+<pre><code class="language-javascript">
+  // Even if you add the '.' directory to the cache, you have
+  // to also add the index.html because '/' and '/index.html'
+  // are two diff urls and you may get a 404 error
+
+  var CACHE_NAME = 'static-cache';
+  var urlsToCache = [
+    '.',
+    'index.html',
+    'styles/main.css'
+  ];
+
+  self.addEventListener('install', function(event) {
+    event.waitUntil(
+      caches.open(CACHE_NAME)
+        .then(function(cache) {
+          return cache.addAll(urlsToCache);
+        })
+      );
+  });
+</code></pre>
+
+<p>Opening the cache is an asynchronous operation, so we have to tell it to wait unitl it's finished before it switches to the active state.</p>
+
+<h3>Retrieving</h3>
+
+<p>With a service worker, you can try first to retrieve content from the cache, and if it's not there, go fetch it from the network:</p>
+
+<pre><code class="language-javascript">
+  self.addEventListener('fetch', function(event) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(function(response) {
+          return response || fetch(event.request);
+        })
+    );
+  });
+</code></pre>
+
+<p>Instead of just fetching, we could also use a custom function, which will both fetch and cache:</p>
+
+<pre><code class="language-javascript">
+  self.addEventListener('fetch', function(event) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(function(response) {
+          return response || fetchAndCache(event.request);
+        })
+    );
+  });
+
+  function fetchAndCache(url) {
+    return fetch(url).then(function(response) {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return caches.open(CACHE_NAME)
+        .then(function(cache) {
+          cache.put(url, response.clone());
+          return response;
+        })
+        .catch(function(error) {
+          console.log('There was an error: ', error)
+        });
+    });
+  }
+</code></pre>
+
+<p>Bad responses (like 404s) still resolve! A fetch promise only rejects if the request was unable to complete. But that doesn't mean we want to cache error pages! Hence we have to check <code class="language-javascript">response.ok</code>. Also, <a href="https://jakearchibald.com/2014/reading-responses/">the request is a stream that can only be consumed once</a>, so if you don't <code class="language-javascript">clone()</code> the response, you  will lose it. If any of the promises in the chain rejects or throws an error, the <code class="language-javascript">cacheFailure(error)</code> function will be invoked.</p>
+
+
+<h3>Deleting</h3>
+
+<p>The service worker API provides a controlled way of deleting cached content. If you don't delete the cache, the browser may do it.</p>
+
+<pre><code class="language-javascript">
+  var cacheName = 'cache-v1';
+  // ...
+  self.addEventListener('activate', function(event) {
+    event.waitUntil(
+      caches.keys()
+        .then(function(keyList) {
+          return Promise.all(keyList.map(function(key) {
+            if (key !== cacheName) {
+              return caches.delete(key);
+            }
+          }));
+        })
+    );
+    return self.clients.claim();
+  });
+</code></pre>
+
+<p>A long activation could potentially block page loads. Keep your activation as lean as possible, only use it for things you couldn't do while the old version was active.</p>
+
+<p>It’s important to remember that caches are shared across the whole origin.</p>
+
+
+
+<h2>Caching</h2>
+
+<p>Service workers use the Cache API for storage. It is actually exposed on the window, and the entry point is <code class="language-javascript">caches</code>.</p>
+
+<p>All updates to items in the cache must be explicitly requested; items will not expire and must be deleted. You are also responsible for periodically purging cache entries. Each browser has a hard limit on the amount of cache storage that a given origin can use. The browser will generally delete all of the data for an origin or none of the data for an origin.</p>
+
+<p>Make sure to version caches by name and use the caches only from the version of the script that they can safely operate on.</p>
+
+<h3>When can you cache:</h3>
+<ul>
+  <li>On install, cache the application shell (static assets like CSS, etc.)</li>
+  <li>On activate, remove outdated caches</li>
+  <li>On fetch and offline-first approach, retrieve with network fallback (i.e., serve from cache, if it's not there, fetch from network).</li>
+  <li>You could also cache the response from the network.</li>
+  <li>On user interaction. You don't need a service worker to use the Cache API: give the user a "Read later" or "Save for offline" button. When it's clicked, fetch what you need from the network and put it in the cache.</li>
+</ul>
+
+<h2>Caching strategies for PWAs</h2>
+
+<ul>
+  <li>Cache falling back to network</li>
+  <li>Network falling back to cache</li>
+  <li>Cache then network</li>
+  <li>Generic fallback</li>
+</ul>
+
+
+<h3>Cache falling back to network</h3>
+
+<p>This is also called "offline-first". The request is intercepted by the service worker, and we look for a match in the cache. If that fails we send the request to the network and return the response.</p>
+
+<h3>Network falling back to cache</h3>
+
+<p>This is the opposite, or "network-first". The request is intercepted by the service worker, and we send the request to the network. If that fails, we look for a match in the cache and return the response.</p>
+
+<p>This is a good approach for resources that update frequently, that are not part of the "version" of the site (e.g. articles, avatars, social media timelines, game leader boards).
+Online users get up-to-date content, offline users get an old cached version.</p>
+
+<p>Caveats: If users have an intermittent or slow connection, they'll have to wait for the network to fail before they get content from the cache. This can take an extremely long time and is a frustrating user experience.</p>
+
+<pre><code class="language-javascript">
+  var cacheName = 'cache-v1';
+  // ...
+  self.addEventListener('fetch', function(event) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(function() {
+          return caches.match(event.request);
+        })
+    );
+  });
+</code></pre>
+
+
+<h3>Cache then network</h3>
+
+<p>This uses both of the previous approaches simultaneously. It's done outside of the service worker, using the fetch API. The page makes two requests, one to the cache, one to the network. The cache will most likely respond first, so it shows cached data first, then updates the page when the network data arrives.</p>
+
+<pre><code class="language-javascript">
+  var networkDataReceived = false;
+  var networkUpdate = fetch('/data.json')
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      networkDataReceived = true;
+      updatePage(data);
+    });
+
+  caches.match('/data.json')
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      if (!networkDataReceived) {
+        updatePage(data);
+      }
+    })
+    .catch(function() {
+      return networkUpdate;
+    })
+</code></pre>
+
+
+<h3>Generic fallback</h3>
+
+<p>If the request is not found in both the cache and on the network, respond with a precached custom "offline" page.  This technique is ideal for secondary imagery such as avatars, failed POST requests, "Unavailable while offline" pages, etc.</p>
+
+<p>The item you fallback to is likely to be a resource that you cached on the install event of the service worker.</p>
+
+<pre><code class="language-javascript">
+  self.addEventListener('fetch', function(event) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(function(response) {
+          return response || fetch(event.request);
+        })
+        .catch(function() {
+          return caches.match('/offline.html');
+        })
+    );
+  });
+</code></pre>
+
+
+
+
+
+<h2>Resources</h2>
+
+
+<h3>Blog posts</h3>
+
+<ul>
+  <li><a href="https://www.smashingmagazine.com/2016/09/the-building-blocks-of-progressive-web-apps/">The building blocks of progressive web apps</a>, by Ada Rose</li>
+  <li><a href="https://www.smashingmagazine.com/2016/12/progressive-web-amps/">What Are Progressive Web AMPs?</a></li>
+  <li><a href="https://jakearchibald.com/2014/offline-cookbook/">The offline cookbook</a>, by Jake Archibald </li>
+  <li><a href="https://medium.com/dev-channel/offline-storage-for-progressive-web-apps-70d52695513c">Offline Storage for Progressive Web Apps</a>, by Addy Osmani </li>
+</ul>
+
+
+<h3>Tools</h3>
+
+<ul>
+  <li><a href="https://www.favicon-generator.org/">Icon generator</a></li>
+  <li><a href="https://tomitm.github.io/appmanifest/">Web manifest generator</a></li>
+  <li><a href="https://manifest-validator.appspot.com/">Web manifest validator</a></li>
+  <li><a href="http://www.responsivebreakpoints.com/">Responsive breakpoints for generating images of different sizes</a></li>
+</ul>

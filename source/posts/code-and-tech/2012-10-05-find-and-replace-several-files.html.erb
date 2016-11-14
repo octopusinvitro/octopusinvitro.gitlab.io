@@ -1,0 +1,118 @@
+---
+layout: post
+title: Find and replace in several files at once
+date: 2012-10-05 15:03:55.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+- featured
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>I often find myself having to find a set of characters in several files and replace them with something else. It is not very practical to open each file and press <kbd>Ctrl + H</kbd> to find and replace. Or for example, I recently had to get a list of all the images inserted in all my site pages.</p>
+<p>You can do all this very easily with the <a href="http://unixhelp.ed.ac.uk/CGI/man-cgi?sed"><code>sed</code></a> command. <code>sed</code> is a stream editor for filtering and transforming text.</p>
+<p>What I do is, first, I use the <a href="http://unixhelp.ed.ac.uk/CGI/man-cgi?grep"><code>grep</code></a> command to search the files where there is an occurrence of the string, let's call it "old":</p>
+<pre><code class="language-bash">grep "old" *</code></pre>
+<p>The asterisk tells <code>grep</code> to search in all the files under the current directory. You can also use <code>*/*</code>, <code>*/*/*</code> and so on to search inside directories, or <code>-r</code> to search recursively in ALL sub-directories. This will return the file or list of files that contain the string "old" and a bit of the characters before and after the occurrences.</p>
+<p>Now you can use <code>sed</code> to search for all the occurrences of "old" in that file and replace them with the "new" string:</p>
+<pre><code class="language-bash">sed -i 's/old/new/g' file</code></pre>
+<p>Or find and replace in a list of files, separated by a space:</p>
+<pre><code class="language-bash">sed -i 's/old/new/g' file1 file2 etc</code></pre>
+<p>The <code>-i</code> is for editing files in place (makes backup if extension supplied). The <code>s/old/new/g</code> attempts to match "old" against the pattern space, where <code>s</code> is the substitute command and <code>g</code> means global (i.e. replace all and not just the first occurrence). If successful, replaces "old" with "new".</p>
+<div class="kitkat">Beware: Don't use <code>-r</code> with <code>sed</code> to search recursively, it is used for a totally different thing!</div>
+<p>If you are lazy, you can also use wildchars. For example, to target all the files under folder <code>directory</code>, you could use:</p>
+<pre><code class="language-bash">sed -i 's/old/new/g' directory/*</code></pre>
+<p>This would change all the files under <code>directory</code> where <code>sed</code> finds occurrences of "old".</p>
+<p>There is another interesting command, the <code>d</code> or "delete", more if it is preceded by an exclamation mark (<code>!d</code>), whose purpose is to negate the command (to do the contrary), as you would do in programing, when you write, for example, <code>!=</code> for "not equal". This will help you make other kind of searches as I'll show you later.</p>
+<h2>Advanced</h2>
+<p>There is an even more powerful command using good ol' friend <a href="http://unixhelp.ed.ac.uk/CGI/man-cgi?find"><code>find</code></a>. However, it is much more difficult to remember or to type, and you would probably have to make a bash alias for it.</p>
+<p>This is how it looks:</p>
+<pre><code class="language-bash">find -L . -type f -exec sed -i 's|old|new|g' '{}' \;</code></pre>
+<p>In this case, you won't even need to specify the path to your files, it will recursively search from your actual location down. This also means it is slower compared to the ultra fast <code>sed</code>. So use it if you are very, VERY lazy.</p>
+<div class="kitkat">If after using this command on a git repo, you have problems with the git index like this:
+<pre><code class="language-bash">
+$ git status
+error: bad index file sha1 signature
+fatal: index file corrupt
+</code></pre>
+<p>you can just delete the index:</p>
+<pre><code class="language-bash">
+$ rm -f .git/index
+$ git reset
+</code></pre>
+</div>
+<h2>Example with sed</h2>
+<p>I used this command recently in my <a href="http://javasnippets.tk">http://javasnippets.tk</a> site files (see <a href="/blog/web-development/custom-menu-in-jekyll/">blog post</a>). I had my SVG files saved as <code>name.html</code> instead of <code>name.svg</code>, so I renamed them correctly. But since these SVG files were in the Jekyll <code>_includes</code> folder, they were being embedded in several other documents of the site. For example, <code>github.html</code>, which stored an SVG version of the GitHub logo, was included in <strong>11 files</strong>:</p>
+<pre><code class="language-bash">
+$ grep "github.html" *
+agecalc.html:	&lt;span class="button text-center"&gt;{% include github.html %} &lt;a href="https://github.com/{{ site.git_username }}/{{ site.git_repo}}/tree/master/ageCalc"&gt;View Age Calculation‘s repo&lt;/a&gt;&lt;/span&gt;
+ascii.html:		&lt;span class="button text-center"&gt;{% include github.html %} &lt;a href="https://github.com/{{ site.git_username }}/{{ site.git_repo}}/tree/master/ascii"&gt;View ASCII‘s repo&lt;/a&gt;&lt;/span&gt;
+commons.html: ...
+
+...
+etc.
+</code></pre>
+<p>Instead of opening 11 files to perform find and replace, I used the <code>sed</code> command:</p>
+<pre><code class="language-bash">sed -i 's/github.html/github.svg/g' *.html</code></pre>
+<h2>Getting a list of the images in all your site pages</h2>
+<p>I had a bunch of files in one of my sites' <code>img</code> folders, from all the testing and optimizing, etc. I didn't want all of those cluttering my production site, so I had to leave just the ones that were inserted through an <code class="language-markup">img</code> tag, and remove the rest. How to do that?</p>
+<p>If it was a WordPress installation, I could just go to <strong>phpmyadmin</strong> and type some good ol' SQL to get a list of the used images. But it was a Jekyll site, so this is what I did:</p>
+<pre><code class="language-bash">
+$ cd sitefolder
+$ sed '/&lt;img/!d' _posts/* > output.txt
+$ sed -i 's/.*}//g' output.txt &amp;&amp; sed -i 's/".*//g' output.txt
+</code></pre>
+<p>Let's break down what we did here. </p>
+<p>The <code>d</code> command would delete ALL the occurrences of the string <code>&lt;img</code>, but if we reverse it with <code>!</code>, then it deletes everything BUT the occurrences of <code>&lt;img</code>. With <code>_posts/*</code>, I'm telling <code>sed</code> to search in all files under the <code>_posts</code> directory, which is where Jekyll stores your blog files. The <code>> output.txt</code> tells any command you type in your terminal to write the results of the execution to a file named <code>output.txt</code> (you can change the name to something that makes more sense to you).</p>
+<p>So I get an <code>output.txt</code> with these contents:</p>
+<pre><code class="language-bash">
+&lt;img src="{{ site.baseurl }}/img/filename1.png" width="579" height="630" alt="Alt text">
+&lt;img src="{{ site.baseurl }}/img/filename2.jpg" width="482" height="573" alt="Alt text" style="margin-top: 1em">
+
+...
+</code></pre>
+<p>There is still a lot of stuff there that is not the images names (the <code>{{ site.baseurl }}</code> is Jekyll's liquid notation for automatically inserting the url of our site). Let's take a look at the second and third <code>sed</code> commands, what do they do?</p>
+<p>The first:</p>
+<pre><code class="language-bash">
+sed -i 's/.*}//g' output.txt
+</code></pre>
+<p>is just searching for a pattern like this <code>.*}</code> in the <code>output.txt</code> file, and replacing it with... well, with nothing. Then, what is that expression targeting? The <code>.*</code> is telling <code>sed</code> to take everything it finds up until the last occurrence of <code>}</code>. The second <code>sed</code> command does something similar:</p>
+<pre><code class="language-bash">
+sed -i 's/".*//g' output.txt
+</code></pre>
+<p>it searches for the first occurrence of <code>"</code> after the first <code>sed</code> is executed, and replaces everything that finds after (that is, <code>.*</code>) with nothing. Since <code>sed</code> works line by line, we end up with an <code>output.txt</code> file whose contents are:</p>
+<pre><code class="language-bash">
+/img/filename1.png
+/img/filename2.jpg
+
+...
+</code></pre>
+<p>and now, it's very easy to manipulate that file for your purposes. For example, if you wanted to copy those images to a new path, you would have to add something like <code>cp</code> (the Linux copy command plus a space) at the beginning of each line, followed by a space plus the new path for your files, at the end of each line. Then you could run the resulting file in your terminal.</p>
+<p>But we can do that with <code>sed</code> too! Take our previous "double sed" command. If, instead of replacing with nothing, we replace with <code style="display:inline-block">cp\ .</code> in the first <code>sed</code> (notice the use of <code>\</code> before spaces) and with the new path <code style="display:inline-block">\ newpath</code> in the second <code>sed</code>, we're done!</p>
+<pre><code class="language-bash">
+$ cd sitefolder
+$ sed '/&lt;img/!d' _posts/* > output.txt
+$ sed -i 's/.*}/cp\ ./g' output.txt &amp;&amp; sed -i 's/".*/\ newpath/g' output.txt
+</code></pre>
+<p>This would generate an <code>output.txt</code> file containing:</p>
+<pre><code class="language-bash">
+cp ./img/filename1.png newpath
+cp ./img/filename2.jpg newpath
+
+...
+</code></pre>
+<p>If you now run that file in your terminal:</p>
+<pre><code class="language-bash">
+$ ./output.txt
+</code></pre>
+<p>You will have all your relevant images (only the ones that are actually embedded in your posts) copied magically to a new path.</p>
+<p>TA-DA!</p>
+<p>And now, go for a cookie :-)</p>
+<h2>Want to know more?</h2>
+<p>If you want a good resource about <code>sed</code> with exhaustive examples, <a href="http://www.grymoire.com/Unix/Sed.html">Bruce Barnett wrote an excellent guide at Grymoire</a>.</p>

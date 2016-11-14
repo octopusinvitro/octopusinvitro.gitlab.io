@@ -1,0 +1,203 @@
+---
+layout: post
+title: "Legacy-code retreat - Rainsberger's Trivial"
+date: 2018-04-23 15:32:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags: []
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>8:30 AM, Saturday right after a three-day work retreat. My phone alarm reminds me that I have to unset it for weekend days. I facepalm internally while turning the noise off, and see a calendar notification: "<em>You have a legacy-code retreat, like, RITE NAO</em>". Your hero wakes up and manages to make it to Codurance HQ at 9:30. <a href="https://codurance.com/publications/author/halima-koundi">Halima</a> receives me with a smile as usual, and pairs me with someone who was coding alone. Pheeew!</p>
+
+<p>(But seriously, only devs are so masochist to have events on a Saturday at 8:30!)</p>
+
+<blockquote>
+  <p>
+    Join us for a hands on Session, full day of Legacy Code retreat with <a href="https://twitter.com/londonswcraft?ref_src=twsrc%5Etfw">@londonswcraft</a> <a href="https://t.co/qv7xtUGHWf">https://t.co/qv7xtUGHWf</a> <a href="https://twitter.com/codurance?ref_src=twsrc%5Etfw">@codurance</a>
+    <br>
+    It is the day long version of the two hours session we ran at <a href="https://twitter.com/TECHKNOWDay?ref_src=twsrc%5Etfw">@TECHKNOWDay</a> London 2018 <a href="https://twitter.com/hashtag/Techknowday?src=hash&amp;ref_src=twsrc%5Etfw">#Techknowday</a>
+  </p>
+  &mdash; Haly (@hkoundi) <a href="https://twitter.com/hkoundi/status/982927694349459456?ref_src=twsrc%5Etfw">8 April 2018</a>
+</blockquote>
+
+<h2 id="tldr">TLDR</h2>
+
+<p>You don't have to deal with me; you can <a href="http://bit.ly/legacy-code-retreat">find the contents of the retreat here</a>. And <a href="https://www.meetup.com/london-software-craftsmanship/events/248606060/">the page of the event is here</a>.</p>
+
+<p>Basically:</p>
+
+<ul>
+  <li>Identify inputs and outputs, generate a golden master and run a test that compares the input/output of the code with your golden master.</li>
+  <li>Refactor by extracting methods and using better naming when possible.</li>
+  <li>Eliminate as many conditionals as you can. If you can't, use guard clauses.</li>
+  <li>Write unit and characterization tests until you can get rid of the golden master.</li>
+  <li>You can now add new features (test-driving it, ideally) or change the code.</li>
+</ul>
+
+<p>If you want more detail though, keep reading!</p>
+
+<h2 id="theformat">The format</h2>
+
+<p>The retreat was about working on a piece of legacy code and learning different techniques to bring it to a state where you don't have any fear of changing, deleting or adding new code.</p>
+
+<p>The code was <a href="https://github.com/jbrains/trivia">Rainsberger's fork of a very basic Trivial game</a> with dummy questions. It decides the winner randomly, and it also prints a lot of stuff to the standard output. The repo comes with versions of the app in several languages.</p>
+
+<p>There were 6 sessions of 45 min that started with an introduction to a specific technique and ended with a small retro followed by a break. During the exercise, the Codurance team members were around to receive questions.</p>
+
+<p>We had to find a pair to go through every session, and then change pair and language for the next session, pretty much as in the <a href="https://www.coderetreat.org">Global Day of Coderetreat</a> (an event where you work on <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a> with different constraints in every session).</p>
+
+<p>At the end of the day we did a retro for the whole retreat.</p>
+
+<h2 id="session1understandingthecode">Session 1 - Understanding the code</h2>
+
+<p><em>Language used: Ruby</em></p>
+
+<p>This was mostly about reading and taking notes about the business rules and behaviour of the system. I enjoyed it as it was very visual and creative. We also ran the code on the terminal and played with it. This made it easy to identify the inputs and outputs of the system.</p>
+
+<h2 id="session2writingagoldenmaster">Session 2 - Writing a Golden Master</h2>
+
+<p><em>Language used: Ruby</em></p>
+
+<p>Amanda Rousseau says it's easy to find out if some malware is using a crypto algorithm <a href="https://www.youtube.com/watch?v=rX7lIfQlqOo&amp;feature=youtu.be&amp;t=17m20s">just by looking for an XOR of two different values</a>. The Golden Master is a technique used when there is a clear input and output at the system level. So the main thing to look for is any IO (stdout/stderr or file printing for example) or random logic, for example. After that it's all internal state.</p>
+
+<p>This is the fastest way to immediately have end-to-end tests that cover the whole system, but it's just a starting point. It's more of a safety net that freezes the behaviour of the system under test (SUT) and observes what it's doing. But it is not a replacement for unit tests.</p>
+
+<p>Steps:</p>
+
+<ol>
+  <li><p><strong>Find clear outputs of the system:</strong> This trivial is printing a lot of stuff to stdout, and it's generating dice numbers randomly.</p></li>
+
+  <li><p><strong>Find a way to capture the output of the system without changing the production code:</strong> in our case, you could redirect the stream of the console to an in-memory stream or a text file.</p></li>
+
+  <li><p><strong>Find a pattern of the outputs:</strong> Is it text? is it a data tree? etc. In this case we have text and random numbers.</p></li>
+
+  <li><p><strong>Generate enough random inputs and persist the pair input/output:</strong>  This is very similar to <a href="https://hypothesis.works/articles/what-is-property-based-testing">property-based testing</a>. You generate inputs pseudo-randomly and then you inject them to produce the outputs. The inputs have to cover most of the system, but the tests should still run in seconds, so here you decide if you generate 1000, 10000 or a million entry data. Then you persist the pair input/output (this is your golden master), and run your test suite against the system under test (SUT), whose outputs have to be the same as your golden master fixtures. In the trivial example, the random dice numbers are the inputs and the stuff printed to stdout are the outputs. We created the golden master by using a random number generator with a custom seed, and for every seed we ran the production code and redirected the output to a fixture text-file whose name was the seed we used.</p></li>
+
+  <li><p><strong>Write a system test to check the SUT against the persisted golden master:</strong> In our case we wrote tests where we used the seeds as input and asserted that the output was the fixture. At this stage we also checked the speed of the test suite.</p></li>
+
+  <li><p><strong>Commit the test:</strong> Once you are green you commit test and fixtures so that you can revert to a working state.</p></li>
+
+  <li><p><strong>Check test behaviour and coverage:</strong> Are all branches covered? If we change the code, are the tests red? If not then we can not refactor that code! So we would have to add more input/output fixtures to cover that part of the code. We fixed this and it allowed us to refactor later without fear.</p></li>
+</ol>
+
+<h2 id="session3refactoringextractingandrenaming">Session 3 - Refactoring: Extracting and Renaming</h2>
+
+<p><em>Language used: Python</em></p>
+
+<p>Refactoring is improving the design of the code without changing its behaviour.</p>
+
+<p>This session was about finding a snippet of code that we understood and extracting it into a method. Also, finding better names for the concepts in the game. After doing a refactoring, we had to run the golden master, to make sure we didn't break anything.</p>
+
+<p>We had the constraint to extract just query methods. As opposed to command methods, they don't change the state of te system, they just return a value.</p>
+
+<p>All I can say is, this session felt sooooo good.</p>
+
+<h2 id="session4refactoringsimplifyingconditionals">Session 4 - Refactoring: Simplifying Conditionals</h2>
+
+<p><em>Language used: Python</em></p>
+
+<p>In this session we had to get rid of conditionals. For example, removing an <code class="language-ruby">else</code> branch and using guard clauses at the top of a method. A guard clause is when you check all special cases first and return a special value, otherwise you jump to the normal code execution. <a href="https://refactoring.com/catalog/replaceNestedConditionalWithGuardClauses.html">Martin Fowler explained it better</a>.</p>
+
+<p>Again, we ran te golden master after every change.</p>
+
+<h2 id="session5characterisationandunittests">Session 5 - Characterisation and Unit Tests</h2>
+
+<p><em>Language used: Java</em></p>
+
+<p>Here we focused on a subset of the code. For the characterisation tests we tried to test a specific behaviour at a time. Testing behaviour does not necessarily mean that you have a 1:1 mapping between tests and methods, though. That's where unit tests came in.</p>
+
+<p>For these tests we wrote a test that we knew would fail, then ran it and let the failure tell us what the actual behaviour was, then changed the test with that correct output.</p>
+
+<p>At this stage we found most of the bugs in the code. For example, nobody was calling the method that checked if the game was playable. This method was checking if we had at least two players. When there were no players at all, the code will throw an error. However, you could play with one player and it would work!</p>
+
+<h2 id="session6introducingnewfeatures">Session 6 - Introducing new Features</h2>
+
+<p><em>Language used: Java</em></p>
+
+<p>The suggestion was to add a new category, but we realized that this would break the golden master, and also we would have to change a lot of code. So we went with the other thing we could do: fix a bug.</p>
+
+<p>We fixed the bug of the number of players, and added more unit tests for it.</p>
+
+<p>This gave us confidence to address the new category task. Shall we regenerate a new golden master for this? We didn't like that idea, so we started working on a new Category class.</p>
+
+<p>This worry of breaking the golden master was only there because in 45 min we didn't have enough time to add tests to a 100% coverage. In real life though, before this step you would have already gotten rid of the golden master and would have tests that you trust.</p>
+
+<h2 id="wrapup">Wrap up</h2>
+
+<p>We mentioned Michael Feathers book a lot (<a href="https://www.amazon.co.uk/Working-Effectively-Legacy-Robert-Martin-ebook/dp/B005OYHF0A">Working effectively with legacy code</a>) and we applied some of the techniques in the book.</p>
+
+<p>I also met Ann Witbrock, who is a woman I had been talking to sporadically on twitter. Now we know each other! She made a good summary of the event in a Twitter thread:</p>
+
+<blockquote>
+  <p>
+    Good day in a legacy code workshop at <a href="https://twitter.com/codurance?ref_src=twsrc%5Etfw">@codurance</a> - exercising all the <a href="https://twitter.com/mfeathers?ref_src=twsrc%5Etfw">@mfeathers</a> techniques and pairing with lovely people in slightly forgotten languages. Very tasty lunch too, thanks all!
+  </p>
+  &mdash; E-quipper (@annwitbrock) <a href="https://twitter.com/annwitbrock/status/987770902204092417?ref_src=twsrc%5Etfw">21 April 2018</a>
+</blockquote>
+
+<h2 id="retro">Retro</h2>
+
+<h3 id="whatwentwell">What went well</h3>
+
+<ul>
+  <li>I was an hour late but didn't miss much and they weren't too mad at me!</li>
+
+  <li>I enjoyed switching languages!</li>
+
+  <li>The lunch food was provided by Codurance and was enough and filling</li>
+
+  <li>I found friends that I always bump into in other events and got to pair with them!</li>
+
+  <li>I still remember Java!</li>
+
+  <li>The discussion with the pairs about how to do things was really cool</li>
+
+  <li>I finally understand the golden master, how to generate it, and how to use it!</li>
+</ul>
+
+<h3 id="whatwentwrong">What went wrong</h3>
+
+<ul>
+  <li>We didn't manage to finish the golden master, but in the next session I paired with someone that did.</li>
+
+  <li>45 minutes felt not enough time, but the focus was on practice, not on finishing!</li>
+
+  <li>It's not clear from the session what to do when you want to change behaviour if you have to break the golden master. They just said that the golden master is something that you should never have to do</li>
+
+  <li>Some people complained that this example was much easier than real life projects</li>
+
+  <li>One of the male Codurance team members of the morning sessions was systematically interrupting Halima while she was trying to explain the sessions, which was very annoying because I wanted to hear the end of her sentences. I should have raised my hand and said something. No excuses. Shame on me.</li>
+</ul>
+
+<h3 id="whatilearned">What I learned</h3>
+
+<ul>
+  <li>I had a bit of a confusion at first when I thought I wouldn't have to do the custom seed part as I could just fake the random generator in tests and make it return what I wanted. The problem is that there were several random generation happening and we needed all possible combinations, so seeding was the way to go.</li>
+
+  <li>I am very obsessed with clean and readable code, so my eyes cried blood a lot, and it was hard to contain the need to clean, refactor or even rewrite from scratch the whole thing. I think I'm getting better at resisting and embracing caos as years go by, though.</li>
+
+  <li>The people who did it in Javascript had problems because apparently you can not seed <code class="language-javascript">Math.random()</code>! I wish I paired with them to see how they solved this, but I have a bit of allergy to Javascript.</li>
+
+  <li>The golden master is so fast. Covering all the code with behavior and unit tests would take us really long, and this is a small app, imagine if this was a real world app.</li>
+</ul>
+
+<h3 id="whatwouldidodifferently">What would I do differently</h3>
+
+<ul>
+  <li>Try new languages. I defaulted to my pair's language, but that was Ruby, Python and Java, which I already know. I should have asked the attendees if any of them was not doing -insert languages I already know-.</li>
+</ul>
+
+<h2 id="otherpeoplewhohastalkedaboutthis">Other people who has talked about This</h2>
+
+<ul>
+  <li>Luciano palma <a href="https://codurance.com/2017/11/05/legacy-code-retreat">wrote about his experience here</a>.</li>
+
+  <li>There is a <a href="https://code.tutsplus.com/tutorials/refactoring-legacy-code-part-1-the-golden-master--cms-2033">TutPlus tutorial as well</a>.</li>
+</ul>

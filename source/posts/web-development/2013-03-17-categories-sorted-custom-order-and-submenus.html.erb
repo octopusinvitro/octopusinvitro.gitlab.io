@@ -1,0 +1,173 @@
+---
+layout: post
+title: Categories sorted in custom order with their own submenu and path in Jekyll,
+  for my thermo site
+date: 2013-03-17 18:05:23.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Jekyll
+- featured
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>Yet another site, this time for my project about Numerical Recipes applied to thermodynamics problems, <a href="https://nrthermo.tk">https://nrthermo.tk</a>.</p>
+<p>Check out the <a href="/work/web-dev/jekyll-site-nrthermo">portfolio post</a>.</p>
+<p>In the associated repo, I included three physics problems and my attempt to find ways to solve them using the <a href="http://www.nr.com/">Numerical Recipes</a> libraries. Either I try several libraries for the same problem and compare the results, or I use different libraries to solve different parts of the same problem.</p>
+<p>So, for this site, I wanted to have the three problems (Breit-Wigner, P-V diagrams and Gibbs curve) as menu items. Then, when you clicked them, a submenu should appear with pages explaining the libraries used or the different parts of the problem. The best way to understand this behavior is to visit the dedicated site. How to automate that with Jekyll?</p>
+<p>It took me some time and experimentation with this tool that is still new to me (and I don't know any ruby or yaml), but finally I figured it out (there's a lot of information on Jekyll's site about how to make "blogs", but not much about making "sites"). I'm going to start with the problems I faced and then write up my solution.</p>
+<h2>tl;dr</h2>
+<p>Before I start, here's the solution (for the lazy, although it probably won't make sense until you read the whole article):</p>
+<p><strong>Menu items:</strong></p>
+<ul>
+<li>Use pages, not posts.</li>
+<li>Save your pages in folders named after the categories you have in your site. Those will be your main menu items. Put the folders under the root folder so that your URLs have the structure <code>siteurl/category/pagetitle.html</code></li>
+<li>Since you can not use posts for what we want to do here, and pages don't have categories, create your custom categories list through a yaml hashed list. Add the hashed-list with your categories to your <code>_config.yml</code> file in the order you want them to appear in the menu, and with the structure <code class="language-bash">"urlname": "Display Name"</code>. For example:
+<pre><code class="language-bash">
+categories:
+  "breitwigner": "Breit-Wigner"
+  "pvdiagrams":  "PV-Diagrams"
+  "gibbs":       "Gibbs"
+</code></pre>
+</li>
+<li>Code your main menu. You can add other items to it as well. For example:
+<pre><code class="language-markup">
+&lt;ul class="wrapper" role="navigation"&gt;
+  &lt;li&gt;&lt;a href="{{ site.url }}"&gt;Home&lt;/a&gt;&lt;/li&gt;{% for cat in site.categories %}
+  &lt;li&gt;&lt;a href="{{ site.baseurl }}/{{ cat[0] }}/"&gt;{{ cat[1] }}&lt;/a&gt;&lt;/li&gt;{% endfor %}
+  &lt;li&gt;&lt;a href="{{ site.baseurl }}/forkit"&gt;Fork it!&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+</li>
+<li>Add an <code>index.html</code> file to each folder to avoid the "Forbidden" page when you click on a category in the menu.</li>
+</ul>
+<p><strong>Sub-menu items:</strong></p>
+<ul>
+<li>Add a <code>date</code> variable in your pages' Front Matter, and use it to sort the sub-menu items as you wish.</li>
+<li>Make the loop over the sorted pages instead of the <code>site.pages</code> (Jekyll collection). For example:
+<pre><code class="language-bash">
+{% assign sorted_pages = site.pages | sort:"date" %}
+&lt;ul class="submenu"&gt;
+  {% for cat in site.categories %}
+    {% if page.dir contains cat[0] %}
+      {% for sorted in sorted_pages %}
+        {% if sorted.dir == page.dir %}
+  &lt;li{% if page.url == sorted.url %} class="active"{% endif %}&gt;&lt;a href="{{ sorted.url }}"&gt;{{ sorted.stitle }}&lt;/a&gt;&lt;/li&gt;
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+&lt;/ul&gt;
+</code></pre>
+</li>
+</ul>
+<p><strong>To do:</strong> Strip the <code>.html</code> out of the generated URLs (<code>permalink</code> only works for pages if it is in the Front Matter of the page, and that breaks the whole concept of automation that I want to achieve here).</p>
+<p>That's all. But to understand the <strong>WHY</strong>, keep reading.</p>
+<h2>First problem: how to stop Jekyll from sorting items alphabetically</h2>
+<p>I need the menu items <strong>sorted in a custom way</strong> rather than in alphabetical order. That means I want "P-V diagrams" after "Breit-Wigner", but "Gibbs" should come after "P-V diagrams". I also want to match them to categories.</p>
+<p>In Jekyll, when you add a category to a post, it saves it in a collection called <code class="language-bash">categories</code>, which is a "hash" or mapping (kind of an array whose elements are made up of pairs of items, like a dictionary or collection). That is, for each <code class="language-bash">category</code> in the <code class="language-bash">categories</code> array, we'll have two items: <code class="language-bash">category[0]</code>, which stores the category, and <code class="language-bash">category[1]</code>, which stores the contents of the post. Every time you add a <code class="language-bash">category: "something"</code> variable to the Front Matter of a post, it is added to this collection.</p>
+<div class="kitkat"><p>The <code class="language-bash">categories</code> collection is never created for PAGES, even if you add a <code class="language-bash">category</code> variable to their Front Matter. It will just behave as any other variable.</p></div>
+<p>The categories in this collection are sorted according to the <code>date</code> variable if it is present in the Front Matter, and if not, the date in the name of the post. For the same date, they are sorted alphabetically. That's not what I want.</p>
+<p>So first I'm going to explain the case where I would use posts and make my own set of categories to add to the <code>_config.yml</code> file, to illustrate why that approach didn't work for this particular project.</p>
+<h3>Categories as an array</h3>
+<pre><code class="language-bash">
+mycategories:
+  - "breitwigner":
+  - "pvdiagrams":
+  - "gibbs":
+</code></pre>
+<p>This is not a hash, it's an array (only one item per array element).</p>
+<div class="kitkat"><p>Don't call your array <code class="language-bash">categories</code> because it is a reserved word for posts, and you won't be able to access your elements (<code>site.categories</code> will return the elements in Jekyll's collection or absolutely nothing if your site is made of only pages). If you define them as a hash instead, and you name it <code class="language-bash">categories</code>, it will add your categories to Jekyll's collection and you'll make a mess. So let's call it <code class="language-bash">mycategories</code> by now.</p></div>
+<p>Now I add <code>category: "categoryname"</code> (for example) as a variable to the Front Matter of my posts. If I wanted to list the posts under each category (which I don't) I could do it like this:</p>
+<pre><code class="language-markup">
+{% for mycategory in site.mycategories %}
+&lt;h1&gt;{{ mycategory }}&lt;/h1&gt;
+&lt;ul&gt;{% for post in site.posts %}{% if mycategory == post.category %}
+    &lt;li&gt;&lt;a href="{{ post.url | prepend: site.baseurl }}"&gt;{{ post.title }}&lt;/a&gt;&lt;/li&gt;{% endif %}{% endfor %}
+&lt;/ul&gt;{% endfor %}
+</code></pre>
+<p>This would print each category according to my custom sorting, followed by the posts in that category.</p>
+<p>In short, I have categories in <code>site.mycategories</code> and categories in <code>site.categories</code>, with the same category names, only that <code>mycategories</code> is an array and is sorted as I want, and <code>categories</code> is a hash and is sorted as Jekyll wants (alphabetically, by date, etc.).</p>
+<p>Two comments:</p>
+<ul>
+<li>How do I make the permalinks (the <code>post.url</code>) be <code>/category/title</code>? If I have my posts inside the <code>_posts</code> folder, the generated permalink is <code>/category/YYYY/mm/dd/title.html</code>. If my site is made of only pages instead, and they live in the root folder, the permalink (<code>page.url</code> in this case) is <code>/title.html</code>. So maybe I should switch to using pages instead of posts.</li>
+<li>If I had a million pages under a category, do I have to manually type the category in every page or can I do something like <code class="language-bash">category: {{ site.mycategories[0] }}</code>? That way, if your category name changed and you were in a situation where you couldn't use find and replace, you wouldn't have to update a million pages. Mixing liquid syntax with the yaml syntax of the Front Matter can not be done in Jekyll unless you use a plugin. Unfortunately, pages hosted in GitHub are not allowed to use plugins.</li>
+</ul>
+<p>The good news is that both things can be achieved if we use pages --instead of posts-- and <strong>match categories to folders</strong>. And so that is why I ended up using pages instead.</p>
+<h2>Second problem: Matching categories to folders to URL paths</h2>
+<p>The idea is to avoid adding a <code>category</code> variable in each and every file, so one possibility is to save the files under a folder that is named after the category it belongs to.</p>
+<pre><code class="language-bash">
+--breitwigner
+  |--bw1.md
+  |--bw2.md
+  |-- ...
+--pvdiagrams
+  |--pv1.md
+  |--pv2.md
+  |-- ...
+--gibbs
+  |--gb1.md
+  |-- ...
+</code></pre>
+<p>In doing so, I don't need to specify the <code>category</code> variable in the Front Matter anymore. I just have to save the file in the corresponding folder. Since I won't be generating categories in the Front Matter, no <code>categories</code> collection will be created by Jekyll. Also, my files will be treated as pages by Jekyll, because they are not under the <code>_posts</code> folder anymore. This means you could go on and name your array <code>categories</code> instead of <code>mycategories</code> in the <code>_config.yml</code> file.</p>
+<div class="kitkat"><p>For Jekyll, <strong>a file is a post only if it lives under the <code>_posts</code> folder and its name starts with a date</strong>. Any file that does not obey these two things is considered a page. This will tell you if you should use <code>site.posts</code> or <code>site.pages</code> in your loops. Post files always include the date in the generated URL structure (<code>YYYY/mm/dd/title.html</code>) unless you specify <code class="language-bash">permalink: /:categories/:title</code> in the <code>_config.yml</code> file and add a <code>category</code> variable in the Front Matter of every file. Also, if you have post files in sub-folders under <code>_posts</code>, those sub-folders will be stripped out when the site is generated and you will loose the folder structure.</p></div>
+<p>My files are not acting as posts anymore but as pages under folders. Their URL will be <code>/foldername/pagetitle.html</code> which in this case matches <code>/category/pagetitle.html</code>. But if we click on a category, we will get a "Forbidden" error page. To fix this, we just have to add an <code>index.html</code> file under each folder. In my case, I use that file to introduce the physics problem at hand.</p>
+<p>I still have to find a way to strip the <code>.html</code> out of the URL. Looks like the global <code class="language-bash">permalink: /:categories/:title</code> only works for posts. For pages, we have to add a permalink variable to their Front Matter, which means, typing the actual name of the category in each page. But, again, that would be against all the automation we are aiming for. Do you have any idea on how to achieve this?</p>
+<h2>Third problem: Having a "variable" name and a "display" name for each category</h2>
+<p>I don't like "breitwigner" appearing on the menu, "Breit-Wigner" would be much better. But "breitwigner" is a better name for a variable. How to have "variable" names and "display" names for categories?</p>
+<p>That's easy. The array where all the categories are defined has to be turned into a hash collection, like this:</p>
+<pre><code class="language-bash">
+categories:
+  "breitwigner": "Breit-Wigner"
+  "pvdiagrams":  "PV-Diagrams"
+  "gibbs":       "Gibbs"</code></pre>
+<p>Now we can list them automatically using a <code>for</code> over the categories. We can access the categories collection with <code>site.categories</code>, and then, for each element in that collection, we use the first item for the URL, and the second to display it as the menu-item text. I added a link to the home page and to the repos page. The final menu looks like this:</p>
+<pre><code class="language-markup">
+&lt;ul class="wrapper" role="navigation"&gt;
+  &lt;li&gt;&lt;a href="{{ site.url }}"&gt;Home&lt;/a&gt;&lt;/li&gt;{% for cat in site.categories %}
+  &lt;li&gt;&lt;a href="{{ site.baseurl }}/{{ cat[0] }}/"&gt;{{ cat[1] }}&lt;/a&gt;&lt;/li&gt;{% endfor %}
+  &lt;li&gt;&lt;a href="{{ site.baseurl }}/forkit"&gt;Fork it!&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+<h2>Fourth problem: sub-menus</h2>
+<p>Every time I click on a category item of the main menu, the <code>index.html</code> page is loaded introducing the physics problem. To load the other pages I link to them in a sub-menu. This sub-menu changes when I click a different category.</p>
+<p>To implement this behavior, I have to first select the pages who are under a category at all (there may be a front page, an about page, etc. I don't want them), and from those I select the ones from a particular category and populate the sub-menu with them.</p>
+<p>In other words: for each category in <code>sites.categories</code>, I have to check if the loaded page is in a directory whose name matches the category. If that's the case, I loop on <code>site.pages</code> and check which are in the same directory as the loaded page. I place those in the sub-menu of that page and ignore the rest:</p>
+<pre><code class="language-bash">
+&lt;ul class="sub-menu"&gt;{% for cat in site.categories %}{% if page.dir contains cat[0] %}{% for p in site.pages %}{% if p.dir == page.dir %}
+  &lt;li{% if page.url == p.url %} class="active"{% endif %}&gt;&lt;a href="{{ p.url }}"&gt;{{ p.title }}&lt;/a&gt;&lt;/li&gt;{% endif %}{% endfor %}{% endif %}{% endfor %}
+&lt;/ul&gt;
+</code></pre>
+<p>I also added a class <code>"active"</code> as I have done in other Jekyll menus in the past. I still have two problems:</p>
+<ul>
+<li><strong>The items in the sub-menu are sorted alphabetically:</strong> that can be fixed by adding a <code>date</code> variable in the Front Matter of each page, and using the dates to sort the pages in the order we want them to appear (this is not like adding a category variable, because the <code>date</code> would be unique, so it would be like adding a title). Then, instead of looping on <code>site.pages</code> we loop on the sorted pages. To sort the pages by date, we add <code class="language-bash">{% assign sorted_pages = site.pages | sort:"date" %}</code> at the beginning of the sub-menu: <code class="language-bash">{% assign sorted_pages = site.pages | sort:"date" %}</code>.</li>
+<li><strong>The page titles are too big for the sub-menu items:</strong> I fixed that adding a variable <code>stitle</code> that stores a short title.</li>
+</ul>
+<p>The sub-menu now looks like this:</p>
+<pre><code class="language-bash">
+{% assign sorted_pages = site.pages | sort:"date" %}
+&lt;ul class="submenu"&gt;
+  {% for cat in site.categories %}
+    {% if page.dir contains cat[0] %}
+      {% for sorted in sorted_pages %}
+        {% if sorted.dir == page.dir %}
+  &lt;li{% if page.url == sorted.url %} class="active"{% endif %}&gt;&lt;a href="{{ sorted.url }}"&gt;{{ sorted.stitle }}&lt;/a&gt;&lt;/li&gt;
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+&lt;/ul&gt;
+</code></pre>
+<h2>Other stuff (not related to menus)</h2>
+<p>For the equations I used MathML with MathJax. I also added a comment next to each equation with the equivalent in LaTeX syntax.</p>
+<p>There are four different fonts used in this design, which makes me feel a bit ashamed. I will just say that I would have never done it had the site been non-static. Also, I optimized the loading, adding <code>&amp;text=NumericalRps</code> and <code>&amp;text=THERMODYNAICS</code> in the <code>src</code> attribute of the <code>link</code> tag to download just what I need.</p>
+<p>I found it very useful to create an extra <code>exclude</code> folder to put everything I don't want tracked by git or generated by Jekyll. That way, instead of adding file by file, I can just add the folder to <code>.gitignore</code> and to the <code>exclude</code> variable in Jekyll's <code>_config.yml</code> file.</p>
+<p>The code of the site can be found <a href="https://github.com/octopusinvitro/nr-thermo/tree/gh-pages">here</a>.<br />
+<!--layouts default for 404 and index and for it, post for pages--></p>
+<h2>Final remarks</h2>
+<p>I did this because I didn't want to write the category name in each file. However, I'm working in another site where I use posts instead of pages and add a category variable in the Front Matter, set permalinks, and use a fake date for the posts to sort them in the order I want. I'll be writing about that in the future!</p>
+<p>But now, I need a drink.</p>

@@ -1,0 +1,263 @@
+---
+layout: post
+title: Error handling in Sinatra
+date: 2017-01-23 18:59:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Ruby
+- Sinatra
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>I try to put none or very few logic in the routes of a Sinatra application (or in the controller if it is a Rails app), so that the application code is not too tangled with the framework code and can be tested easily. Here is an example of three error handling cases I had to think about recently.</p>
+
+<h2>First example: No post found with that slug</h2>
+
+<p>The application code can sometimes throw errors that you have to handle in some way. For example, imagine we have a Sinatra app that reads markdown files and displays them as blog posts. We could have a route that looks like this:</p>
+
+<pre><code class="language-ruby">
+get '/blog/:slug' do |slug|
+  finder = Document::Finder.new(pattern: "#{MARKDOWN_FILES_DIRECTORY}/slug.md")
+  @page = Page::Post.new(post: finder.find_single)
+  erb :post
+end
+</code></pre>
+
+<p>In this example, we send just one object to the views: the <code class="language-ruby">@page</code>, which is an instance of a post page. The responsibility of this page object is to send the view everything it needs to display. It works a bit like the <code class="language-">context</code> hash in a Django app.</p>
+
+<p>The responsibility of finding a document is in the finder. Let's take a look at how this happens:</p>
+
+<pre><code class="language-ruby">
+module Document
+  class Finder
+    def initialize(pattern:)
+      @pattern: pattern
+    end
+
+    def find_single
+      find_all.first
+    end
+
+    private
+
+    attr_reader :pattern
+
+    def find_all
+      filenames.map { |filename| create_document(filename) }
+    end
+
+    def filenames
+      @filenames ||= Dir.glob(pattern)
+    end
+
+    def create_document(filename)
+      Document::MarkdownWithFrontmatter.new(filename: filename)
+    end
+  end
+end
+</code></pre>
+
+<p>This finder class searches for files according to a certain glob pattern, and creates an array of <code class="language-ruby">Document::MarkdownWithFrontmatter</code> objects from the filenames matched. These objects represent a markdown file that contains frontmatter (like a Jekyll post for example). The call to <code class="language-ruby">glob(pattern)</code> is memoed beause disk operations are expensive and Ruby is a particularly slow dynamic language. Finally, it's a good practice that class members are private, for the sake of encapsulation.</p>
+
+<p>If you look at this code more deeply, there is a problem: if no files are found, then <code class="language-ruby">find_all.first</code> will return <code class="language-ruby">nil</code>. If we pass this to the <code class="language-ruby">Page::Post</code>, the moment it starts asking it for a <code class="language-ruby">title</code>, <code class="language-ruby">date</code> or <code class="language-ruby">body</code> (which are the methods we can call on this object), an error will be raised.</p>
+
+<p>The most robust solution would be to create a custom exception and catch it, although I am not really a fan of exceptions. But if you decide to go that way, this is how the test for the finder class would look like:</p>
+
+<pre><code class="language-ruby">
+describe 'when it fails to find a document' do
+  let(:finder) { Document::Finder.new(pattern: "#{TEST_DIRECTORY}/filename.md")}
+
+  it 'detects that there are no documents with a slug' do
+    Dir.stub :glob, [] do
+      error = assert_raises(Document::NoFilesFoundError) { finder.find_single }
+      error.message.must_include('filename.md')
+    end
+  end
+end
+</code></pre>
+
+<p>Here we are testing that our custom error class is thrown when <code class="language-ruby">Dir.glob(pattern)</code> returns nothing, and we are also asserting that our custom (and hopefully informative for the developer) message contains the filename we searched for.</p>
+
+<div class="kit-kat">
+  <p>We are stubbing the <code class="language-ruby">Dir</code> class because this is a unit test, and should only test the individual class behavior, not interactions between classes or external services/dependencies (you would do that in an integration test). In other words, unit test have to follow <h href="https://pragprog.com/magazines/2012-01/unit-tests-are-first">F.I.R.S.T: Fast, Isolated, Repeatable, Self-validating and Timely</a>. Also, since the <code class="language-ruby">Dir</code> class is a core Ruby class, it is not expected to change a lot, get out of sync, etc. As Sandi Metz says in her book POODR, "<a href="https://www.goodreads.com/author/quotes/5763434.Sandi_Metz"><em>depend on things that change less often than you do</em></a>. That is what we are doing!</p>
+</div>
+
+<p>The implementation of our custom exception could look like this:</p>
+
+<pre><code class="language-ruby">
+module Document
+  class NoFilesFoundError < StandardError
+    def initialize(msg = 'No files found')
+      super
+    end
+  end
+end
+</code></pre>
+
+<p>It takes a message as an argument in the constructor and provides a default one if no mesasge is provided.</p>
+
+<p>We can now use this custom error in the finder:</p>
+
+<pre><code class="language-ruby">
+# ...
+
+def find_single
+  raise_error_if_no_files_found
+  find_all.first
+end
+
+def none?
+  filenames.empty?
+end
+
+private
+
+def raise_error_if_no_files_found
+  message = "No documents matched '#{pattern}'"
+  raise Document::NoFilesFoundError, message if none?
+end
+</code></pre>
+
+<p>This should make the finder tests pass. The <code class="language-ruby">none?</code> method was also introduced through TDD but I have ommited it to avoid distractions.</p>
+
+<p>Up until here no line of code has nothing to do with Sinatra. Now it's the time to use this in our app. Let's start with a web test for that route:</p>
+
+<pre><code class="language-ruby">
+require 'test_helper'
+require_relative '../../app'
+
+describe 'Post Page' do
+  it 'throws a 404 error if no file is found' do
+    get '/blog/i-dont-exist'
+    subject = Nokogiri::HTML(last_response.body)
+    subject.css('h1').first.text.must_equal('Not Found')
+  end
+end
+</code></pre>
+
+<p>This is showing our own 404 page, as opposed to Sinatra's 404 page. This is how we make this test pass; in the <code class="language-">app.rb</code> file we do:</p>
+
+<pre><code class="language-ruby">
+set :show_exceptions, :after_handler
+
+error Document::NoFilesFoundError do
+  status 404
+  @page = Page::BasicPage.new(title: 'Page Not Found - 404')
+  erb :fourohfour
+end
+</code></pre>
+
+<p>Here we are catching our custom exception and simply loading a custom 404 page when that happens. Also, <a href="https://github.com/sinatra/sinatra#error">from the official documentation</a>, "<em>the error handler is invoked any time an exception is raised from a route block or a filter. But note in development it will only run if you set the show exceptions option to <code class="language-ruby">:after_handler</code></em>". Hence the line:</p>
+
+<pre><code class="language-ruby">
+set :show_exceptions, :after_handler
+</code></pre>
+
+<h2>Second example: Multiple posts found with that slug</h2>
+
+<p>I lied a bit before because the actual filenames all start with a date structure like <code>YYYY-MM-DD</code>, which means that your system could actually be able to save two files that have the same slug, yet have a different file name because they were produced in different dates.</p>
+
+<p>Following the same process as before we can add another custom error for that. The test in the finder would be:</p>
+
+<pre><code class="language-ruby">
+describe 'when it fails to find a document' do
+  let(:finder) { Document::Finder.new(pattern: "#{TEST_DIRECTORY}/filename.md")}
+
+  # ...
+  it 'detects multiple documents with same name and different dates' do
+    Dir.stub :glob, ['2016-01-01-filename', '2012-01-01-filename'] do
+      error = assert_raises(Document::MultipleFilesFoundError) { finder.find_single }
+      error.message.must_include('filename.md')
+      error.files.count.must_equal(2)
+    end
+  end
+end
+</code></pre>
+
+<p>There is a variation here, we are returning the filenames that were found, in the hopes that it would be helpful for debugging purposes.</p>
+
+<p>The custom-exception implementation would be:</p>
+
+<pre><code class="language-ruby">
+module Document
+  class MultipleFilesFoundError < StandardError
+    attr_reader :files
+    def initialize(msg='Multiple files found', files=[])
+      @files = files
+      super(msg)
+    end
+  end
+end
+</code></pre>
+
+<p>In the finder, we will have:</p>
+
+<pre><code class="language-ruby">
+def find_single
+  raise_error_if_multiple_files_found
+  raise_error_if_no_files_found
+  find_all.first
+end
+
+def multiple?
+  filenames.size > 1
+end
+
+private
+
+def raise_error_if_multiple_files_found
+  message = "Multiple documents matched '#{pattern}'"
+  raise Document::MultipleFilesFoundError.new(message, find_all) if multiple?
+end
+</code></pre>
+
+<p>and in the app.rb:</p>
+
+<pre><code class="language-ruby">
+error Document::MultipleFilesFoundError do
+  status 500
+  @page = Page::BasicPage.new(title: env['sinatra.error'].message)
+  erb :multiple
+end
+</code></pre>
+
+<h2>Third example: State machine implementation</h2>
+
+<p>You can use <code class="language-ruby">pass</code> in Sinatra and this will allow you to jump to the next route in the <code class="language-ruby">app.rb</code>. In this case, we can use the previously defined methods <code class="language-ruby">none?</code> and <code class="language-ruby">multiple?</code> as a condition to jump. This behavior is very similar to how the <a href="http://community.wvu.edu/~hhammar//rts/adv%20rts/statecharts%20patterns%20papers%20and%20%20examples/paper%20on%20state%20pattern%20B31-full.pdf">State Machine Design Pattern</a> works. The State Machine prevents us from filling everything up with ugly <code class="language-ruby">if</code>/<code class="language-ruby">else</code> statements.</p>
+
+<p>Using <code class="language-ruby">pass</code> we could rewrite the routes in the following way:</p>
+
+<pre><code class="language-ruby">
+get '/blog/:slug' do |slug|
+  finder = Document::Finder.new(pattern: "#{MARKDOWN_FILES_DIRECTORY}/slug.md")
+  pass if finder.none?
+  pass if finder.multiple?
+  @page = Page::Post.new(post: finder.find_single)
+  erb :post
+end
+
+get '/blog/:slug' do |slug|
+  finder = Document::Finder.new(pattern: "#{MARKDOWN_FILES_DIRECTORY}/slug.md")
+  pass if finder.none?
+  status 500
+  @page = Page::BasicPage.new(title: env['sinatra.error'].message)
+  erb :multiple
+end
+
+get '/blog/:slug' do |slug|
+  status 404
+  @page = Page::BasicPage.new(title: 'Page Not Found - 404')
+  erb :fourohfour
+end
+</code></pre>
+
+<p>It might look as more code, but with this approach we wouldn't need the code we added for the custom exceptions. Also, I think this option is more expressive/explicit and informative of what is going on and where. The exception throwing might be a more robust solution though. If you didn't remember to check first, you could innocently send a <code class="language-ruby">nil</code> to the post page and make everything blow up. So like with everything in software development: TRADEOFFS. Check what works best for your specific use-case.</p>
+
+<p>See more about error handling in Sinatra <a href="https://github.com/sul-dlss/sdr-services-app/blob/master/Sinatra-error-handling.md">here</a>.</p>
