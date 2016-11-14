@@ -1,0 +1,256 @@
+---
+layout: post
+title: Designing a book's layout with LaTeX
+date: 2013-01-06 15:42:35.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- TeX
+- featured
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>I just re-designed and old PDF lab guide I made long time ago for a course I was teaching. It was typeset in LaTeX, but it used the defaults, so it looked a bit dull. This is how I designed my first book ever with LaTeX.</p>
+<p>Check out the <a href="/work/projects/book-layout-lab-guide/">portfolio post</a> to see screenshots of the lab guide.</p>
+<h2>Set up</h2>
+<p>The lab guide is part of the repository of the course, where there are other files like macros, etc.</p>
+<p>You can find the TeX files in the repo sub-folder called <code>zlabguide</code>.</p>
+<ul>
+<li><a href="https://github.com/octopusinvitro/cosmic-rad">If you use GitHub</a></li>
+<li><a href="https://bitbucket.org/octopusinvitro/cosmic-rad">If you use BitBucket</a></li>
+<li><a href="https://gitlab.com/octopusinvitro/cosmic-rad">If you use GitLab</a></li>
+</ul>
+<h3>Fonts</h3>
+<p>The first thing I wanted to change was the font. LaTeX default font is awesome in many senses, but it desperately shouts "<em>I was made with LaTeX</em>". A font that I really like a lot is <a href="http://www.fontsquirrel.com/fonts/alegreya">Alegreya</a>, from <a href="http://www.huertatipografica.com/en">Huerta Tipográfica</a> (which, very conveniently, was designed for printed books). I think they do a great job with design, and their other fonts are super awesome too (specially <a href="http://www.huertatipografica.com/en/fonts/robots-ht">robots</a>). I have it installed in my system and in my TeX distribution.</p>
+<p>Since I wanted to use Alegreya, I decided to compile with <code>XeLaTeX</code>, which has support for modern font technologies.</p>
+<p>For the snippets of code, I used <a href="http://www.fontsquirrel.com/fonts/dejavu-sans-mono">DejaVu Sans Mono</a>, a font that comes with Ubuntu and is very similar to Consolas. It has the four basic families: normal, oblique, bold and bold oblique.</p>
+<p>For the equations, I used <a href="https://www.ctan.org/tex-archive/fonts/mathpazo?lang=en">mathpazo</a>, which are a set of fonts to typeset mathematics to match Palatino. Alegreya is not a LaTeX default font, but Palatino looks very similar (it's also a font I love and I've used it in other projects, but Alegreya wins in my heart). See how mathpazo looks with Palatino:</p>
+<p><a href="/images/uploads/2013/01/pazo.png"><img class="aligncenter size-full wp-image-144" src="/images/uploads/2013/01/pazo.png" alt="Preview of Palatino with mathpazo" width="914" height="380" /></a></p>
+<p>To use them, I load their packages and <code>fontspec</code>, a package that XeLaTeX uses to manage fonts:</p>
+<pre><code class="language-latex">
+\usepackage{Alegreya}
+\usepackage{AlegreyaSans}
+\usepackage{DejaVuSansMono}
+\usepackage{mathpazo}
+\usepackage{fontspec}
+</code></pre>
+<p>Then I set them as defaults:</p>
+<pre><code class="language-latex">
+% **************************************************
+% Fonts
+% **************************************************
+\defaultfontfeatures{Ligatures=TeX}
+\setmainfont[Numbers=Lining]{Alegreya}
+\setsansfont[Numbers=Lining]{Alegreya Sans}
+\setmonofont{DejaVuSansMono}
+\setmathrm{Alegreya}
+\setmathsf{Alegreya Sans}
+\setboldmathrm[BoldFont={Alegreya Bold}]{Alegreya}
+</code></pre>
+<h3>Organization of files</h3>
+<p>I have my layout settings and preamble in a <strong>main file</strong> called <code>cosmicrad.tex</code>. Then I divided the guide in chapters and stored the contents of each chapter in its own TeX file. I include them in the main file with <code class="language-latex">\input{filename.tex}</code>. Compiling the main file joins the others together to make the guide.</p>
+<p>Since the steps for compiling are repetitive, I put them in a file called <code>cosmicrad</code>, and then run <code class="language-bash">$ . cosmictad</code> in a terminal.</p>
+<p>To avoid certain errors, I first delete some files before compiling, but that's just because I'm a control freak. I have to compile three times because I have several references and lists that are build in several steps. Finally, I move the generated PDF guide to the parent directory. The contents of <code>cosmicrad</code> are then:</p>
+<pre><code class="language-bash">
+rm cosmicrad.aux cosmicrad.log cosmicrad.out ../cosmicrad.pdf cosmicrad.toc
+XeLaTeX cosmicrad.tex
+XeLaTeX cosmicrad.tex
+XeLaTeX cosmicrad.tex
+mv cosmicrad.pdf ../
+</code></pre>
+<h3>Positioning</h3>
+<p>To avoid one of the most annoying habits of LaTeX, which is, positioning images and tables where it wants, I used the <a href="https://www.ctan.org/pkg/float">float</a> package. Then I just have to write <code class="language-latex">[H]</code> next to my image/table/whatever, to place it f*cking HERE. Or, as the manual says much more elegantly, "Here, definitely".</p>
+<h3>User commands</h3>
+<p>To make my life easier, I defined several handy new commands for those LaTeX commands that I use the most, for example:</p>
+<pre><code class="language-latex">
+\newcommand{\bc}{\begin{center}}
+\newcommand{\ec}{\end{center}}
+</code></pre>
+<p>so now, instead of <code class="language-latex">\begin{center} Centered text \end{center}</code> I can do <code class="language-latex">\bc Centered text \ec</code>. I also defined an easier way of typing powers of ten:</p>
+<pre><code class="language-latex">
+\providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+</code></pre>
+<p>custom separators:</p>
+<pre><code class="language-latex">
+\newcommand{\separator}{\bc\noindent\rule[2pt]{5mm}{0.1pt}$\sim \star \sim$ \rule[2pt]{5mm}{0.1pt}\ec}
+</code></pre>
+<p>and much more. My favorites are the "graybox", which makes a gray box to highlight special concepts with just a <code class="language-latex">\graybox{I'm inside a gray box!}</code> command:</p>
+<pre><code class="language-latex">
+\newcommand{\graybox}[3]{%
+  \bc\fcolorbox{lightgray}{lightgray!50!white}{%
+    \parbox{#1\textwidth}{%
+      \bc\parbox{#2\textwidth}{#3}\ec
+    }%
+  }\ec\par
+}</code></pre>
+<p>and the ordered/unordered lists, with bold numbers/stars inside a gray circle:</p>
+<pre><code class="language-latex">
+  \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+  \node[shape=circle,draw,inner sep=2pt,fill=lightgray,lightgray!50!white] (char) {\color{gray}#1};}}
+  \renewcommand{\labelenumi}{\protect\circled{\AlegreyaBlack\arabic{enumi}}}
+  \renewcommand{\labelitemi}{\protect\circled{$\star$}}
+  \renewcommand{\labelitemii}{\color{yellow}$\star$}
+</code></pre>
+<p><a id="pagenumbers" href="/images/uploads/2013/09/projects-labguide3.png"><img class="aligncenter size-full wp-image-62" src="/images/uploads/2013/09/projects-labguide3.png" alt="Lab guide book layout design - details" width="915" height="792" /></a><br />
+<em class="small">This is how ordered/unordered lists, gray boxes and page numbers look like.</em></p>
+<h3>References</h3>
+<p>With references I'm not referring to the bibliography (not only), but to LaTeX references, which basically are:</p>
+<ul>
+<li><strong>References to a page, equation, image, table, etc.</strong>: for example, if we want to reference an image in our document, we do <code class="language-latex">Fig. \ref{fig:label}</code>, and then we add <code class="language-latex">\label{fig:label}</code> to the image we want to reference. You don't have to use <code>fig:</code>, but it helps keep things organized. If you had tables, for example, you would use <code>tab:</code>, etc. You can reference anything.</li>
+<li><strong>References to a bibliography item</strong>: Those are done with <code class="language-latex">\cite{aut:YY}</code>, where <code>aut</code> are three letters to refer to the author name and <code>YY</code> is the year of publication. Works pretty much as normal references, but instead of <code class="language-latex">\label</code> you use <code class="language-latex">\bibitem[AutYY]{aut:YY}</code> in a separate file, which I called <code>cosmicrad.bbl</code>. This file contains a list of all your bibliography items. After that command, you write the information of your item.</li>
+<li><strong>The lists (table of contents, list of figures, etc.):</strong> Those are very easily inserted by placing <code class="language-latex">\tableofcontents</code>, <code class="language-latex">\listoffigures</code>, etc. where you want the list to appear. Then you just have to use <code class="language-latex">\chapter{Chapter title}</code>, <code class="language-latex">\section{Section title}</code>, <code class="language-latex">\includegraphics{path to the figure}</code>, etc to tell LaTeX that those have to be listed in their respective lists.</li>
+</ul>
+<p>This is just basic LaTeX, you can learn more in the <a href="http://en.wikibooks.org/wiki/LaTeX">LaTeX Wikibooks</a>.</p>
+<h2>The cool stuff</h2>
+<h3>References</h3>
+<p>Regarding the first type of references, I'm using the <a href="https://www.ctan.org/pkg/caption">caption</a> package, which is a cool way to modify LaTeX default captions. You can include some options when you load it:</p>
+<pre><code class="language-latex">
+\usepackage[hang,small]{caption}
+</code></pre>
+<p>You can use a lot of modifiers but for this guide I used <code>hang</code>, which indents the caption text, and <code>small</code>, which renders the caption font in a small size. You can even add more settings in your preamble, for example, I set a sans-serif font for the caption, set a bold weight for the label and a light one for the text, and the total width as 80% of the text width.</p>
+<pre><code class="language-latex">
+% **************************************************
+% Captions
+% **************************************************
+\DeclareCaptionFont{sf}{\AlegreyaSansLight}
+\DeclareCaptionFont{bf}{\AlegreyaSansMedium}
+\captionsetup{width=0.8\textwidth}
+\captionsetup{labelfont=bf,textfont=sf}
+</code></pre>
+<p><a href="/images/uploads/2013/09/projects-labguide4.png"><img class="aligncenter size-full wp-image-63" src="/images/uploads/2013/09/projects-labguide4.png" alt="Lab guide book layout design - tables and plots" width="686" height="958" /></a><br />
+<em class="small">This is how captions look like</em>.</p>
+<p>For the second type of references (citing), I chose the <code>alpha</code> style, that is, author/year, which also happens to make the items look like the captions we just set. I did that with <code class="language-latex">\bibliographystyle{alpha}</code> at the end of the main file.</p>
+<p>Finally, for the table of contents: if you want to have a table of contents not only in your document but in your PDF reader also, you can use the awesome package <a href="https://www.ctan.org/pkg/hyperref?lang=en">hyperref</a>. You should load it after all your other packages. It's a good idea to load the url package too, which makes clicable URLs inside your document.</p>
+<pre><code class="language-latex">
+\usepackage{url}
+\usepackage[bookmarks]{hyperref}
+</code></pre>
+<p>Now let's define a special blue color for our links:</p>
+<pre><code class="language-latex">
+\definecolor{blue}{RGB}{34,128,188}
+</code></pre>
+<p>With <code class="language-latex">\hypersetup</code> you can configure <code>hyperref</code>'s options. Since the code is commented, I think it's best to show it as is:</p>
+<pre><code class="language-latex">
+% **************************************************
+% PDF output
+% **************************************************
+\hypersetup {
+% --- Configuration options -------------------------------------------------------------------------------------------------------
+  breaklinks  = true,		% allow links to break over lines by making links over multiple lines into PDF links to the same target.
+% --- Extension options -----------------------------------------------------------------------------------------------------------
+  linktoc     = page,		% section, slide, page, none, or all be link on TOC/LOF/LOT. Also linktocpage = true.
+  colorlinks  = true,		% false: boxed links; true: colored links (boxed links are not printed). Only named colors work.
+  linkcolor   = red,		% color of internal links
+  urlcolor    = blue,		% color of external links
+  citecolor   = blue,		% color of links to bibliography
+% --- PDF-specific display options ------------------------------------------------------------------------------------------------
+  linkbordercolor = {1 0 0},			% The color of the box around normal links
+  urlbordercolor  = {0.13 0.50 0.73},	% The color of the box around links to URLs
+  citebordercolor = {0.13 0.50 0.73},	% The color of the box around citations
+% --- PDF display and information options -----------------------------------------------------------------------------------------
+  pdftitle     = {Cosmic Radiation},					% title
+  pdfsubject   = {Advanced Experimental Techniques},	% subject of the document
+  pdfstartview = {FitV},								% fits the height of the page to the window
+}
+</code></pre>
+<p>I am doing several things here:</p>
+<ul>
+<li>When I open the PDF in a viewer, there will be an index to the left that will allow me to jump to the sections by clicking them.</li>
+<li>The page numbers in the table of contents of the document are clicable.</li>
+<li>Different colors for internal (to parts of the document) and external links.</li>
+<li>I can add meta data to the generated PDF document, like the title, author, etc.</li>
+</ul>
+<h3>Code syntax highlighting</h3>
+<p>There's a package for everything in LaTeX. You can use the <a href="https://www.ctan.org/pkg/listings">listings</a> package to highlight your code. First you define your colors:</p>
+<pre><code class="language-latex">
+% **************************************************
+% Colors
+% **************************************************
+\definecolor{blue}{RGB}{34,128,188}
+\definecolor{lightblue}{RGB}{199,234,253}
+\definecolor{lightgray}{RGB}{230,230,230}
+\definecolor{yellow}{HTML}{F3C50F}
+\definecolor{green} {HTML}{9ACD32}
+\definecolor{violet}{HTML}{990055}
+</code></pre>
+<p>Then you configure the listings package settings:</p>
+<pre><code class="language-latex">
+% Listings
+\lstset{
+  language        = C++,
+  breaklines      = true,
+  tabsize         = 4,
+  frame           = single,
+  numbers         = left,
+  numberstyle     = \color{gray}\sffamily,
+  basicstyle      = \color{violet}\scriptsize\ttfamily,
+  keywordstyle    = \color{green!90!black}\bfseries,
+  identifierstyle = \color{black},
+  commentstyle    = \color{gray}\itshape,
+  stringstyle     = \color{blue},
+  showstringspaces= false,
+  rulecolor       = \color{lightgray},
+  backgroundcolor = \color{lightgray!50!white}
+}
+</code></pre>
+<p>Then you can embed your code, even add more specific configurations locally:</p>
+<pre><code class="language-latex">
+\begin{lstlisting}[language=cpp]
+cout("Hello world!");
+\end{lstlisting}
+</code></pre>
+<p>Or you can include a file:</p>
+<pre><code class="language-latex">
+\lstinputlisting{../mcEff/mcScin.c}
+</code></pre>
+<p>Or even just some lines in that file:</p>
+<pre><code class="language-latex">
+\lstinputlisting[
+  firstnumber = 49,
+  firstline   = 49,
+  lastline    = 49
+]{../mcEff/mcScin.c}
+</code></pre>
+<p>This would show just the line number 49 of the file.</p>
+<p><a href="/images/uploads/2013/09/projects-labguide5.png"><img class="aligncenter size-full wp-image-64" src="/images/uploads/2013/09/projects-labguide5.png" alt="Lab guide book layout design - syntax highlighting" width="709" height="960" /></a><br />
+<em class="small">This is listings in action</em>.</p>
+<h3>Tables</h3>
+<p>For tables I used the package <a href="https://www.ctan.org/pkg/ctable">ctable</a>. You can make totally awesome tables with it and it has a lot of useful options. I also used <a href="https://www.ctan.org/pkg/multirow">multirow</a> which creates tabular cells spanning multiple rows, and <a href="https://www.ctan.org/pkg/dcolumn">dcolumn</a>, to align on the decimal point of numbers in tabular columns.</p>
+<h2>The even cooler stuff</h2>
+<p>In this section, I'll cover the look and feel of the different types of chapters throughout the guide, page numbers, etc.</p>
+<p>Cooler also means way more advanced. First, you have to load these three life savers:</p>
+<pre><code class="language-latex">
+\usepackage{fancyhdr}
+\usepackage[explicit]{titlesec}
+\usepackage{tikz}
+</code></pre>
+<p>The first one lets you configure the way your headings and footers are going to look like. That includes, for example, the format of your page numbers. If you haven't, check <a href="#pagenumbers">this screenshots</a>, where you can see the page number format I ended up using. Any command in the preamble that starts with <code class="language-latex">\fancy</code> is doing configurations in the header and footer of your pages.</p>
+<p>The second one lets you personalize the titles of your chapters and sections, which look pretty dull in LaTeX defaults. The third one is <a href="http://sourceforge.net/projects/pgf/">a super awesome package</a> that you should check more deeply, because it lets you draw stuff in LaTeX or work with graphics in a very simple way, and it has a lot of commands and possibilities. The <a href="http://pgf.sourceforge.net/pgf_CVS.pdf">manual</a> is a thousand pages long.</p>
+<p>With the help of these two packages, I made those white chapter numbers over a yellow background. Then, for anything that is not a "real" chapter title, like the title of the "Contents" page or the bibliography, etc. I use a different style. This also applies to the page numbering which is roman at the beginning, and Arabic later.</p>
+<p><a href="/images/uploads/2013/09/projects-labguide2.jpg"><img class="aligncenter size-large wp-image-61" src="/images/uploads/2013/09/projects-labguide2-1024x734.jpg" alt="Lab guide book layout design - inner pages" width="840" height="602" /></a><br />
+<em class="small">LaTeX helping you make cooler chapter titles</em>.</p>
+<h3>The cover</h3>
+<p>The package <a href="https://www.ctan.org/pkg/eso-pic">eso-pic</a> lets you make a cover that is worth your content. The command <code class="language-latex">\AddToShipoutPicture</code> lets you use an image as background of a page. Then you can configure that image more precisely in the preamble. For example, for a cover that fits the entire page:</p>
+<pre><code class="language-latex">
+\newcommand\BackgroundPic{%
+  \put(-126,0){
+    \parbox[b][210mm]{297mm}{%
+      \vfill
+      \centering
+      \includegraphics[width=210mm,keepaspectratio]{img/cover.jpg}%
+      \vfill
+    }%
+  }%
+}%
+</code></pre>
+<p>Then you just have to tell eso-pic to use it where you want it:</p>
+<pre><code class="language-latex">
+\AddToShipoutPicture{\BackgroundPic}
+</code></pre>
+<p>And that's pretty much all. This is my first book-layout design with LaTeX, I'm sure there are better ways to achieve this, but this is what I found and learned!</p>
+<p>What do you think? What would you change? Would you do it in a different way and how? Have you ever designed a book layout? Have you ever used LaTeX?</p>
