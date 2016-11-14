@@ -1,0 +1,97 @@
+---
+layout: post
+title: First steps with Erlang
+date: 2015-10-21 22:13:17.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Erlang
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>Everyone is excited about Elixir, the programming language built on top of Erlang that shares the same abstractions as Erlang but is inspired by Ruby and it's developer friendliness.</p>
+
+<p>I've been thinking for a while about giving it a try. However, since it's most important features are related with <strong>concurrency</strong> and that's the reason Erlang was created to begin with, I thought it would be better to start with Erlang.</p>
+
+<p>Here I put together some of my notes about the language, although to really get it into my system I have to find a fun project to build with it. Preferably a project that needs concurrency!</p>
+
+<h2>Installing</h2>
+
+To install it:
+
+<pre><code class="lang-bash">
+sudo apt install erlang
+sudo apt install erlang-base
+</code></pre>
+
+<p>It comes with <a href="http://erlang.org/doc/man/erl_lint.html">a linter</a>. If you are using atom, there is a <code class="language-plaintext">language-erlang</code> plugin for syntax highlighting and a <code class="language-plaintext">erlang-linter</code> too.</p>
+
+<p>Erlang also comes with a shell prompt that you start like this:</p>
+
+<pre><code class="lang-erlang">
+erl
+Erlang (BEAM) emulator version 4.9.1.2
+
+Eshell V4.9.1.2 (abort with ^G)
+1&gt;
+</code></pre>
+
+<p>It says to press <kbd>Ctrl</kbd> + <kbd>G</kbd> to exit, but the only way I could achieve it is by hitting <kbd>Ctrl</kbd> + <kbd>C</kbd> and then <kbd>a</kbd> for &quot;abort&quot;.</p>
+
+<p>Just like in a SQL shells you often have to finish everything with a <code class="language-plaintext">;</code> end all sentences with a dot, and if you have several lines in a function, each finishes with a comma and the last one with a dot, as if it was a sentence in English. It does throw an error, just silently returns the prompt.</p>
+
+<h2>Environment</h2>
+
+<p>Erlang code is compiled to bytecode so it can be used by the VM:</p>
+
+<pre><code class="lang-bash">
+erlc -v filename.erl
+</code></pre>
+
+<p>this will generate <code class="language-plaintext">filename.beam</code>. Now you can run it inside the erl bash:</p>
+
+<pre><code class="lang-erlang">
+erl
+1&gt; filename:function(argument)
+</code></pre>
+
+<p>The Erlang <strong>package manager</strong> is <a href="https://hex.pm/">hex</a>, for which you need <a href="http://www.rebar3.org/">rebar3</a>, which is the official build tool for Erlang.</p>
+
+<p>I couldn't find any official Erlang <strong>version managers</strong>, but <a href="https://github.com/robisonsantos/evm">this Github repository</a> created in 2012 seems to still be maintained. Not sure if this is what Erlang people use though.</p>
+
+<p>For <strong>debugging</strong>, a <a href="http://erlang.org/doc/apps/debugger/debugger_chapter.html">native debugger</a> is shipped with the language, as well as a trace facility called <a href="http://erlang.org/doc/man/dbg.html">dbg</a>.</p>
+
+<p>Apparently it looks like it also comes with a <strong>testing framework</strong>, <a href="https://www.erlang.org/doc/apps/eunit/chapter.html">EUnit</a>.</p>
+
+<p>Finally, the <strong>gitignore</strong> site has an Erlang specific <a href="https://www.gitignore.io/api/erlang">gitignore file</a> to use in your projects.</p>
+
+<h2>The language</h2>
+
+<p>There is a <a href="https://learnxinyminutes.com/docs/erlang/">learn X in Y minutes</a> dedicated page for Erlang.</p>
+
+<p><a href="https://www.tutorialspoint.com/erlang/erlang_bifs.htm">BIFs</a> are functions that are built into Erlang to do tasks that are impossible to program in Erlang.</p>
+
+<p>In Erlang functions should always return something, if you are not, then Erlang will return the atom <code class="language-plaintext">ok</code>.</p>
+
+<p>Also, the last logical expression of a function to be executed will be returned to the caller automatically, like in Ruby and other imperative languages. Comments are marked with a <code class="language-plaintext">%</code> symbol, like in LaTeX. Function notation is <code class="language-plaintext">-&gt;</code> like in JavaScript ES6. Functions are called with parentheses even if they take no arguments, just like python there is no <code class="language-plaintext">end</code>.</p>
+
+<p>It&#39;s a best practice to not use <code class="language-erlang">import</code> for external modules and rather make the dependency explicit by using <code class="language-erlang">io:format(foo)</code>, for example.</p>
+
+<p>Module name and file name have to be the same, extension is <code class="language-plaintext">erl</code>.</p>
+
+<p>There are function declarations made up of function clauses, which are separated by <code class="language-plaintext">;</code> rather than using <code class="language-plaintext">if</code>-<code class="language-plaintext">else</code>.</p>
+
+<pre><code class="lang-erlang">
+greet(male, Name) -&gt;
+  io:format("Hello, Mr. ~s!", [Name]);
+greet(female, Name) -&gt;
+  io:format("Hello, Miss. ~s!", [Name]);
+greet(_, Name) -&gt;
+  io:format("Hello, ~s!", [Name]).
+</code></pre>
