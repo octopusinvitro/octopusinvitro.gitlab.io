@@ -1,0 +1,296 @@
+---
+layout: post
+title: Git etiquette
+date: 2014-02-17 21:32:16.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- git
+author:
+display_name: Octopus in vitro
+first_name: ''
+last_name: ''
+---
+
+<blockquote>
+  <p><a href="https://www.youtube.com/watch?v=Dv8I_kfrFWw">"The biggest why for git's existence is telling the story of your project"</a><br>
+  &mdash; Jessica Kerr</p>
+</blockquote>
+
+<p>Having a clean git history is just <a href="https://fangpenlin.com/posts/2013/09/30/keep-a-readable-git-history/">as important as writing clean code</a>. So I thought I would do a write up of good git practices.</p>
+
+<h2 id="gitgoodpractices">Git good practices</h2>
+
+<ul>
+  <li><p>Commits should have a single responsibility.</p></li>
+
+  <li><p>The commit message should use verbs in imperative tense (for example: <code class="language-bash">Add README</code>, instead of <code class="language-bash">Adds README</code> or <code class="language-bash">Added README</code>).</p></li>
+
+  <li><p>Commits should explain the "<em>why</em>" rather than the "<em>what</em>".</p></li>
+
+  <li><p>It's a good idea to organize the message into a summary line and a longer body:</p>
+    <ul>
+      <li>Keep the summary line clear and concise. Ideally it should not be more than 50 characters.</li>
+
+      <li>Keep the body focused. Wrap the body lines around ~70 characters.</li>
+    </ul>
+  </li>
+
+  <li><p>Don't litter the project's history with unnecessary merge commits. When pulling new commits when you have local commits that haven't been pushed yet, do <code class="language-bash">git fetch origin BRANCH_NAME</code> rather than just <code class="language-bash">git pull</code>. Then you can inspect the contents of the branch using <code class="language-bash">git diff origin/BRANCH_NAME</code> (note the <code class="language-bash">origin/</code> before the branch name) and decide what to do with it. Maybe you want to merge the new changes, maybe rebase yours over them, maybe hard reset your branch to <code class="language-bash">origin/BRANCH_NAME</code>. Some people would advise doing <code class="language-bash">git pull --rebase</code>, but then you are not in control, as you are if you fetch instead.</p></li>
+
+  <li><p><strong>Clean history 1:</strong> It's a good practice to rebase the branch with master just before merging the branch into master. For that, use <code class="language-bash">git rebase master</code> on the child branch, then merge. This will produce a fast-forward merge.</p></li>
+
+  <li><p><strong>Clean history 2:</strong> Same applies to merging other branches into their parent branches. For that, use <code class="language-bash">git rebase PARENT_BRANCH</code> on the child branch, then merge. This will produce a fast-forward merge.</p></li>
+
+  <li><p><strong>Clean history 3:</strong> If you want git to maintain a history of featured branches, you can always avoid fast-forward merges by adding a  merge commit. For that, use <code class="language-bash">git merge --no-ff</code> instead of <code class="language-bash">git merge</code>, after rebasing.</p></li>
+
+  <li><p>Use <code class="language-bash">rebase</code> thoroughly to clean your history. Do not submit commits to the project that are litter or fix typos. Instead, squash, split and reorder commits as necessary. Always use <code class="language-bash">rebase</code> to update a child branch with its parent, rather than using <code class="language-bash">merge</code>.</p></li>
+
+  <li><p>When rebasing, don't change any commit from the parent branch, only commits from the child branch. Parent branch commits should be treated like master commits. To see the commits that belong just to the child branch use <code class="language-bash">git log PARENT_BRANCH..CHILD_BRANCH</code></p></li>
+
+  <li><p>Once a branch is merged into master, there is no point in leaving it hanging, creating confusion. Delete the branch locally and remotely. You can do this easily by adding this alias to your <code class="language-bash">.bash_aliases</code>:</p>
+<pre><code class="bash language-bash">
+delete() {
+  git push origin :$1
+  git branch -D $1
+}</code></pre>
+  </li>
+</ul>
+
+<p>then you can use it like this: <code class="language-bash">delete BRANCH_NAME</code></p>
+
+
+<h2 id="aguidetoprofessionalpullrequests">A guide to professional pull requests</h2>
+
+<ul>
+<li><p>Always work on tiny branches. Small PRs are easier to review, and are more likely to be merged fast.</p></li>
+
+<li><p>It's a good habit to do "cleaning" PRs before the real PR, to fix the code first for the change we want to do.</p>
+  <blockquote>
+    <p><a href="https://twitter.com/kentbeck/status/250733358307500032?lang=en">"<em>Make the change easy, then make the easy change</em>"</a>.<br>
+      &mdash; Kent Beck
+    </p>
+  </blockquote>
+</li>
+
+<li><p>Before you submit a PR, remember to check if the README or the documentation needs updating after your change.</p></li>
+
+<li><p>PRs are not the place to comment on syntax, whitespace, etc. Agree with the team beforehand on the conventions to be used, and use a linter to automatically enforce consistency in the codebase.</p></li>
+
+<li><p>Make sure the code you submit with your PR is covered by tests, and that all the tests pass. Branches should not be merged if tests aren't green.</p></li>
+
+<li><p>PR templates are a useful tool to remind contributors of things that should be checked before submitting a PR.</p></li>
+
+<li><p>When addressing feedback on a PR that requires modifying a change introduced by a commit in that branch, don't add a new commit. Use <code class="language-bash">git commit --fixup COMMIT_SHA</code>. Then, before merging, you can squash those commits with <code class="language-bash">git rebase -i --autosquash PARENT_BRANCH</code>.</p></li>
+
+<li><p>The contributor who submitted the PR is usually the one who merges the branch after the PR has been reviewed and approved. This is because branches should be rebased before merging (clean history approach), and the contributor knows better how to fix conflicts if they appeared.</p></li>
+
+<li><p>It is recommended that every single commit passes the tests in isolation. An example of when this could be useful is if you need to do <code class="language-bash">git bisect</code> at some point. For example, if you are working on a ruby project that uses rake to run the tests, you can check that every commit passes the tests using:</p></li>
+</ul>
+
+<pre><code class="language-bash">
+git rebase -i --exec 'bundle exec rake' master
+</code></pre>
+
+<p>The rebase will stop if tests fail. Then you can fix them and do <code class="language-bash">git rebase --continue</code> when you are done.</p>
+
+
+<h2 id="tipsandtricks">Tips and tricks</h2>
+
+<ul>
+<li>Want to add only bits of a file? (works also for <code class="language-bash">checkout</code>, <code class="language-bash">reset</code>, <code class="language-bash">stash</code>, etc.)</li>
+</ul>
+
+<pre><code class="language-bash">
+git add file -p
+</code></pre>
+
+<ul>
+<li>Same but file is new and still not tracked?</li>
+</ul>
+
+<pre><code class="language-bash">
+git add file -N
+git add file -p
+</code></pre>
+
+<ul>
+<li>Want to copy the same commit message than another commit with <code class="language-bash">COMMIT_SHA</code>?</li>
+</ul>
+
+<pre><code class="language-bash">
+git commit -c COMMIT_SHA
+</code></pre>
+
+<ul>
+<li>Want to have GitHub-like word by word difference highlights?</li>
+</ul>
+
+<pre><code class="language-bash">
+git diff --color-words='.'`
+# another variant:
+git diff --word-diff
+</code></pre>
+
+<ul>
+<li>Want to gitignore something without adding it to <code class="language-bash">.gitignore</code>?</li>
+</ul>
+
+<p>Add it to <code class="language-bash">.git/info/exclude</code> instead.</p>
+
+<ul>
+<li>Discovered a typo 5 commits behind? Don't add a commit that says 'Fixes typo'. Instead:</li>
+</ul>
+
+<pre><code class="language-bash">
+git add FILE_AFTER_CORRECTING_TYPO
+git commit --fixup COMMIT_SHA_OF_FILE_WITH_TYPO
+git rebase -i --autosquash PARENT_BRANCH
+</code></pre>
+
+<ul>
+<li>Same but you added some other changes to the same file after that commit? Just do an interactive rebase and edit the commit:</li>
+</ul>
+
+<pre><code class="language-bash">
+git rebase -i PARENT_BRANCH
+# your git editor opens,
+# change label of commit for file with typo to 'edit' and close editor
+git add FILE_AFTER_CORRECTING_TYPO
+git rebase --continue
+</code></pre>
+
+<ul>
+<li>Want to stash everything, including untracked files?</li>
+</ul>
+
+<pre><code class="language-bash">
+git stash -u
+</code></pre>
+
+<ul>
+<li>Want to stash but not the files that are in staging?</li>
+</ul>
+
+<pre><code class="language-bash">
+git stash --keep-index
+</code></pre>
+
+<ul>
+<li>Want to run a command for all the commits in the branch? For example, running the tests?</li>
+</ul>
+
+<pre><code class="language-bash">
+git rebase -i --exec 'COMMAND_TO_RUN_THE_TESTS' PARENT_BRANCH
+</code></pre>
+
+<p>Beware: your bash aliases don't work here! Type the whole command.</p>
+
+<ul>
+<li>Want to pull the current branch but you don't know if there are new commits upstream and you have new local commits?</li>
+</ul>
+
+<pre><code class="language-bash">
+git fetch origin CURRENT_BRANCH
+git diff origin/CURRENT_BRANCH
+# See the differences and decide what to do.
+</code></pre>
+
+<p>It is not advised to just use <code class="language-bash">git pull</code> because <code class="language-bash">pull</code> is a <code class="language-bash">fetch</code> followed by a <code class="language-bash">merge</code>.</p>
+
+<ul>
+<li>When you don't like to edit your commits in an editor (like sane humans do), but you still want to have a message and a body:</li>
+</ul>
+
+<pre><code class="language-bash">
+git commit -m 'Message here' -m 'Long body description here, but you gotta be a masoquist to do this'
+</code></pre>
+
+<ul>
+<li>Want to show just the commits of the current branch?</li>
+</ul>
+
+<pre><code class="language-bash">
+git log PARENT_BRANCH..CURRENT_BRANCH
+</code></pre>
+
+<ul>
+<li>Want to show just the git history of a file?</li>
+</ul>
+
+<pre><code class="language-bash">
+git log FILENAME
+</code></pre>
+
+<ul>
+<li>Same but for a single function in a file?</li>
+</ul>
+
+<pre><code class="language-bash">
+git log -L :FUNCTION_NAME:FILENAME
+</code></pre>
+
+<ul>
+<li>Want to split a commit in two?</li>
+</ul>
+
+<pre><code class="language-bash">
+git rebase -i PARENT_BRANCH
+# mark commit as 'edit'
+git reset HEAD^
+# this reset undoes the changes, so now you can commit them separately
+</code></pre>
+
+<ul>
+<li>Want to amend the author of all commits in this branch?</li>
+</ul>
+
+<pre><code class="language-bash">
+git rebase -i --exec 'git commit --amend --author "New Author Name &lt;email@address.com&gt;"' PARENT_BRANCH
+</code></pre>
+
+<p>alternatively, if you have already set the new name and email locally or globally:</p>
+
+<pre><code class="language-bash">
+git rebase -i --exec 'git commit --amend --reset-author' PARENT_BRANCH
+</code></pre>
+
+<ul>
+<li>Want to push to several upstream repos at the same time?</li>
+</ul>
+
+<p>Say you have 3 origins called <code class="language-bash">github</code>, <code class="language-bash">bitbucket</code> and <code class="language-bash">gitlab</code>:</p>
+
+<pre><code class="language-bash">
+[remote "github"]
+  url = git@github.com:octopusinvitro/zagakus.git
+  fetch = +refs/heads/*:refs/remotes/github/*
+[remote "bitbucket"]
+  url = ssh://git@bitbucket.org/octopusinvitro/zagakus.git
+  fetch = +refs/heads/*:refs/remotes/bitbucket/*
+[remote "gitlab"]
+  url = git@gitlab.com:octopusinvitro/zagakus.git
+  fetch = +refs/heads/*:refs/remotes/gitlab/*
+</code></pre>
+
+<p>Open your <code class="language-bash">.git/config</code> file and add:</p>
+
+<pre><code class="language-bash">
+[remote "origin"]
+  url = git@github.com:octopusinvitro/zagakus.git
+  url = ssh://git@bitbucket.org/octopusinvitro/zagakus.git
+  url = git@gitlab.com:octopusinvitro/zagakus.git
+</code></pre>
+
+<p>Now when you do <code class="language-bash">git push origin</code> you will push to the three at once. You will still have to pull from each separately though.</p>
+
+<h1 id="resources">Resources</h1>
+
+<ul>
+  <li><a href="http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html">Commit messages, by Tim Pope</a></li>
+
+  <li><a href="https://medium.com/@porteneuve/getting-solid-at-git-rebase-vs-merge-4fa1a48c53aa">Getting solid at Git rebase vs. merge</a></li>
+</ul>

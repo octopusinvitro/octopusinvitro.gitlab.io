@@ -10,19 +10,12 @@ categories:
 tags:
 - Bash
 - featured
-meta:
-  _edit_last: '1'
-  _wpas_done_all: '1'
-  _revision-control: a:1:{i:0;s:8:"defaults";}
-  _oembed_c79a63ff3a9350f77be6d52d4405c18d: "{{unknown}}"
 author:
-
-
   display_name: Octopus in vitro
   first_name: ''
   last_name: ''
 ---
-<p>I often find myself having to find a set of characters in several files and replace them with something else. It is not very practical to open each file and press <kbd>Ctrl + H</kbd> to find and replace. Or for example, I recently had to get a list of all the images inserted in all my site pages.</p>
+<p>I often find myself having to find a set of characters in several files and replace them with something else. It is not very practical to open each file and press <kbd>Ctrl</kbd> + <kbd>H</kbd> to find and replace. Or for example, I recently had to get a list of all the images inserted in all my site pages.</p>
 <p>You can do all this very easily with the <a href="http://unixhelp.ed.ac.uk/CGI/man-cgi?sed"><code>sed</code></a> command. <code>sed</code> is a stream editor for filtering and transforming text.</p>
 <p>What I do is, first, I use the <a href="http://unixhelp.ed.ac.uk/CGI/man-cgi?grep"><code>grep</code></a> command to search the files where there is an occurrence of the string, let's call it "old":</p>
 <pre><code class="language-bash">grep "old" *</code></pre>
@@ -32,7 +25,7 @@ author:
 <p>Or find and replace in a list of files, separated by a space:</p>
 <pre><code class="language-bash">sed -i 's/old/new/g' file1 file2 etc</code></pre>
 <p>The <code>-i</code> is for editing files in place (makes backup if extension supplied). The <code>s/old/new/g</code> attempts to match "old" against the pattern space, where <code>s</code> is the substitute command and <code>g</code> means global (i.e. replace all and not just the first occurrence). If successful, replaces "old" with "new".</p>
-<div class="kitkat">Beware: Don't use <code>-r</code> with <code>sed</code> to search recursively, it is used for a totally different thing!</div>
+<div class="kitkat"><p>Beware: Don't use <code>-r</code> with <code>sed</code> to search recursively, it is used for a totally different thing!</p></div>
 <p>If you are lazy, you can also use wildchars. For example, to target all the files under folder <code>directory</code>, you could use:</p>
 <pre><code class="language-bash">sed -i 's/old/new/g' directory/*</code></pre>
 <p>This would change all the files under <code>directory</code> where <code>sed</code> finds occurrences of "old".</p>
@@ -42,7 +35,7 @@ author:
 <p>This is how it looks:</p>
 <pre><code class="language-bash">find -L . -type f -exec sed -i 's|old|new|g' '{}' \;</code></pre>
 <p>In this case, you won't even need to specify the path to your files, it will recursively search from your actual location down. This also means it is slower compared to the ultra fast <code>sed</code>. So use it if you are very, VERY lazy.</p>
-<div class="kitkat">If after using this command on a git repo, you have problems with the git index like this:</p>
+<div class="kitkat"><p>If after using this command on a git repo, you have problems with the git index like this:</p>
 <pre><code class="language-bash">
 $ git status
 error: bad index file sha1 signature

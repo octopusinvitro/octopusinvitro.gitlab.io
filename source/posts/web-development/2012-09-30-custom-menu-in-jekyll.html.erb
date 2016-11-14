@@ -1,0 +1,56 @@
+---
+layout: post
+title: Custom menu in Jekyll for my collection of Java snippets
+date: 2012-09-30 14:36:35.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Jekyll
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>I just launched <a href="http://javasnippets.tk/">http://javasnippets.tk</a>, a site for a repo where I plan to collect all my most used Java snippets and tricks, so that I don't have to be searching the web when I need something.</p>
+<p>Check out the <a href="/work/web-dev/jekyll-site-java-snippets/">portfolio post</a>.</p>
+<h2>Loading all the pages in a menu</h2>
+<p>Whenever I have a menu, I like to use the <code class="language-markup">ul</code> tag. Some people use links directly, but if you are browsing the site with stylesheets disabled or with a text browser (like <a href="http://lynx.browser.org/">lynx</a> in linux terminals, for example), the links appear together with no separation between them, which make them difficult to read. You could use a separator like <code>|</code>, but then you need to put it between <code>span</code> tags to hide it from visual browsers like Firefox. <strong>The un-ordered list tag feels natural and more semantic as a way to list items in a menu</strong> (at least for me).</p>
+<p>Now, the liquid syntax (used by Jekyll to generate the code of your site) allows you to use a <code class="language-liquid">for</code> loop to list your pages so that you don't have to write or update them manually. The problem is that they are listed in alphabetical order (or anti-alpha order).</p>
+<p>So, <strong>if I want to list my pages in a particular order, I have to do it by hand</strong>. For example, I wanted to have a "How to" page as the first item in the menu, so I placed it manually and then coded the automatic menu generation within the <code class="language-liquid">for</code> loop for the rest of the pages.</p>
+<pre><code class="language-markup">
+&lt;ul&gt;
+  &lt;li&gt;&lt;a class="menu" href="{{ site.baseurl }}/howto/"&gt;How to&lt;/a&gt;&lt;/li&gt;{% for page in site.pages %}{% if page.menuname %}
+  &lt;li&gt;&lt;a class="menu" href="{{ page.url | prepend: site.baseurl }}"&gt;{{ page.menuname }}&lt;/a&gt;&lt;/li&gt;{% endif %}{% endfor %}
+&lt;/ul&gt;</code></pre>
+<p>I also prefer to <strong>use specific classes for the list items</strong> (class <code>"menu"</code>) <strong>instead of playing inception with the tags</strong> (<code class="language-css">.class tag tag tag ...etc {...}</code>), since it has less CSS specificity, so it's more performant.</p>
+<p>I added yet another small twist: a Front Matter variable in every page, called <code>menuname</code>. In this variable I store a short name for the page in the menu. Otherwise, I would have to use something like the title, which is too long for the sidebar:</p>
+<pre><code class="language-css">
+---
+layout:    default
+title:     "ProcessBuilder with multi-threading"
+menuname:  "PB Multithread"
+permalink: /pbmultithread/
+---</code></pre>
+<p>The "How to" page <strong>doesn't have this variable in the Front Matter</strong>, to prevent the <code>for</code> loop from placing it again in the menu.</p>
+<p>And that's all! I also used permalinks in the Front Matter to strip the html extension from the url (if it was hosted in another server, I could use an .htaccess file for that instead). Finally, I'm using <a href="http://leaverou.github.io/prefixfree/">prefix-free</a>, <a href="http://prismjs.com/">prismjs</a> and <a href="https://www.mathjax.org/">MathJax</a> as usual.</p>
+<h2>Layouts folder</h2>
+<p>Just one default layout. The prismjs and MathJax libraries are included here instead of in the footer.</p>
+<h2>Includes folder</h2>
+<p>To keep it simple, I have a file for the <code>head</code> tag, another for the sidebar, and a footer. In the sidebar, there is a menu where I list all the pages I have in the site. I thought it made more sense to have the snippets in pages than to have them in blog posts.</p>
+<h2>Sass files</h2>
+<p>This is also the first time I use <a href="http://sass-lang.com/">sass</a>, so this Jekyll site has a <code>_sass</code> folder where all the partials are stored. This is the order in which they are loaded in my <code>main.scss</code> file, which lives inside the <code>css</code> folder:</p>
+<pre><code class="language-css">
+/* Import partials from `sass_dir` (defaults to `_sass`) */
+@import
+  "normalize",
+  "base",
+  "layout",
+  "prism",
+  "mediaqueries"
+;</code></pre>
+<p>The first one is Nicolas Gallagher's famous <a href="http://necolas.github.io/normalize.css/">reset stylesheet "normalize"</a>. Then I have basic styling stuff for html tags. The <code>layout</code> partial is where I have what I would call the actual theme, although the separation is not that sharp; part of the theme's styling can be found in the <code>_base</code> partial too. Then I have Lea Verou's syntax highlighter prism, and finally, the media queries for responsiveness, which I like to keep together in a separate file.</p>
+<p>I think this is a good organization model and I might be using something very similar in future sites.</p>
+<p>You can find the code of this site at <a href="https://github.com/octopusinvitro/java-snippets/tree/gh-pages">GitHub</a>.</p>

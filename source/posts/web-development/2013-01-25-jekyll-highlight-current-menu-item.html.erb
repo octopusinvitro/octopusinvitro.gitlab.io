@@ -1,0 +1,43 @@
+---
+layout: post
+title: Highlight current menu item in Jekyll for my cosmic radiation site
+date: 2013-01-25 17:23:05.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Jekyll
+meta:
+  _edit_last: '1'
+  _wpas_done_all: '1'
+  _thumbnail_id: '119'
+  _revision-control: a:1:{i:0;s:8:"defaults";}
+  _wp_old_slug: highlight-current-menu-item-in-jekyll-for-my-cosmic-radiation-site
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>I decided to share my lab course from back in 2005, when I was teaching undergraduate students about the awesomity of cosmic radiation. As usual, I made a dedicated site for the project at <a href="http://cosmicrad.tk/">http://cosmicrad.tk</a>.</p>
+<p>I had a lot of fun re-designing the <a href="/blog/code-and-tech/lab-guide-layout-with-latex/">lab guide</a> and the old site so that it reminded of a spaceship, and this time I used HTML entities for the equations instead of MathJax. I turned it into a Jekyll site, so I could host it together with the code of the course. It is pretty similar to my other sites in terms of structure, and <strong>it includes a menu that highlights an item when it matches the current page</strong>.</p>
+<p>Check out the <a href="/work/web-dev/jekyll-site-cosmicrad/">portfolio post</a>.</p>
+<h2>Highlight current menu item</h2>
+<p>I used a <code>for</code> loop to automatically populate the menu with the site's pages as I did in <a href="/blog/web-development/custom-menu-in-jekyll/">my Java snippets site</a>. I also used permalinks and a short name for the items, whose value is specified in a Front Matter variable called <code>short</code>.</p>
+<pre><code class="language-bash">
+&lt;ul&gt;{% for p in site.pages %}{% if p.short %}
+  &lt;li&gt;&lt;a {% if page.url == p.url %}class="selected"{% endif %} href="{{ p.url | prepend: site.baseurl }}"&gt;{{ p.short }}&lt;/a&gt;&lt;/li&gt;{% endif %}{% endfor %}
+&lt;/ul&gt;
+</code></pre>
+<p>To highlight the current item, I add a CSS class called <code>"selected"</code> if the current page matches the item. To check that, I compare the contents of the <code>page.url</code> liquid variable with the URL of the page of the current loop iteration, like this:</p>
+<pre><code class="language-bash">{% if page.url == p.url %}class="selected"{% endif %}</code></pre>
+<p>If the two URLs don't match, no class is added to the item.</p>
+<h2>Layouts folder</h2>
+<p>It has a default layout and an extra one to use with the 404 error page, where I change the header titles.</p>
+<h2>Includes folder</h2>
+<p>The structure is similar to my other pages, but I split the header file in two, to have different site titles for the error page and the rest of the pages.</p>
+<h2>Error page</h2>
+<p>For this site I tried the <a href="https://cse.google.com/cse/">Google Custom Search</a> (which is basically a script that you paste where you want the search form), since I still haven't got the time to fiddle with Jekyll search implementation. For what I've read in the manual, it doesn't look like there is a built-in searching capability. I might have to find the time to read <a href="http://stackoverflow.com/questions/10131541/how-can-i-add-a-site-search-feature-to-a-jekyll-blog">this SO question</a> more carefully.</p>
+<h2>The book</h2>
+<p>The PDF lab guide I made for this physics course looked a bit rusty after all these years. It was typeset with LaTeX, but it used all the LaTeX defaults. At that time I didn't care much about good looks XD. I decided to revamp it and that's how my first book-layout design ever made with LaTeX was born. If you are curious about it, I wrote about the process <a href="/blog/code-and-tech/lab-guide-layout-with-latex/">here</a>. The site's code is in the <a href="https://github.com/octopusinvitro/cosmic-rad/tree/gh-pages">GitHub repo</a>.</p>
