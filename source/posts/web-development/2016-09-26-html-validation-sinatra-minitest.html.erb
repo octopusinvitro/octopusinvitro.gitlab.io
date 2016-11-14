@@ -1,0 +1,206 @@
+---
+layout: post
+title: HTML validation in minitest with Sinatra
+date: 2016-09-26 15:42:35.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Ib development
+tags:
+- Sinatra
+- HTML
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>You would think that automatic HTML validation or malformed markup detection is a well solved problem in 2016, and you would be right... kind of. It is, for some well-known frameworks. But I had some trouble to find the right solution for the combination Sinatra plus minitest.</p>
+
+<p>Since it took me at least two days to figure it out I decided to share it here, maybe somebody finds it useful!</p>
+
+
+<h2>TL;DR version</h2>
+
+<p>I ended up using <a href="https://github.com/ericbeland/html_validation">Eric Beland's HTML validation gem</a>, for which you need <a href="https://github.com/htacg/tidy-html5/tree/master/README">tidy-HTML5</a>. I made it optional to install tidy though. In the tests, I make a request and validate the response against the gem's methods, and I skip the HTML validation if tidy is not installed locally. But I do install tidy on Travis so that these tests always run there (this also means that if you broke the HTML with a change to an erb template, and you don't have tidy installed locally, you won't notice until Travis is finished running).</p>
+
+<p>You can find the PR that implements this gem and take a look at the Travis file <a href="https://github.com/everypolitician/viewer-sinatra/pull/15565/files">here</a>. The PR also includes <a href="https://github.com/everypolitician/viewer-sinatra/pull/15565/files#diff-6b239b24019ef54330ee2a88b4832872">a test using it</a> and <a href="https://github.com/everypolitician/viewer-sinatra/pull/15565/files#diff-9cf3bf20d9c400f97ba157690fae772b">the shell script</a> that installs tidy on Travis.</p>
+
+<p>Ok, so now: if you like movies like Indiana Jones, Star-Wars or Lord of the Rings, keep reading for some adventures that you may or may not enjoy!</p>
+
+<h2>A long time ago in a galaxy far, far away...</h2>
+
+<p>...a developer made a PR to add nothing more than four characters: <code class="language-markup">&lt;/a></code>. The reason was so that nations could remember the reviewer as "<em>the human that looked at the most complex PR and survived to tell the story</em>" (please always do tiny PRs. Thank you 🙂 ) .</p>
+
+<p>The reviewer wisely mentioned that bug fixes should always have regression tests (i.e., I didn't have tests to detect malformed markup). Fear not, as our dear heroes were prepared to save the world by using Nokogiri in strict mode and adding a test to check that the errors array was empty.</p>
+
+<p>But this of course, opened Pandora's box. Otherwise, there would be no story.</p>
+
+<h2>Nokogiri doesn't seem to speak HTML5</h2>
+
+<p>Despite their <a href="http://www.nokogiri.org/tutorials/ensuring_well_formed_markup.html">documentation page on markup validation</a>, Nokogiri's syntax checker doesn't seem to detect all malformed markup, only some of it. What's more, it doesn't seem to support HTML5 tags. For example, in pry, I tried:</p>
+
+<pre><code class="language-ruby">
+Nokogiri::HTML("&lt;header>") {|config| config.strict }.errors
+=> [#&lt;Nokogiri::XML::SyntaxError: Tag header invalid>]
+
+Nokogiri::HTML("&lt;div>&lt;a>") {|config| config.strict }.errors
+=> []
+
+Nokogiri::HTML("&lt;div>&lt;/a>") {|config| config.strict }.errors
+=> [#&lt;Nokogiri::XML::SyntaxError: Unexpected end tag : a>]
+
+Nokogiri::HTML("&lt;a/>&lt;a/>&lt;a/>") {|config| config.strict }.errors
+=> []
+</code></pre>
+
+<p>You can use <code class="language-ruby">Nokogiri::XML</code> as well, but then you get other errors, like:</p>
+
+<pre><code class="language-ruby">
+Nokogiri::XML::SyntaxError: Premature end of data in tag html line 5
+</code></pre>
+
+<p>when I opened the page in a browser, line 5 was an innocent and unharmful <code class="language-markup">&lt;html class="no-js"></code>.</p>
+
+<p>I Googled and couldn't believe that nobody was complaining about this. I went to Nokogiri's GitHub repo and there are no similar issues (also nothing on their Nokogiri talk page), <a href="https://github.com/sparklemotion/nokogiri/issues/1277">apart from this</a>, but they basically ignored it. It is from 2013 but as you can see I tried it in pry and get the same result.</p>
+
+<p>I posted a question in Stack Overflow that same day and I am still waiting for a reply.</p>
+
+<p>So I searched for other natural options that wouldn't force me to install another gem.</p>
+
+
+<h2>Other native options</h2>
+
+<p>Things that came to my mind:</p>
+
+<ul>
+  <li>Is there a linter that I can use in our editors and maybe drop and version-control a config file (like <code class="language-">.eslintrc</code> in JavaScript projects)? I could only find a linter-erb module but it is for atom, and it doesn't need any config file.</li>
+  <li>There is a <a href="https://github.com/katgironpe/rails-erb-lint">rails-erb-lint gem</a>, but it is for Rails obviously. Nothing for Sinatra.</li>
+  <li>Maybe I could find something like rubocop for erb files? I found nothing like that, or it would lint just the ruby code on them. But in the more interesting Mark's words:<br />
+  <blockquote><p>evaluating the erb might always produce valid HTML. Or the other way around. In computer science terms, telling if erb always evaluates to valid HTML is equivalent to <a href="https://en.wikipedia.org/wiki/Halting_problem">the Halting Problem</a>, so you can't do it.</p></blockquote>
+  </li>
+</ul>
+
+<p>So, with no native options... I searched for a gem next.</p>
+
+<h2>Raiders of the lost gem</h2>
+
+<p>Basically this is the summary of what I found:</p>
+
+<ul>
+  <li><a href="https://github.com/rgrove/sanitize/">Sanitize</a> (updated a month ago), it is a tool to fix broken HTML, rather than just to detect it, so I discarded it. I want to fix the errors at the template level, before the HTML is produced. But it is based on <a href="https://github.com/google/gumbo-parser">Gumbo</a>, and it was made by the guy who made the <a href="https://rawgit.com/">RawGit CDN</a>, so you might find it cool for some of your projects.</li>
+
+  <li><a href="http://stackoverflow.com/a/32594362/2750478">NokoGumbo</a> (updated Aug 2016), parses the HTML, but doesn't seem to give you errors. I tried it, and not only it uses Nokogiri, but it is also in the category of gems that will fix the HTML instead of telling you what's wrong. Discarded.</li>
+
+  <li><a href="https://rubygems.org/gems/html-proofer">HTML proofer</a> (updated Aug 2016), checks HTML files, (or directories full of HTML files), so you would have to do some <em>dance</em> to pass it the string of the HTML response in tests:
+
+<pre><code class="language-ruby">
+HTMLProofer.check_file(Tempfile.new(last_response.body).path).run
+</code></pre>
+
+    <p>or if that doesn't work you can try this:</p>
+
+<pre><code class="language-ruby">
+HTMLProofer::Runner.new(FILENAME, type: :file, check_html: true, checks_to_ignore: ["ScriptCheck", "ImageCheck", "LinkCheck"]).process_files
+</code></pre>
+
+    <p>then a missing <code class="language-markup">&lt;/div></code> causes the return values to be something like this:</p>
+
+<pre><code class="language-ruby">
+[{:external_urls=>{}, :failures=>[#&lt;HTMLProofer::Issue:0x007fd9b47414a0 @desc="Opening and ending tag mismatch: header and div", @line=" (line 78)", @path="index.html", @status=-1>]}]
+</code></pre>
+
+    <p>Sadly, it uses Nokogiri for the validation, so I discarded it. The fun fact is that I am using it already in another project (<a href="https://github.com/everypolitician/everypolitician-docs/blob/b88798da076faafa467afd77ad1baefd94b456af/Rakefile#L7">to validate the EP-data docs site</a>). At least they took the trouble to manually <a href="https://github.com/gjtorikian/html-proofer/blob/65e885e193c75e735cb66efa71bab0b6404e9c23/lib/html-proofer/check/html.rb#L12-L14">ignore invalid tag errors</a> that appear for HTML5 tags<br />
+    and also <a href="https://github.com/gjtorikian/html-proofer/blob/65e885e193c75e735cb66efa71bab0b6404e9c23/lib/html-proofer/check/html.rb#L16-L18"><code class="language-ruby">htmlParseEntityRef</code> errors</a> as well.
+    </p>
+    <p>This gave me the idea of monkey-patching Nokogiri to achieve the same and avoid installing the gem:</p>
+<pre><code class="language-ruby">
+module Nokogiri
+  module XML
+    class DocumentFragment &lt; Nokogiri::XML::Node
+      def errors
+      # iterate on document.errors and do stuff with them
+      end
+    end
+  end
+end
+</code></pre>
+    <p>because WHAT COULD POSSIBLY GO WRONG. More importantly, I had already discarded Nokogiri! Please laugh at me. Harder. (Of course I didn't carry on with this).</li>
+
+  <li><a href="https://rubygems.org/gems/be_valid_asset">be valid asset</a> (updated Jul 2016) it was made for RSpec. The cool thing about it is that it can also validate CSS. But they officially confirmed that <a href="https://github.com/unboxed/be_valid_asset/issues/18">it can't be used with minitest</a>. Discarded</li>
+
+  <li><a href="https://github.com/spk/ruby-vnu">Ruby-vnu</a> (updated 2015) is a bit old (a colleague commented "<em>it must be super robust because it has no issues</em>!" LOL).
+
+    <p>But the cool thing about it is that it uses the <a href="https://validator.github.io/validator/">nu validator</a>, which is the official W3C validator. HOW COOL IS THAT. I tried it and confirmed that I get the same errors than with the online W3C validator.</p>
+
+    <p>Again, WHAT COULD POSSIBLY GO WRONG! IT WORKS! IT'S OFFICIAL! TESTS ARE GREEN! IT'S SO SHINY!</p>
+    <p>I MADE A PULL REQUEST!</p>
+    <p>...Travis was red. 🙁</p>
+
+    <p>The nu validator was built in Java, so you have to install the <code class="language-">openjdk-8-jre-headless</code> package. I didn't notice any problems because I have worked with Java and Android projects in the past, and I probably have more Java stuff in my laptop than you could expect the average Ruby dev to have.</p>
+
+    <p>Ok so this should be easy, I just have to install Java in Travis. How complex could that be?</p>
+
+    <p>Turns out that I couldn't use Java 8 in our container based build in Travis. I tried installing the <code class="language-">openjdk-7-jre-headless</code> package instead, but then the nu-validator didn't work. I switched to Trusty in Travis, so that I could use Java 8, which also means some commands have to be sudoed, but I discovered that Travis was still using a container based build (and you can’t use <code class="language-">sudo</code> on Travis' container based builds). I tried several many other things in the Travis config file, including <a href="https://github.com/spk/ruby-vnu/blob/master/.travis.yml">the Travis file that nu-validator is using</a>, with no success.</p>
+
+    <p>I sent a message to Travis on Twitter.</p>
+
+    <p>Introducing a Java dependency scared the team at more levels than just getting Travis working. So we agreed to make this work in a way that people using it didn't have to install Java (If you are curious about why the nu validator was written in Java, read <a href="https://about.validator.nu/">here, the section "<em>Java? Eww. Why didn’t you write it in Python or Ruby?</em>").</a></p>
+
+    <p>At this point I just went back to the happy times when I just wanted to close an unclosed link tag. And this also came to my mind:</p>
+
+    <blockquote class="twitter-tweet">
+      <p dir="ltr" lang="en">The software development process</p>
+      <p>i can’t fix this</p>
+      <p>*crisis of confidence*<br />
+        *questions career*<br />
+        *questions life*
+      </p>
+      <p>oh it was a typo, cool</p>
+      <p>— I Am Devloper (@iamdevloper) <a href="https://twitter.com/iamdevloper/status/694848050796212224">February 3, 2016</a></p>
+    </blockquote>
+
+    <p>So, since our tests all use spec format and I just use minitest to drive them rather than rspec, I thought of trying out one of the solutions made for RSpec, maybe using a thin shim that transforms them to work with whatever minitest does with specs. The other option was moving to RSpec right away. But really the requirements at this point were:</p>
+
+    <ol>
+      <li>it runs on Travis</li>
+      <li>it doesn't fail if someone doesn't have it installed</li>
+      <li>it doesn't force someone to install something that might be complex</li>
+      <li>it should be easy for anyone to run locally if the prereqs are installed</li>
+    </ol>
+
+    <p>So I moved to the next option:</p></li>
+
+  <li>Finally, <a href="https://github.com/ericbeland/html_validation">HTML validation</a> (updated Aug 2015), it was made for RSpec, although it seems to work without RSpec as well. HoIver, it requires a previous installation of <a href="https://github.com/htacg/tidy-html5/tree/master/README">tidy for HTML5</a>. So it was a decision on installing tidy or installing Java, really. Hopefully, the installation of tidy worked on Travis.</li>
+</ul>
+
+<p>Both Mac and Linux seem to come with a version of Tidy preinstalled, and in both cases the version is the super-old 10-years-old version. So in order to install tidy it is recommended that you uninstall the old version of Tidy first. Then to install <a href="http://tidy.sourceforge.net/">tidy-HTML5</a>, in Mac you can do <code class="language-bash">brew install tidy</code>, and in Linux you can follow the instructions in our shell sript in viewer sinatra, skiping the step where it creates a <code class="language-">bin</code> directory in the home directory. Or you can just <a href="https://github.com/htacg/tidy-html5/releases/tag/5.2.0">download the deb</a> if you use a debian based distro.</p>
+
+<p>To exclude running those tests if the dev doesn't have tidy installed, I thought about "<em>tagging</em>" those specs as needing html-tidy and only running them on Travis by default, using something like <a href="https://github.com/ordinaryzelig/minispec-metadata">minispec-metadata</a>, then adding <code class="language-ruby">html_validations: true</code> or something to those specs, etc. But a much simpler solution is to just use <code class="language-ruby">skip</code>:</p>
+
+<pre><code class="language-ruby">
+def last_response_must_be_valid
+  skip if `which tidy`.empty?
+  validation = PageValidations::HTMLValidation.new.validation(last_response.body, last_request.url)
+  assert validation.valid?, validation.exceptions
+end
+</code></pre>
+
+<p>and then your tests will whisper to you like this: <code class="language-ruby">······SSSS·············</code> 🙂</p>
+
+<h2>Other gems</h2>
+
+<p>There are other gems out there, but I didn't bother with them because they seem to have been left forgotten. I leave them here for posterity:</p>
+
+<ul>
+  <li><a href="https://github.com/damian/html5_validator">HTML5 validator</a>, updated Jul 2014, but for RSpec.</li>
+  <li><a href="https://github.com/jmuheim/headhunter">HeadHunter</a>, updated Apr 2014, but for Rails</li>
+  <li><a href="https://rubygems.org/gems/html-validator">HTML validator by Team Iguana</a>, not updated since 2013, but for test-unit.</li>
+  <li><a href="https://rubygems.org/gems/rspec_html_validator">RSpec HTML validator</a>, updated 2012, but for RSpec.</li>
+  <li><a href="https://rubygems.org/gems/w3c_validators">W3C validators</a>, Not updated since 2011, but for test-unit.</li>
+</ul>
+
+<hr>
+
+<p>Phew! that was all. I hope I didn't bore you and you found it useful!</p>

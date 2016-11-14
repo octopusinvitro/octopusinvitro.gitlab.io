@@ -1,0 +1,97 @@
+---
+layout: post
+title: Cybersecurity workshop
+date: 2017-09-13 20:00:00.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags: []
+author:
+display_name: Octopus in vitro
+---
+
+<p>I attended a cybersecurity workshop recently, so I wanted to share my notes.</p>
+<p>There are two things you can do to test a system:</p>
+<ul>
+  <li><strong>QA testing:</strong> test with good inputs</li>
+  <li><strong>penetration testing:</strong> test with bad inputs</li>
+</ul>
+<p>It's a good idea to introduce pentesting in the release cycle, although this practice is not very spread.</p>
+<div class="kitkat">
+  Denial of service is not something pentesters do, because they prefer to enter systems and investigate them which is the opposite!
+</div>
+
+<p>The rules of the pentester:</p>
+<ul>
+  <li>you can not modify what you are penetrating</li>
+  <li>you can not access what you are penetrating (i.e. if you get passwords, etc.)</li>
+</ul>
+<p><strong>Example of pentesting mindset:</strong> How do you connect 9 dots with just 3 lines? You have to think out of the box!</p>
+<figure>
+  <img src="<%= image_host %>/images/uploads/2017/09/9dots3lines.gif" width="500" height="198" alt="Connect 9 dots with 3 lines with a big Z">
+  <figcaption>Connect 9 dots with 3 lines with a big Z</figcaption>
+</figure>
+
+<p>A pentester ends up forgetting how to use software like a normal person, thinks out of the box, and is not limited by what the app can do.</p>
+</ul>
+
+<h2 id="the-wifi-pineapple">The WiFi Pineapple</h2>
+<p><a href="https://www.wifipineapple.com/">The WiFi pineapple</a> is a device to intercept your laptop or phone connections. You may use a VPN to protect yourself from the &quot;pineapple&quot;, but it could still place itself in the middle and act as your VPN (the certificates may not match though). Two-factor authentication can also help protect your laptop from this attack.</p>
+
+<h2 id="the-three-most-common-attacks">The three most common attacks</h2>
+
+<h3 id="cross-site-scripting-xss-">Cross-site scripting (XSS)</h3>
+<p>It basically consists of injecting JS in the frontend.</p>
+<ul>
+  <li><strong>Example software:</strong> <a href="https://portswigger.net/burp/">BurpSuite</a>, <a href="https://www.telerik.com/fiddler">Fiddler</a>, <a href="https://beefproject.com/">BeEF</a>. BeEF sits between you and the server (don't use against commercial apps like Facebook, etc., or they will get &quot;legal-angry&quot;)</li>
+  <li><strong>Ways to use it:</strong>
+    <ul>
+      <li><strong>Fuzzing:</strong> sets of bad data, crazy nonsense, throw everything you can at the bot.</li>
+      <li><strong>Manual:</strong> sending you links inside your own app</li>
+    </ul>
+  </li>
+  <li><strong>Solution to XSS:</strong> Escape, blacklist, encode all user input, as people can load malicious javascript through it.</li>
+</ul>
+
+<h3 id="sql-injection">SQL injection</h3>
+<p>Inject SQL in the app's backend. You can also perform automated exploitations. You can encode inputs in the frontend, but SQL injection still makes it to the backend.</p>
+<ul>
+  <li><strong>Example software:</strong> <a href="http://sqlmap.org/">sqlmap</a> is a free tool that helps you do that.</li>
+  <li><strong>Ways to use it:</strong> Try this out: add a single quote at the end of an input and try writing some SQL after it, see what you get!</li>
+  <li><strong>Solution to SQL injection:</strong> Use prepared statements and parameterized queries.</li>
+</ul>
+
+<h3 id="command-injection">Command injection</h3>
+<p>Inject code in the server/system's OS.</p>
+<ul>
+  <li><strong>Example software:</strong> <a href="https://www.metasploit.com/">metasploit</a> is a free tool that helps you do that.</li>
+  <li><strong>Ways to use it:</strong> For example, the call to <code class="language-">system()</code> in the C language is done as root, so somebody can access your backend and OS that way.</li>
+  <li><strong>Solution to command injection:</strong> Parameterize OS commands and arguments. For example, use the <code class="language-">ProcessBuilder</code> library in Java.</li>
+</ul>
+
+<h2 id="introducing-security-testing-in-your-pipeline">Introducing security testing in your pipeline</h2>
+<p>A static code analyzer detects vulnerabilities like SQL injection or libraries with known vulnerabilities.</p>
+<p>Ways to apply it:</p>
+<ul>
+  <li>cloud vs in house (somebody vs your resources and maintenace)</li>
+  <li>centralised vs federalized (teams themselves but inconsistencies)</li>
+</ul>
+<p>Do this testing at the beginning of the deployment cycle, not at the end, because it's more costly.</p>
+<p>Jenkins CI is an example of how to have a release cycle that adds one step in the middle for this:</p>
+<ul>
+  <li>build</li>
+  <li>code quality</li>
+  <li>API and 3rd party</li>
+  <li>production</li>
+</ul>
+
+<h2 id="mobile-security">Mobile security</h2>
+<p>Today we serve several devices, several OS, and several apps.</p>
+<ul>
+  <li><strong>Platform controls:</strong> OS and hardware. Manufacturers, avoid jail break, etc.</li>
+  <li><strong>App store:</strong> Secure and certified apps.</li>
+  <li><strong>Compliance:</strong> International standard and regulatory controls, for example, only accepting passwords that are more than 8 characters long, etc.</li>
+  <li><strong>Sandboxing and containerisation:</strong> You create a boundary for the app, nothing gets in or out. Separate what happens on the system and the app. If something goes wrong, the sandbox shuts down and a new one is launched and new certs generated</li>
+</ul>

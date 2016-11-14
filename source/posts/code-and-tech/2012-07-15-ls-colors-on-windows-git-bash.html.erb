@@ -1,0 +1,87 @@
+---
+layout: post
+title: ls colors in Windows git bash
+date: 2012-07-15 22:53:20.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+- Linux
+- Windows
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>I started using git recently, and I installed it in my Ubuntu partition, as well as in my Windows partition. Something very stupid was annoying me on the Windows Git Bash; the fact that I couldn't differentiate file types by color as I can in the Linux terminal. It was all white text over a black background.</p>
+<p>Soon after starting to play with the issue, I discovered a <code>.bash_history</code> file under my Windows user folder... could it be that Git Bash was treating my Windows user folder as a Linux user folder? You loose nothing by trying, so I created a <code>.bashrc</code> file under my user folder and typed in the line:</p>
+<pre><code class="language-bash">alias ls='ls --color -hX</code></pre>
+<p>The <code>--color</code> option tells the bash to use color to distinguish file types, the <code>-h</code> is to list file sizes in a human readable format, and the <code>X</code> is to list directories first. I opened my Git Bash and typed <code>ls -al</code>... and <em lang="fr">voilá!</em> colors!</p>
+<p>I rolled all over the floor, because that's how excited I get about my stupidest discoveries.</p>
+<div class="kitkat"><p>If you are new to this. When you open your Git Bash, you should be by default in your home directory. Now create the <code>.bashrc</code> file (if on Windows 7, the file should be named <code>.bashrc.</code>). If you're not in the home directory change it with:</p>
+<pre><code class="language-bash">$ cd</code></pre>
+<p>You can create the file with <a href="https://notepad-plus-plus.org/">Notepad++</a>. Just beware of some text formatting issues.</div>
+<p>I tried to push it forward. Since I don't dig the default colors, can I define my custom colors as I do in the Linux terminal?</p>
+<p>This is not possible, or at least, <em><strong>I couldn't make it work</strong></em>. In Linux, there is the system variable <code>LS_COLORS</code>, that allows you to do something like this:</p>
+<pre><code class="language-bash">
+LS_COLORS='di=1:fi=0:ln=31:pi=5:so=5:bd=5:cd=5:or=31:mi=0:ex=35:*.rpm=90'
+export LS_COLORS
+</code></pre>
+<p>Those numbers refer to colors; and the codes, to file types, according to these lists:</p>
+<pre><code class="language-markup">
+di = directory
+fi = file
+ln = symbolic link
+pi = fifo file
+so = socket file
+bd = block (buffered) special file
+cd = character (unbuffered) special file
+or = symbolic link pointing to a non-existent file (orphan)
+mi = non-existent file pointed to by a symbolic link (visible when you type ls -l)
+ex = file which is executable (ie. has 'x' set in permissions).
+
+00  = default colour
+01  = bold
+04  = underlined
+05  = flashing text
+07  = reverse field
+31  = red
+32  = green
+33  = orange
+34  = blue
+35  = purple
+36  = cyan
+37  = grey
+40  = black background
+41  = red background
+42  = green background
+43  = orange background
+44  = blue background
+45  = purple background
+46  = cyan background
+47  = grey background
+90  = dark grey
+91  = light red
+92  = light green
+93  = yellow
+94  = light blue
+95  = light purple
+96  = turquoise
+100 = dark grey background
+101 = light red background
+102 = light green background
+103 = yellow background
+104 = light blue background
+105 = light purple background
+106 = turquoise background
+</code></pre>
+<p>So, say you want to list directories with a bold font and in light blue, you would use <code>di=01;94</code>, where <code>di</code> means "apply this to directories", <code>01</code> means "bold", and <code>94</code> means "light blue". But this is not working for me at the moment (I mean, for Git Bash running on Windows 7). Could be that I have to use a different variable instead of <code>LS_COLORS</code>, or that I have to edit a different file, not the <code>.bashrc</code>, or that I have to just take a totally different approach.</p>
+<p>Once you know all this, it's easy to do more interesting things with your bash file. For example, now you can also go and try to add your aliases at the end, like:</p>
+<pre><code class="language-bash">$ alias gs='git status'</code></pre>
+<p>I haven't push this forward, though, so it's possible that some commands may not work. Remember that the Git Bash is limited, you can't type all the commands you can in a Linux terminal.</p>
+<p>Finally, if you have the Git Bash opened when making changes to the <code>.bashrc</code> file, you can type:</p>
+<pre><code class="language-bash">$ source .bashrc</code></pre>
+<p>to run the changes in that window, or you can just close it and open a new Git Bash window. That way you can test and try to check whether your commands work or not.</p>

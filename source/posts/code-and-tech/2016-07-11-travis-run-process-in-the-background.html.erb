@@ -1,0 +1,69 @@
+---
+layout: post
+title: Running processes in the background in Travis
+date: 2016-07-11 20:12:35.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>The other day I had a surprise in Travis. <a href="https://github.com/octopusinvitro/morphio-scraper-australian-parliament">I wrote my first scraper ever</a> and I wasn't sure how to test it. Now I know better, if the page is relatively stable you can save a version of the page you are scraping and use webmock to retrieve it in tests, or you can use VCR to record the request, which is similar.</p>
+
+<p>Because I was young and innocent (I was never lol), I downloaded the page but also thought it would be a good idea to run a local server and serve the page, which I stored in the fixtures folder:</p>
+
+<pre><code class="language-bash">
+ruby -run -e httpd -- -p 4000 spec/fixtures
+</code></pre>
+
+<p>and then run the tests against that, for which I was using another terminal window:</p>
+
+<pre><code class="language-bash">
+bundle exec rake
+</code></pre>
+
+<p>I naively put this into my Travis file:</p>
+
+<pre><code class="language-bash">
+image: ruby:2.3.0
+
+before_script:
+  - gem install bundler --no-ri --no-rdoc
+  - bundle install --jobs $(nproc)  "${FLAGS[@]}"
+
+serve:
+  script:
+    - ruby -run -e httpd -- -p 4000 spec/fixtures
+
+rspec:
+  script:
+    - bundle exec rspec
+</code></pre>
+
+<p>If you want to run a command before running the tests, you should do so specifying a <code class="language-">"before_script"</code> action. In the documentation examples, there is a command to start a server before running the tests. That process should run in a different thread. However, when I pushed to GitHub, Travis started the server and everything was blocked, so the process was stopped after 10 minutes, with errors like:</p>
+
+<pre><code class="language-bash">
+ruby -run -e httpd -- -p 4000 spec/fixtures
+[2016-07-07 18:40:20] INFO  WEBrick 1.3.1
+[2016-07-07 18:40:20] INFO  ruby 2.3.0 (2015-12-25) [x86_64-linux]
+[2016-07-07 18:40:20] INFO  WEBrick::HTTPServer#start: pid=12791 port=4000
+
+ERROR: Build failed: execution took longer than 3600 seconds
+</code></pre>
+
+<p>This has an easy solution, adding the <code class="language-">&amp;</code> operator at the end of the command, which tells the system to run it in the background. Ah, silly me.</p>
+
+<p>The information in the <code class="language-">.travis.yml</code> file is compiled into a bash script. Commands you specify in <code class="language-">"before_install"</code>, <code class="language-">"install"</code>, <code class="language-">"script"</code>, etc., are executed sequentially.</p>
+
+<p>I'm leaving it here to shame myself and to demonstrate that no matter how many years you are doing this, you still will make the stupidest mistakes. The times I've used this in the past... and I didn't see it coming.</p>
+
+<pre><code class="language-bash">
+ruby -run -e httpd -- -p 4000 spec/fixtures &amp;
+</code></pre>

@@ -1,0 +1,71 @@
+---
+layout: post
+title: Where to place the gh-pages folder?
+date: 2012-08-20 12:31:18.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- git
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>It's 2012 and I officially switched to <a href="https://git-scm.com/">git</a> (finally!) and it seemed natural to get an account in <a href="https://github.com/">GitHub</a>, because "<em>that's what all the cool kids are doing</em>". I like the fact that you can host your project's dedicated site on the repo, although it is done through Jekyll, GitHub's static-pages generator. Anyways, it means no databases, which means faster loading and less security issues/overhead, but has other limitations. For each problem, its tool.</p>
+<p><a href="https://help.GitHub.com/articles/creating-project-pages-manually/">As the site explains</a>, you have to create a new branch in your project called <code>gh-pages</code> to store the contents of your site. When you push that branch to your GitHub remote repository, the server will build your static site from the files in the branch (that is, you should version-control and push everything but the <code>_site</code> folder).</p>
+<p>This branch is not a normal branch though. It's an <em><strong>orphan</strong></em> branch. And, what is an orphan branch? According to <a href="http://git-scm.com/docs/git-checkout/">git's manual</a>:</p>
+<blockquote><p>Create a new orphan branch, named <code>&lt;new_branch&gt;</code>, started from <code>&lt;start_point&gt;</code> and switch to it. The first commit made on this new branch will have no parents and it will be the root of a new history totally disconnected from all the other branches and commits.</p></blockquote>
+<p>You create it using the command:</p>
+<pre><code class="language-bash">git checkout [-q] [-f] [-m] --orphan  [&lt;start_point&gt;]</code></pre>
+<p>Since I'm still new to git I can't totally grasp the implications of an orphan branch or its applications, although the git manual lists at least one:</p>
+<blockquote><p>This can be useful when you want to publish the tree from a commit without exposing its full history. You might want to do this to publish an open source branch of a project whose current tree is "clean", but whose full history contains proprietary or otherwise encumbered bits of code.</p></blockquote>
+<p>Now, when you checkout a branch in your local repo, your system's folder browser will switch to the contents of that branch. That is a bit confusing to me. Let me explain why.</p>
+<p>Basically I am thinking of these two scenarios: repo folder and gh-pages in the same folder or in different folders.</p>
+<h2>Repo folder and gh-pages in the same folder</h2>
+<p>Let's say I have a local repo folder in my computer (or I clone it from GitHub). Now I want to have a dedicated site for my project in a branch called <code>gh-pages</code>. I follow the instructions to create an orphan branch, store my site in there, commit, and push to GitHub.</p>
+<p>When I want to continue working on my project I checkout the <code>master</code> branch, make my changes and commit / push to GitHub. If I want to make changes to the site, I checkout <code>gh-pages</code> branch again, and so on.</p>
+<p>So everything lives in ONE local folder of my computer, which shows different files depending on the branch I have checked out. But the problem is, every time I want to see the files of one of the branches in, say, Nautilus (Ubuntu's file browser), I have to do it through git. I can't click folders and open them, because they don't appear until I git checkout the branch.</p>
+<h2>Repo folder and gh-pages in different folders</h2>
+<p>The other scenario is: I have my local repo folder that contains my project's files, where I make changes to the code, commit and push to GitHub.</p>
+<p>Now, instead of making a <code>gh-pages</code> branch, I make a <code>gh-pages</code> folder INSIDE my local repo folder (and add this folder to <code>.gitignore</code>).</p>
+<p>I go to the <code>gh-pages</code> folder, clone my project in there, create a <code>gh-pages</code> orphan branch, paste in my site's files, commit and push. In the <code>gh-pages</code> folder, I keep checked into the <code>gh-pages</code> branch forever.</p>
+<p>If I want to continue working in my project, I just switch to my local repo folder and make changes / commit / push to GitHub.<br />
+If I want to continue working on the project's site, I switch to the <code>gh-pages</code> folder and make changes / commit / push to the <code>gh-pages</code> branch in GitHub.</p>
+<p>So I now have a "project" living inside my project, just for <code>gh-pages</code>. Everything is organized, and if I browse the local repo folder with Nautilus (or any other system's file browser), I will be able to see both my code files and my project's site files. If I have several projects, each with their respective site, everything can be kept organized.</p>
+<p>The problem is, I am saving my project files twice, am I not? One in my working repo, and the other in the master branch of the cloned repo living inside the <code>gh-pages</code> folder (just that it will never be updated).</p>
+<p>Also, if you had files in the <code>gh-pages</code> branch that are also in the <code>master</code> (because you are using some of them in your site as demos, for example), you would have to use the first approach. Lea Verou talked a year or so ago about how to <a href="http://lea.verou.me/2011/10/easily-keep-gh-pages-in-sync-with-master/">easily keep gh-pages in sync with master</a> because she was having that exact problem. The links in the comments are very enlightening too. And there is even another different way to do it by <a href="http://jasonrudolph.com/blog/2009/02/25/git-tip-how-to-merge-specific-files-from-another-branch/">checking out single files instead of the whole branch</a>. All this is still too obscure to me, and I will need time to internalize it.</p>
+<h2>How I do it</h2>
+<p>Maybe the answer is so obvious that you are all laughing at me at this moment. Whatever the answer is, I chose the second approach. I think it's less confusing that way, and since I won't be updating the master branch of the cloned repo, but just the <code>gh-pages</code> branch, seems like it'll be as if the master branch didn't exist at all.</p>
+<p>More important is the fact that when I work on a project, I'm usually also updating the project's site <em>at the same time</em>, so <strong>I need to have both folders opened</strong>. Otherwise I'd have to change from one branch to the other constantly and I find it very prone to error, or simply an uncomfortable workflow. That's the way I work, maybe your workflow is different and this is not an issue for you.</p>
+<p>Now, to avoid having the files repeated twice, what I do is to clone the GitHub repo just after I create it, and before uploading any file to it. But this is probably something that will only be viable for my personal projects.</p>
+<h2>My Workflow</h2>
+<p>I do this only once: just after creating my repo:</p>
+<ul>
+<li>Enter repo and add <code>gh-pages</code> to <code>.gitignore</code>.</li>
+<li>Create folder <code>gh-pages</code></li>
+<li>Clone the repo <code class="language-bash">git clone &lt;remote repo URL> gh-pages</code>.</li>
+<li>Follow the instructions in the GitHub website:</li>
+<pre><code class="language-bash">
+$ cd gh-pages
+$ git checkout --orphan gh-pages
+$ git rm -rf .
+</code></pre>
+<p>The following step is better done in the GUI (<code>temp</code> is a temporary folder where you have your site files):</p>
+<pre><code class="language-bash">
+$ cd ..
+$ mv temp/* gh-pages
+$ rm -rf temp
+</code></pre>
+<p>Now, you can start version-controlling your site files:</p>
+<pre><code class="language-bash">
+$ cd gh-pages
+$ git add .
+$ git commit -a -m "First pages commit"
+$ git push origin gh-pages
+</code></pre>
+</ul>
+<p>I'm doing a first pages commit because NOW I will start version controlling my site files. I normally work on a site on my Dropbox when I am in the initial phases, and only when I have something that makes sense do I start control versioning. It's better for my mental health if I do it that way :-).</p>
+<p>If there is a better way of doing this, let me know!</p>

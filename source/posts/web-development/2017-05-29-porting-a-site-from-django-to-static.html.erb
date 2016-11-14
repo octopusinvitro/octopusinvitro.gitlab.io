@@ -1,0 +1,137 @@
+---
+layout: post
+title: 'Porting a site: from Django to static'
+date: 2017-05-29 10:30:45.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Python
+- Django
+- Ruby
+- Sinatra
+author:
+  display_name: Octopus in vitro
+---
+
+
+<p>I recently worked on a project to port <a href="https://github.com/mysociety/pombola">Pombola, a Django site</a> to a static site. It was a legacy project with a huge amount of code that had several apps for different per-country versions so that they could use the same architecture and code. This means that in order to work on one country version, you had to download the whole repo, including the other countries' versions of the site. There were plans to extract the core into a Python package so that each site could live in its own repo, but that never happened.</p>
+
+<p>Code always rots, in particular if you don't keep it tidy as you go. The problem is that requirements from users and clients always pile-up, and are always required "<code class="language-markup">&lt;em&gt;for yesterday&lt;/em&gt;</code>". Hence you make a fast patch that provides the required functionality and you promise yourself that you will come back in the future to fix it. We know that is a lie 😂.</p>
+
+<p>A bad codebase only gets worse as you pile-up bad code over bad-code because it's simply too difficult (if not impossible) to do things the right way.</p>
+
+<p>You can see <a href="/work/web-dev/sinatra-shineyoureye">a dedicated page with details about this project</a> in my portfolio. Keep reading for the technical details on how it was built.</p>
+
+<h2>Pros and cons of a dynamic website</h2>
+
+<h3>Pros</h3>
+
+<ul>
+  <li>You have a CMS to add content to the site, which means that non-technical users can manage it.</li>
+  <li>You have interactive elements like comments, search and contact forms baked into the architecture.</li>
+</ul>
+
+<h3>Cons</h3>
+
+<ul>
+  <li>Slow because it talks to a database and it needs resources from the server to generate the pages on the fly.</li>
+  <li>Needs some sort of caching of pages that are requested frequently, so that you don't have to dynamicly create them each time, and can save hosting resources. But this is not easy to get right!</li>
+  <li>You have to watch out for security issues and attacks to your database (good ol' SQL injection and similar).</li>
+  <li>Maintenance cost is high, and you need to do backups of the database contents frequently and test them.</li>
+  <li>Hosting cost is high</li>
+  <li>Database management, migrations etc. is WORK.</li>
+</ul>
+
+<h2>Pros and cons of a static website</h2>
+
+<h3>Pros</h3>
+
+<ul>
+  <li>Super fast load times.</li>
+  <li>Hosting is easy and cheap, all your host needs to support is html, some (like Gitlab pages) even support several static site generators.</li>
+  <li>Easy to build and maintain, fast to develop.</li>
+  <li>A bit more secure.</li>
+  <li>Your content can be kept under very granular version-control with a resource like <a href="https://prose.io/#about">prose.io</a>.</li>
+  <li>Loads of static site generators to choose from, see for example <a href="https://gitlab.com/groups/pages">the ones offered by GitLab</a>.</li>
+</ul>
+
+<h3>Cons</h3>
+
+<ul>
+  <li>No CMS, so until now they remained mainly for tech users; however this is less of a problem today since there are tools like <a href="%5Bmavo.io%5D(http://prose.io/)">prose.io</a> and <a href="http://mavo.io/">mavo.io</a>, among many others</li>
+  <li>You need third party services for things like comments, contact forms and search.</li>
+</ul>
+
+<p>You can read a more detailed summary in this Smashing Magazing article "<a href="https://www.smashingmagazine.com/2015/11/modern-static-website-generators-next-big-thing/">Why Static Site Generators Are The Next Big Thing</a>".</p>
+
+<h2>A real use case</h2>
+
+<p>One of our teams was already using a static approach to their product's site, although they started static right away. Basically all they had to do was consume a huge JSON file and spit parts of this JSON file in a human-digestible way in different pages. You could think of that JSON file as their database. They had tried Jekyll but it turned out too complex for what they wanted to do. I don't think they tried other static-site generators out there, probably they didn't know of them.</p>
+
+<p>For example, <a href="https://middlemanapp.com/">Middleman</a> is a static-site generator powered by Ruby, so you can still write your own business-logic in Ruby-plain-objects. But the only static-site generator that Github supports automatically in their GitHub pages service is Jekyll, and they were hosting the site in Github (Gitlab supports a bunch of static-site generators, though, including Middleman).</p>
+
+<p>So they created a new approach: they built a Sinatra app with proper service objects etc., then run the app locally and <code class="language-bash">wget</code> all its pages. Finally, they push this plain HTML pages to a <code class="language-plaintext">gh-pages</code> branch on a repo. I believe this happens automatically (through <a href="https://travis-ci.org/">Travis</a> maybe?) everytime a PR is merged to master.</p>
+
+<p>Sinatra gives you great flexibility with less framework code, so that could have been a reason for choosing it over a static-site generator. I worked on that project too.</p>
+
+<h2>From Django to static</h2>
+
+<p>We decided to use the same approach to port the Django app into a static site.</p>
+
+<h3>Content</h3>
+
+<p>We had to handle both new content and old content.</p>
+
+<h4>New content</h4>
+
+<p>First we needed to find a way for users to enter content, and that content to be persisted. We stored the content in a repository in GitHub. Then used the integration that <a href="https://github.com/prose/prose">prose.io</a> provides with GitHub.</p>
+
+<p>This is an open-source project that provides a GUI to files stored in GitHub, so that non-technical users can add, update and delete content easily. Each change is recorded in the main branch as a GitHub commit, which means that the content is version-controlled. Also, since this tool is open-source, we could submit PR for any functionality that we required.</p>
+
+<p>The way we used it is the following:</p>
+
+<ul>
+  <li>We keep "the prose repo", where users enter content. Things that live in this repo are blog posts, static pages, anything that is just content.</li>
+  <li>In the repo with the Sinatra code that powers the site, we create a <code class="language-plaintext">prose</code> folder. Then we tell Sinatra that the content files are there.</li>
+  <li>We clone the prose repo in that folder.</li>
+  <li>We add this folder to the Sinatra repo's <code class="language-plaintext">.gitignore</code></li>
+</ul>
+
+<p>Having the prose repo living there allows us to easily make changes in context anytime we need to update any file in the prose repo, like the configuration file or the Travis file (we use a Travis file to deploy to staging).</p>
+
+<h4>Old content</h4>
+
+<p>To port the old content (like old pages, images and old blog posts) from the Django website, we wrote some scripts that would read what was stored in the database and spit it in the form of markdown files with frontmatter. You may be familiar with this format if you ever used Jekyll.</p>
+
+<p>The reason to do this is because prose was made originally for Jekyll blogs, so it produces markdown files with frontmatter in them. You can define the fields that you want your frontmatter to have in <a href="https://github.com/prose/prose/wiki/Prose-Configuration">prose's config file</a>. The values of these fields can be edited from prose's GUI by the non-technical users. If they click on the "metadata" icon, they will be presented with a form listing all editable fields. Some of them, like the dropdowns or the published checkbox, are very powerful.</p>
+
+<p>We used these fields in the code behind in the Sinatra app to manipulate the data and decide how and what we would present in the views.</p>
+
+<h3>Deploying</h3>
+
+<p>The deployment is done automatically through a script. This is what the script does:</p>
+
+<ul>
+  <li>The Sinatra repo is cloned</li>
+  <li>A <code class="language-plaintext">prose</code> folder is created under the root of the project, and the prose repo is cloned inside it.</li>
+  <li>The Sinatra app is fired.</li>
+  <li>We crawl it with <code class="language-bash">wget</code>.</li>
+  <li>We push these html pages to the <code class="language-plaintext">gh-pages</code> branch of our staging or production repo.</li>
+</ul>
+
+<h3>URLs</h3>
+
+<p>Prose makes automatic URL generation very easy, because when you create a new file, it is automatically saved with a filename built from the date and a dashified version of the title.</p>
+
+<p>This is very convenient for new sites, because you can just have a dynamic route in Sinatra, and tell it to go search a file with that slug as filename from a specific folder. Then it's a matter of reading the contents and the frontmatter fields and doing whatever you want with it.</p>
+
+<p>We had a complication though: since we were porting from an existing site, we had to keep the same slugs for every page as the slugs that already existed. Luckily, those were stored in the database, so it was just a matter of adding extra code in the script to deal with that. Basically, we used the creation date of the record in the table, followed by the slug saved in the database for that page, as the name of the file.</p>
+
+<h3>Images</h3>
+
+<p>We wanted to serve images from a proxy. Prose lets you define a folder to save your images in the same repository where all the content lives. Then, in the GUI, whenever you want to add an image, you can either upload a new image from your computer or select an existing image from that folder.</p>
+
+<p>If you don't provide a specific fullpath to an image or resource, but a relative path instead, Sinatra will assume that the resource has to be read from the current app, so it will search for the resource in the <code class="language-plaintext">public</code> directory by default, or in any custom directory you specify in Sinatra settings.</p>
