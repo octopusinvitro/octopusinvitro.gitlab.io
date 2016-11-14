@@ -1,0 +1,126 @@
+---
+layout: post
+title: Working with SVG from JavaScript
+date: 2014-05-28 09:10:20.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- JavaScript
+- SVG
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>For a while I've been trying to do a web based tic-tac-toe game just so that I could explore what it is like to manipulate the DOM of SVG sprites from JavaScript.</p>
+
+<p>I finally got to it, although <a href="https://github.com/octopusinvitro/js-ttt">the project is still a work in progress</a>.</p>
+
+<p>The basic difference with HTML DOM manipulation seems to be the fact that <strong>you have to provide a namespace</strong>, but also <strong>there are some SVG specific methods</strong>. This is what I learnt:</p>
+
+<h2>SVG DOM manipulation</h2>
+
+<h3>Getting elements by id</h3>
+
+<p>You can still use the basic <code class="language-javascript">getElementById(id)</code>:</p>
+
+<pre><code class="language-javascript">
+var svg = document.getElementById(index);
+</code></pre>
+
+<p>but the inline SVG needs to have the <code class="language-markup">xmlns</code> attribute set:</p>
+
+<pre><code class="language-markup">
+&lt;svg id="cell-1" viewBox="0 0 270 270" xmlns="http://www.w3.org/2000/svg"&gt;
+  &lt;!-- SVG code here -->
+&lt;/svg&gt;
+</code></pre>
+
+<h3>Getting elements by tag name</h3>
+
+<p>There is a specific method for that, <code class="language-javascript">getElementsByTagNameNS()</code>, and you need to pass the namespace.</p>
+
+<p>For example, this code gets the <code class="language-markup">&lt;use&gt;</code> element so that we can set its value. The <code class="language-markup">&lt;use&gt;</code> element takes nodes from within the SVG document, and duplicates them somewhere else, reducing code duplication inside of the SVG sprite.</p>
+
+<p>Setting the value of an attribute requires a specific method too: <code class="language-javascript">setAttributeNS()</code>, and it also needs a namespace.</p>
+
+<pre><code class="language-javascript">
+var BoardView = {
+  svgNS: 'http://www.w3.org/2000/svg',
+  linkNS: 'http://www.w3.org/1999/xlink'
+};
+
+var use = svg.getElementsByTagNameNS(BoardView.svgNS, 'use')[0];
+use.setAttributeNS(BoardView.linkNS, 'href', '#' + mark);
+</code></pre>
+
+<p>If you are using sprites, then you need the <code class="language-markup">xmlns:link</code> in the inline SVG:</p>
+
+<pre><code class="language-markup">
+&lt;svg id="cell-1" viewBox="0 0 270 270" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"&gt;
+  &lt;use href="#sprite-id"&gt;&lt;/use&gt;
+&lt;/svg&gt;
+</code></pre>
+
+<h3>Creating SVGs in the DOM</h3>
+
+<p>Since this is an app that runs in the browser, I am using the Jasmine standalone library to run the tests against the browser directly. That way I can do manual cross-browser testing (you can automate it using any of the many services out there for a sum of money, but hey, this is a pet project).</p>
+
+<p>You can create elements from JavaScript to setup your test fixtures like this:</p>
+
+<pre><code class="language-javascript">
+function createCell(index, mark) {
+  var cell = document.createElementNS(svgNS, 'svg');
+  cell.setAttributeNS(svgNS, 'xmlns', svgNS);
+  cell.setAttributeNS(linkNS, 'xmlns:xlink', linkNS);
+  cell.setAttributeNS(svgNS, 'id', index);
+
+  var use = document.createElementNS(linkNS, 'use');
+  use.setAttributeNS(linkNS, 'href', '#' + mark);
+
+  cell.appendChild(use);
+}
+
+function insertCell(index, mark) {
+  var body = document.body;
+  body.insertBefore(cell, body.firstChild);
+  return cell;
+}
+</code></pre>
+
+<p>If you prefer, since tests are a controlled environment and the code won't go to production and won't receive external input (you are literally setting the input) you could use <code class="language-javascript">element.innerHTML</code>:</p>
+
+<pre><code class="language-javascript">
+function insertCell(index, mark) {
+  board = document.getElementById(boardId);
+  board.innerHTML = '&lt;svg id="' + index + '" viewBox="0 0 270 270" xmlns="' + svgNS + '" xmlns:xlink="' + linkNS + '"&gt;&lt;use href="#' + mark + '"&gt;&lt;/use&gt;&lt;/svg&gt;';
+}
+
+function removeCell() {
+  board.innerHTML = '';
+}
+</code></pre>
+
+<p>You can also use the <a href="https://stackoverflow.com/a/24109000/2750478">DOMParser</a>, which is experimental at the moment of writing this, but looks promising.</p>
+
+<p>Just bear in mind that <a href="https://developer.mozilla.org/en/docs/Web/SVG/Namespaces_Crash_Course#Scripting_in_namespaced_XML">SVG is a different namespace</a> and it doesn't define the same setters and getters:</p>
+
+<h2>Alternatives</h2>
+
+<p>You can also use an object tag to embed an inline SVG in the HTML DOM so that it works with Internet Explorer:</p>
+
+<pre><code class="language-markup">
+&lt;object type="image/svg+xml" data="mySVG.svg"&gt;
+  &lt;img src="fallback-image.png" alt="…" /&gt;
+&lt;/object&gt;
+</code></pre>
+
+<p>You could also use <a href="https://www.smashingmagazine.com/2014/11/styling-and-animating-svgs-with-css/">these cool techniques by Sara Soueidan</a> but then you can not use SVG sprites.</p>
+
+<p>Also, if your sprites are small, it's better to keep them in the same document, because IE doesn't support linking to external SVG in a link inside an SVG.</p>
+
+<p>To search elements inside an inline SVG, you could use XPath, but IE doesnt support it and <a href="https://caniuse.com/?search=xpath">can I use</a> doesn't know about it at the moment of writing this.</p>

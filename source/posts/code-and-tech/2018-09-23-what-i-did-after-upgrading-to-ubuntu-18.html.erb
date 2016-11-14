@@ -1,0 +1,87 @@
+---
+layout: post
+title: "What I did after upgrading to Ubuntu 18.04"
+date: 2018-09-23 15:32:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Linux
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+
+<p>In Ubuntu 18 some functionality has changed. Also, the Xorg system has been replaced by Wayland. Hence, if you want some of the old functionality, you will have to make some tweaks.</p>
+
+<p>These are the tweaks that I did, some of them are strongly personal preferences, but I hope they are helpful anyway.</p>
+
+<h2 id="fix-the-loop-that-redirects-you-to-the-login-screen-when-you-try-to-log-into-xorg">Fix the loop that redirects you to the login screen when you try to log into Xorg</h2>
+<p>When you finish upgrading, the login screen shows you three options, normal login (X11), log into Wayland and log into Unity. The only one that was working for me was log into Wayland. The problem is that in Wayland, screen sharing doesn&#39;t work, so if you have to share your screen at work like I do, for example for pair programming, you will be in trouble.</p>
+<p>The solution to be able to log into X11 is to rename your <code class="language-bash">.local</code> folder:</p>
+
+<pre class="language-bash"><code>mv ~/.local ~/.local-old</code></pre>
+
+<p>and then restart. You should be able to log into X11 or Unity now.</p>
+
+<h2 id="scrolling-direction">Scrolling direction</h2>
+<p>Ubuntu 18 scrolls like Windows or Mac. Personally, this way of scrolling is counter-intuitive to me and messes with my brain.
+To change it, go to Settings, Devices, Mouse &amp; Touchpad, and set Natural scrolling to OFF.</p>
+
+<h2 id="move-close-minimize-maximize-buttons-to-the-left">Move close/minimize/maximize buttons to the left</h2>
+<p>I have my muscle memory trained to go to the top left corner of the window in order to close it (if I am not using <kbd>Alt</kbd> + <kbd>F4</kbd>). In Ubuntu 18, these buttons were moved to the top right corner. To move them back to the left:</p>
+
+<pre class="language-bash"><code>gsettings set org.gnome.desktop.wm.preferences button-layout 'close,minimize,maximize:'</code></pre>
+
+<h2 id="install-tweaks-to-manage-extensions">Install tweaks to manage extensions</h2>
+<p>Tweaks provides a GUI for managing extensions that we need in order to change settings that are not available anymore in the settings app in Ubuntu 18:</p>
+
+<pre class="language-bash"><code>sudo apt install gnome-tweak-tool</code></pre>
+
+<h2 id="move-the-clock-to-the-right">Move the clock to the right</h2>
+<p>Again, my muscle memory is trained to look at the top right to get system/status information.</p>
+<p>Install <strong>Extend Panel Menu</strong> extension from the software center and open Tweaks to configure it.</p>
+
+<h2 id="show-remaining-time-for-battery-rather-than-percentage">Show remaining time for battery rather than percentage</h2>
+<p>This change has been critisized a lot in Ubuntu 18. The percentage is not useful, while time remaining is.</p>
+<p>Install <strong>Battery Status</strong> extension from the software center and open Tweaks to configure it. This may or may not work.</p>
+
+<h2 id="show-desktop-button">Show desktop button</h2>
+<p>In Ubuntu 18, you can not add a desktop button to the dock anymore. However, you can still show the desktop with <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>D</kbd>, or install the <strong>Show Desktop Button</strong> extension from the software center and open Tweaks to configure it. It will put a desktop button on the left of the top bar.</p>
+<p>You can also install the <strong>Dash to Dock</strong> extension from the software center and open Tweaks to configure it. It is supposed to show the option to add a Desktop button in the Behavior tab. But in my case, it didn&#39;t show it.</p>
+
+<h2 id="show-mounted-devices-partitions-in-the-dash-launcher">Show mounted devices/partitions in the dash/launcher</h2>
+<p>This is another weird move in Ubuntu 18. If you mount a drive, you will have to open the file browser to find it. Before, all mounted devices were automatically added to the dock for easy access and unmounting. Same with the system&#39;s hard disk.</p>
+<p>Install <strong>Removable Drive Menu</strong> extension from the software center and open Tweaks to configure it. This will put an icon in the top bar.</p>
+
+<h2 id="start-graphical-applications-as-root-from-the-terminal-">Start graphical applications as root from the terminal:</h2>
+<p>This is a design feature of Wayland, the workaround is to create aliases to activate and deactivate this option:</p>
+
+<pre class="language-bash"><code>
+alias gsuon='xhost +si:localuser:root'
+alias gsuoff='xhost -si:localuser:root'
+</code></pre>
+
+<p>You could also check first if the session is using Weyland before doing this</p>
+
+<pre class="language-bash"><code>
+  if [ $XDG_SESSION_TYPE = 'wayland' ]; then
+    xhost +si:localuser:root
+  fi
+</code></pre>
+
+
+<h2 id="fix-gedit-error">Fix gedit error</h2>
+<p>If you see this error:</p>
+
+<pre class="language-bash"><code>
+(gedit:14896): dbind-WARNING **: 15:23:17.699: Couldn't register with accessibility bus:...etc.
+</code></pre>
+
+<p>you can add this to your <code class="language-bash">.profile</code> or <code class="language-bash">.bashrc</code> file:</p>
+
+<pre class="language-bash"><code>export NO_AT_BRIDGE=1</code></pre>

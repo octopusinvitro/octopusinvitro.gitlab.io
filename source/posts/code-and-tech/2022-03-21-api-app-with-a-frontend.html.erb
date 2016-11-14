@@ -1,0 +1,302 @@
+---
+layout: post
+title: API app with a frontend
+date: 2022-03-21 12:36:07.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- JavaScript
+- Ruby
+- Sinatra
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>What does setting up a <strong>Ruby fullstack app</strong> looks like <strong>in 2022</strong>?</p>
+
+<p>Whenever I had worked on this type of app in my work history, it was always on codebases that were already started by others, and had been running in production for a couple of years. I wanted to check out the state of things in 2022. How would I start one of those from scratch today.</p>
+
+<p>I also always wanted to create a <strong>proof of concept</strong> for a webapp that is both an API and has a sandbox to try it out and a docs page all in the same place. So I created an API app using Sinatra and PostgreSQL, with a frontend that makes AJAX requests to the API using vanilla Javascript. <a href="/work/projects/api-app">You can see the project details here</a>.</p>
+
+<p><a href="<%= image_host %>/images/uploads/2022/03/projects-api-app.png"><img class="aligncenter" src="<%= image_host %>/images/uploads/2022/03/projects-api-app.png" alt="Screenshot of an API app with a frontend" width="1024" height="339" /></a></p>
+
+<p>The <strong>backend</strong> was by far the easiest part to do. As it happens in general with any fullstack app, the backend has the language and library dependencies pinned to a specific version and it will run in a single specific server on a specific operating system etc. Meanwhile, the <strong>frontend</strong> is a mess; you never know which device will your site be loaded on, which browser and version, and which O.S and version. On top of that, there is a lot of optimization and best practices to keep in mind, like uglifying, minimizing, gzipping, saving for web, optimizing, and what not.</p>
+
+<p>Because of this I keep scafolds for different languages that I can just build apps on top of, and be reassured that they are taking into account all the things. In this particular case, since it's a Ruby app with a vanilla JS frontend, I used both my Ruby scafold and my HTML scafold repositories.</p>
+
+<h2>Backend</h2>
+
+<p>For the backend, I used my <a href="https://github.com/octopusinvitro/ruby-scafold">Ruby scafold repository</a> as a starting point. It comes with a basic folder structure for a vanilla Ruby app, RSpec, Rubocop and a couple of badge configurations to keep an eye on code quality and dependencies.</p>
+
+<h3>Heroku</h3>
+
+<p>As all my hobby apps, this one is deployed to <strong>Heroku</strong>. I like how easy the process is, and the fact that you can use <code class="language-plaintext">git</code> to deploy, but also can manage your app from your local console using the <code class="language-plaintext">heroku-cli</code> tool.</p>
+
+<p>Heroku will automatically detect that your site is a Ruby app. However if you have another stack like Node, you need to specify it like this:</p>
+
+<pre><code class="language-bash">
+heroku buildpacks:add --index 1 heroku/ruby
+heroku buildpacks:add --index 2 heroku/nodejs
+</code></pre>
+
+<p>Heroku also needs you to add a <code class="language-plaintext">Procfile</code> and a server that supports parallelism like <code class="language-plaintext">puma</code>.</p>
+
+<h3>Database</h3>
+
+<p>I needed a database for the API, so I chose <strong>PostgreSQL</strong>. For communicating with PostgreSQL, I am using the <code class="language-plaintext">sinatra-activerecord</code> gem. I could probably be done with just the <code class="language-plaintext">pg</code> gem and do things manually, but this is a pet project so I was lazy! In particular, I didn't want to implement <strong>migrations</strong> manually 😅.</p>
+
+<p>To use the gem, you need to add this to your Rakefile:</p>
+
+<pre><code class="language-ruby">
+require 'sinatra/activerecord/rake'
+
+namespace :db do
+  task(:load_config) { require './lib/apiapp' }
+end
+</code></pre>
+
+<p>And this to your controller:</p>
+
+<pre><code class="language-ruby">
+require 'sinatra'
+require 'sinatra/activerecord'
+
+class APIapp < Sinatra::Base
+  register Sinatra::ActiveRecordExtension
+  # ...etc.
+end
+</code></pre>
+
+<p>The <a href="https://github.com/octopusinvitro/players-api#project-setup">README specifies how to setup the database locally</a>. There is a specific database setup file for the CI. Back in the day I used travis as my CI but they stopped being free for hobby projects so I switched to the Gitlab CI. I added a step where I copy that file into the default file:</p>
+
+<pre><code class="language-bash">
+cp config/database.gitlab.yml config/database.yml
+</code></pre>
+
+<p>I have just three tables at the moment. I wasn't sure about the need for the <code class="language-plaintext">ranks</code> table, but thought it may scale better to have it from the beginning. I have a <code class="language-plaintext">seeds.rb</code> file that populates the database with the right ranks at the very beginning of the databse setup process so that they are available from the start:</p>
+
+<h3>Web server</h3>
+
+<p>For this app I needed a simple web server to serve some endpoints and return JSON, but also return HTML for the sandbox and docs in the frontend.</p>
+
+<p>I am using <strong>Sinatra</strong> as a thin and simple server. Since Sinatra is a rack app, I added the <code class="language-plaintext">rack-test</code> gem to the dev dependencies so I can test it nicely. It allows you to write tests like:</p>
+
+<pre><code class="language-ruby">
+it 'loads "Try it!" by default' do
+  get '/'
+  expect(last_response).to be_ok
+  expect(last_response.body).to include('Try it!')
+end
+</code></pre>
+
+<p>Just add it to your <code class="language-plaintext">spec_helper.rb</code>:</p>
+
+<pre><code class="language-ruby">
+require 'rack/test'
+
+RSpec.configure do |config|
+  config.include Rack::Test::Methods
+end
+</code></pre>
+
+<p>Since I have backend and frontend endpoints, I decided to keep those separated in two different Sinatra controllers:</p>
+<ul>
+<li><code class="language-plaintext">Webapp</code>: the frontend controller, and</li>
+<li><code class="language-plaintext">APIapp</code>: the API controller, which has all the API endpoints.</li>
+</ul>
+
+<p>I can tell rack about them in the <code class="language-plaintext">config.ru</code> file:</p>
+
+<pre><code class="language-ruby">
+run Rack::URLMap.new(
+  '/' =&gt; Webapp, # Frontend will be mounted at /
+  '/api/v1' =&gt; APIapp # The API will be mounted at /api/v1
+)
+</code></pre>
+
+<p>Since it's just a proof of concept and I don't plan to take this to the next level, the API is a simple role player management app. Maybe it could be used to build a community of role game players and keep track of their games.</p>
+
+<h3>The API</h3>
+
+<p>I created three models to represent the three tables in the database. There are some basic validations and helper methods in them. There is a lot of room for improvement as this is just a pet project and also a proof of concept. So some design decisions can be polished.</p>
+
+<p>The API controller contains all the endpoints of the API, at the moment just two GET and one POST. More endpoints can be added as needed.</p>
+
+<p>I could use the <code class="language-plaintext">factory-bot</code> gem for the test fixtures, but I felt there was no need to add another dependency when my fixtures are very simple. So I just added them all in a <code class="language-plaintext">spec/factories.rb</code> file.</p>
+
+<p>There is also another gem to cleanup the database after every test, but again, why add another dependency when you can just add this to your <code class="language-plaintext">spec_helper.rb</code> file:</p>
+
+<pre><code class="language-ruby">
+RSpec.configure do |config|
+  config.before(:each) do
+    PG.connect(dbname: 'playersapi_test').exec('truncate players, games, ranks;')
+  end
+end
+</code></pre>
+
+<h2>Frontend</h2>
+
+<p>For the frontend, I used my <a href="https://github.com/octopusinvitro/html5-scafold">HTML scafold</a> repository as a starting point. It sets up a vanilla JavaScript webapp using Jasmine standalone as the testing framework, and gulp as a task runner. For the CSS I am still using SCSS, although CSS these days is pretty powerful. But I think both modern CSS and SCSS serve different purposes and a mix of both is a better solution.</p>
+
+<p>For this app I decided to keep the frontend assets in a dev folder called <code class="language-plaintext">assets</code> and have <code class="language-plaintext">gulp</code> spit the assets ready to serve in a <code class="language-plaintext">public</code> folder. This is by default the folder that Sinatra uses to serve static assets from, although you can change it if you want. Then I can tell <code class="language-plaintext">gulp</code> to watch for changes to the <code class="language-plaintext">assets</code> folder and rerun the relevant tasks:</p>
+
+<pre><code class="language-javascript">
+function watch() {
+  gulp.watch(dev.img,  gulp.series(img, cache, reload));
+  gulp.watch(dev.js,   gulp.series(lintJS, js, cache, reload));
+  gulp.watch(dev.scss, gulp.series(scss, cache, reload));
+  gulp.watch(dev.spec, gulp.series(lintSpec));
+}
+</code></pre>
+
+<p>The cache task adds a small string at the end of asset files that have changed, so that the browser pulls those files again when they changed instead of getting them from the browser's cache.</p>
+
+<pre><code class="language-javascript">
+function cache() {
+  let token = new Date().getTime();
+  return gulp
+    .src('./views/layout.erb')
+    .pipe(replace(/cachebust=\d+/g, 'cachebust=' + token))
+    .pipe(gulp.dest('./views/'));
+}
+</code></pre>
+
+<p>Then in the HTML:</p>
+
+<pre><code class="language-markup">
+&lt;link rel="apple-touch-icon" href="img/favicon.png?cachebust=1647473925110"&gt;
+&lt;link rel="stylesheet" href="css/main.css?cachebust=1647473925110"&gt;
+&lt;script src="js/main.js?cachebust=1647473925110"&gt;&lt;/script&gt;
+...etc.
+</code></pre>
+
+<h3>Stylesheets</h3>
+
+<p>I always use normalize as my reset stylesheet. I don't like declarations like <code class="language-css">* { box-sizing: border-box }</code> and similar. First, you are targeting every single element in the page. Second, you may not need that declaration on absolutely every element in the page! I feel like the contents of normalize are well researched and justified, it adds only the bare minimum that is needed.</p>
+
+<p>Then I build my styles on top of <a href="https://github.com/h5bp/html5-boilerplate/blob/main/dist/css/style.css">the defaults from HTML5 boilerplate</a>. Again, I feel like they have done the cross-browser research that I would be too lazy to do on my own.</p>
+
+<p>Other things that I do often and are contemplated in my scafold are: creating sourcemaps and adding the right vendor prefixes using <code class="language-plaintext">autoprefixer</code>.</p>
+
+<p>I tell <code class="language-plaintext">gulp</code> to uglify all the files into one stylesheet and keep an eye on its size so that it doesn't grow beyond some tens of KB. The whole site I definitely try to keep under 500kB as much as possible, and definitely no more than 1MB.</p>
+
+<pre><code class="language-javascript">
+function scss() {
+  del.sync(`${dist.css}**`);
+  return gulp
+    .src(dev.scss)
+    .pipe(sourcemaps.init())
+    .pipe(sass({ outputStyle: 'compressed' }))
+    .pipe(autoprefixer())
+    .pipe(sourcemaps.write('./'))
+    .pipe(gulp.dest(dist.css));
+}
+</code></pre>
+
+<h3>Javascripts</h3>
+
+<p>I tend to write <strong>vanilla JavaScript</strong> as a start, and only if I need a framework later, I will add it, after doing my research on what's the best framework for the job. I've been making websites for so many years, so I really despise the idea of starting a project with React right away, no matter what. You may not need it!</p>
+
+<p>I usually have one or several UI classes to handle the DOM, and then <strong>model my domain</strong> with extra classes containing the relevant business logic not related to DOM operations. For this app I ended up with:</p>
+<ul>
+<li><code class="language-plaintext">client.js</code>: The client that does requests to the API endpoints from the frontend</li>
+<li><code class="language-plaintext">selectors.js</code>: I had many selectors on this site so I decided to keep them all organized in one place.</li>
+<li><code class="language-plaintext">ui.js</code>: The class dealing with DOM operations.</li>
+<li><code class="language-plaintext">main.js</code>: The class sitting at the top of everything, creates all the instances and wires things up.</li>
+<li><code class="language-plaintext">prism.js</code>: Lea Verou's great syntax highlighter. The best highlighter.</li>
+</ul>
+
+<p>This all together is less than 20KB. I don't know what it would be like had I used a framework.</p>
+
+<p>There is room for improvement as the blocks for every endpoint in the UI are very similar, so there is some abstraction lurking in there to represent an endpoint block. But that's for future me.</p>
+
+<p>Nothing is installed globally, not even <code class="language-plaintext">gulp</code>. I just don't like that idea, as different devs may have different versions of <code class="language-plaintext">gulp</code> installed locally. So everything is pinned to a specific version. I use the <code class="language-plaintext">package.json</code> file to alias interesting CLI commands:</p>
+
+<pre><code class="language-json">
+"scripts": {
+  "assets": "node node_modules/gulp/bin/gulp.js assets",
+  "start": "node node_modules/gulp/bin/gulp.js"
+}
+</code></pre>
+
+<p>For convenience I created two rake tasks to run these commands:</p>
+
+<pre><code class="language-ruby">
+task(:watch) { sh('npm start') }
+task(:assets) { sh('npm run assets') }
+</code></pre>
+
+<p>In this project I am writing modern JavaScript and not using Babel to transpile it to supported JavaScript. I wouldn't do this in a real project though. In this app I am only using Babel as a parser for ESlint, the linter of my choice. I do concatenate and uglify the JavaScript and create sourcemaps for it:</p>
+
+<pre><code class="language-javascript">
+function js() {
+  del.sync(`${dist.js}**`);
+  return gulp
+    .src(dev.js)
+    .pipe(sourcemaps.init())
+    .pipe(concat('main.js'))
+    .pipe(uglify())
+    .pipe(sourcemaps.write('./'))
+    .pipe(gulp.dest(dist.js));
+}
+</code></pre>
+
+<p>For the tests, I use the <strong>standalone Jasmine library</strong>, which is supposed to be used for testing in the browser. I think if your JavaScript runs in a browser it makes more sense to run your tests in a browser too, so you can do cross-browser testing. If you want to run your web tests on a CI, you will need a tool like <strong>testem</strong>, which lets you configure headless browsers to test in the CI. I didn't do it for this project but have done it in other projects.</p>
+
+<p>The gulp file uses <code class="language-plaintext">browser-sync</code> to spin up a server that serves the Jasmine tests page:</p>
+
+<pre><code class="language-javascript">
+function server() {
+  browsersync.init({
+    server: { routes: { '/tests': './assets/js' } },
+    port:   4000,
+    notify: false,
+    open:   false
+  });
+}
+</code></pre>
+
+<p>It also have live reload so that it refreshes the page when changes happen:</p>
+
+<pre><code class="language-javascript">
+function reload(callback) {
+  browsersync.reload();
+  callback();
+}
+</code></pre>
+
+<h3>Images</h3>
+
+<p>Images used to be the performance elephant in the room until the JavaScript part of things became bloated with huge and slow frameworks, and now JavaScript is the elephant in the room (hehe).</p>
+
+<p>Still, as much as possible I try to use SVGs for images that are either logos, icons or similar. Then I use PNG for images with plain shapes and colors, and JPG for raster images. They can all benefit from optimization for web, for which there are many tools out there. For <code class="language-plaintext">gulp</code> there is <code class="language-plaintext">gulp-imagemin</code>, although I am not using it here. Then you can also serve different image sizes for different device sizes, and take into account art-direction (horizontal or vertical orientation), etc. I didn't implement any of that as this is a simple app.</p>
+
+<p>I love SVGs because not only they are more zippable than images, as they are 100% text, but they are also crispier at any size, as they are vectors. They are also very easy to use as sprites. You can put all your SVGs in a file, under the <code class="language-markup">&lt;defs&gt;</code> tag and give each <code class="language-markup">&lt;symbol&gt;</code> an <code class="language-markup">id</code> and <code class="language-markup">viewbox</code> (and a <code class="language-markup">&lt;title&gt;</code>, for accessibility), like this:</p>
+
+<pre><code class="language-markup">
+&lt;svg xmlns="http://www.w3.org/2000/svg"&gt;
+  &lt;defs&gt;
+    &lt;symbol id="arrowup" viewBox="0 0 32 32"&gt;
+      &lt;title&gt;Arrow up icon&lt;/title&gt;
+      &lt;g fill="hsl(184, 70%, 43%)"&gt;
+        &lt;path d="M808.7 259.9c23.2-23.6 55.6-35.9 88.6-33.6 31.9-2.4 63 10 84.6 33.6l548.3 546.3c45.4 45.4 45.4 119 0 164.4-45.4 45.4-119 45.4-164.4 0l-354.4-354.4v833.6c.4 63.8-51 115.8-114.8 116.1h-.7c-64-.4-115.8-52.1-116.1-116.1V616.3L426.2 970.6c-45.4 45.4-119 45.4-164.4 0-45.4-45.4-45.4-119 0-164.4l546.9-546.3z"/&gt;
+      &lt;/g&gt;
+    &lt;/symbol&gt;
+  &lt;/defs&gt;
+&lt;/svg&gt;
+</code></pre>
+
+<p>Then you can use it as an inline image in your HTML like this, which allows you to style the icon from your CSS through a class if you need to:</p>
+
+<pre><code class="language-markup">
+&lt;svg aria-hidden="true" class="optional-class"&gt;
+  &lt;use href="img/icons.svg#arrowup-icon"&gt;&lt;/use&gt;
+&lt;/svg&gt;
+</code></pre>
+
+<p>The file will be cached and all the icons will be immediately available. And since it's a 100% text file, the size will be low (and even lower with server gzipping).</p>
