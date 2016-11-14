@@ -1,0 +1,63 @@
+---
+layout: post
+title: Travis integration for Slack
+date: 2017-08-25 15:32:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>I recently wanted to post notifications from Travis builds in a Slack channel. There is a <a href="https://google-qa-pwa.slack.com/apps/A0F81FP4N-travis-ci">Travis app in Slack</a> which does exactly that.</p>
+
+<p>Once you install it, it will generate a key that you can use to connect Slack with Travis. You can add this to your Travis file, <a href="https://blog.travis-ci.com/2014-03-13-slack-notifications">as explained in their blog</a> and in <a href="https://docs.travis-ci.com/user/notifications/#Configuring-slack-notifications">their documentation page</a>.</p>
+
+<p>They also recommend to <a href="https://docs.travis-ci.com/user/encryption-keys">encrypt this key</a>. The easiest way is to install their gem to do this:</p>
+
+<pre><code class="language-bash">
+$ gem install travis
+$ rbenv rehash
+$ travis encrypt nameofyourkey:7q5uXtQcekdHMFRH9EGPeK6K
+Shell completion not installed. Would you like to install it now? |y| n
+Detected repository as `name/repository-name`, is this correct? |yes| y
+Please add the following to your .travis.yml file:
+
+  secure: "LOADS AND LOADS OF GIBBERISH"
+
+Pro Tip: You can add it automatically by running with --add.
+</code></pre>
+
+<p>The "pro tip" at the end of this output reminded me of when you read "beware" stickers like "<em>don't turn me upside down</em>" in the upside down side. TOO LATE.</p>
+
+<p>The <code class="language-">nameofyourkey</code> is all lowercase and with no spaces.</p>
+
+<p>Also, if you do as the pro tip says:</p>
+
+<pre><code class="language-bash">
+$ travis encrypt SLACK_API_KEY="nameofyourkey:7q5uXtQcekdHMFRH9EGPeK6K" --add
+</code></pre>
+
+<p>Then you need to pass the variable name <code class="language-">SLACK_API_KEY</code>, but this produces no output and adds this to your travis file:</p>
+
+<pre><code class="language-yaml">
+env:
+  global:
+    secure: THE SAME GIBBERISH BUT WITHOUT QUOTES
+</code></pre>
+
+<p>What you really want to do is to use the first command and add:</p>
+
+<pre><code class="language-yaml">
+notifications:
+  slack:
+    secure: "blah"
+</code></pre>
+
+<p>to your travis file. I don't know if there is a command to add this automatically, but the Pro Tip has failed me, he he.</p>

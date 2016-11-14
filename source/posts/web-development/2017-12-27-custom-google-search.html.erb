@@ -1,0 +1,118 @@
+---
+layout: post
+title: Custom Google search
+date: 2017-12-27 20:00:00.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- JavaScript
+author:
+display_name: Octopus in vitro
+---
+
+<p>For a long time I had a disfunctional search in my site. It is a static site, so you have to use third party services if you want search capabilities. I was using Google Custom Search, but they changed the way you use it a long time ago, and as the saying goes, <em>The shoemaker's children always go barefoot</em>. I'm a developer, I have a site, site is abandoned, lol.</p>
+
+<p>You can find the new docs for Google's Custom Search API <a href="https://developers.google.com/custom-search/docs/overview">here</a>. Basically, you have a free version (with ads) that will allow you a maximum of 100 searches per day, or the paid version. Honestly, I'm not that popular and you can always search on Google anyway... but it's nice to have a search in place.</p>
+
+<p>So I decided to document what I did here in case I need to change things in the future.</p>
+
+
+<h2 id="firstcreateanewsearchengine">First: create a new search engine</h2>
+
+<p>The documentation is out of date and mentions menus that don't exist. So do this:</p>
+
+<ul>
+  <li>Go to your Control panel: <a href="https://cse.google.com/manage/all">https://cse.google.com/manage/all</a></li>
+
+  <li>Click <strong>New search engine</strong></li>
+
+  <li>Add your pages. In my case:
+    <ul>
+      <li>octopusinvitro.tk/blog/</li>
+
+      <li>octopusinvitro.tk/work/</li>
+
+      <li>octopusinvitro.tk/about/</li>
+    </ul>
+  </li>
+
+  <li>Now it appears in the menu of the left.</li>
+</ul>
+
+<p>You can now use the API in your site through a GET request, through a JavaScript snippet to paste in your site that will generate their characteristic search form, or through a page that they generate for you that is styled with the awful Google-backend-developer-who-doesnt-know-shit-about-design style.</p>
+
+
+<h2 id="configureyoursearchengine">Configure your search engine</h2>
+
+<ul>
+  <li>Click on <strong>Setup</strong> and then click on <strong>Seach Engine ID</strong> and copy that code. You'll need it to talk to the API.</li>
+
+  <li>Next to the ID is <strong>Public URL</strong>. This will give you a link to a page with a Google search form that returns results for your site only. However, the first four links or so returned here will be ads. The <strong>Look and feel</strong> item in the left menu allows you to configure this page. You can also do it programmatically passing options to your code snippet (see next point). My public url is <a href="https://cse.google.com/cse/publicurl?cx=006696410474927510846:afhgacvjtkm">here</a>, in case you like to have your eyes cry blood.</li>
+
+  <li>Next to the URL is <strong>Get code</strong>, this will give you a script to paste in your site, use this if you want google to generate the search form for you. You can configure it from the Control Panel or <a href="https://developers.google.com/custom-search/docs/tutorial/implementingsearchbox">programmatically through JavaScript</a>. It will look like this:</li>
+</ul>
+
+<pre><code class="language-javascript">
+&lt;script>
+  (function() {
+    var cx = 'YOUR-SEARCH-ENGINE-ID';
+    var gcse = document.createElement('script');
+    gcse.type = 'text/javascript';
+    gcse.async = true;
+    gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(gcse, s);
+  })();
+&lt;/script>
+</code></pre>
+
+<ul>
+  <li>Click on <strong>Image search</strong> and turn it on, so that the search includes images.</li>
+
+  <li>If the Control Panel does not give you the level of customization that you need, you can click on the advanced tab and download the context (your search setup) and anotations (your sites to search) as XML files. Edit them to add your advanced configuration and then upload them again.</li>
+</ul>
+
+<h2 id="getanapikeygen">Get an API key</h2>
+
+<p>You can go to the docs or get it from your Control pane. You can also get it from <a href="https://console.developers.google.com/apis/credentials/key">your Google developer console</a>.</p>
+
+<p>The API key is safe for embedding in URLs, it doesn't need any encoding.</p>
+
+
+<h2 id="makingrequests">Making requests</h2>
+
+<p>The API only has a GET method, and the URL to make requests to it is:</p>
+
+<pre><code class="language-markup">
+https://www.googleapis.com/customsearch/v1?key=YOUR-API-KEY&amp;cx=YOUR-SEARCH-ENGINE-ID
+</code></pre>
+
+<p>It has a lot of parameters that you can pass to it. Three of them are required with each search request:</p>
+
+<ul>
+  <li><strong>API key:</strong> Use the <code class="language-">key</code> query parameter to identify your application.</li>
+
+  <li><strong>Custom search engine ID:</strong> Use <code class="language-">cx</code> to specify the custom search engine you want to use to perform this search. The search engine must be created with the Control Panel. Also, this ID contains a <code class="language-">':'</code>, so you will need to encode this ID before using it to make a request or you will get an "invalid parameter" error.</li>
+
+  <li><strong>Search query:</strong> Use the <code class="language-">q</code> query parameter to specify your search expression.</li>
+</ul>
+
+<p>You can find a list of all parameters that you can pass to this URL and what they mean in the <a href="https://developers.google.com/custom-search/json-api/v1/reference/cse/list">API reference page</a>. This page has a sidebar on the right where you can try the API with a demo API, so that you don't exceed your daily requests limit of 100. You will get the results in JSON format, which you can compare with the sample in that same page.</p>
+
+<p>If you still wanted to use your own API key, you could use it directly on a browser, or use <a href="https://developers.google.com/apis-explorer/#p/customsearch/v1/search.cse.list">this page</a>, which will also spit the JSON in place.</p>
+
+
+<h2 id="kindofgraphql">Kind of GraphQL</h2>
+
+<p>The API allows you to choose only those parameters that you want in the resulting JSON, so that you don't have to deal with a lot of data at once, using the <code class="language-">fields</code> query parameter. The <code class="language-">fields</code> syntax is very well explained in <a href="https://developers.google.com/custom-search/json-api/v1/performance">their performance page</a> so I won't go into detail here, but this is an example:</p>
+
+<pre><code class="language-markup">
+https://www.googleapis.com/demo/v1?key=YOUR-API-KEY&amp;fields=kind,items(title,characteristics/length)
+</code></pre>
+
+<p>This will get only the <code class="language-">kind</code> and <code class="language-">items</code> keys from their database, and only the <code class="language-">title</code> and <code class="language-">characteristics</code> keys from <code class="language-">items</code>. And from all the fields in <code class="language-">characteristics</code>, you will only get the <code class="language-">length</code>.</p>
+
+<p>That's it, enjoy!</p>
