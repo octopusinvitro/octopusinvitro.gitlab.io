@@ -1,0 +1,82 @@
+---
+layout: post
+title: Remember websites back in the days?
+date: 2014-07-29 19:02:42.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- CSS
+- HTML
+- nostalgia
+- PHP
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>The other day I was doing some cleaning on my hard disk and I found a lot of old files that I have kept in my computer for more than 10 years now. For example, I found my old "websites" folder. THAT folder. The folder where my first websites ever were stored.</p>
+<p>There are not only websites made by me entirely from scratch (with tables!), but also, experiments of all types: decorated boxes, papyrus backgrounds, ROUNDED CORNERS... I also had a folder where I saved websites made by others that I was dissecting. Websites that I considered interesting or that had some functionality that I wanted to learn about. Like, "<em>holy cow, a menu appears when I hover!</em>". Super high technology like that ;-p .</p>
+<p><strong>BEWARE! Nostalgia attack!</strong></p>
+<h2>Rounded corners</h2>
+<p>I (re)discovered that I had an obsession with rounded cornered boxes. I had like 12 folders of different techniques to create them (I considered keeping them to make a museum, but at the end deleted them all). Remember how those were made?</p>
+<p>Back in the time (2003-2004) you had to use images with rounded borders... up to 12 images... and then engage in all kinds of sorcery with tables to position them. And they where super inflexible.</p>
+<p>Then, somebody had the idea of using JavaScript to create them. That was the famous <a href="http://www.html.it/articoli/niftycube/index.html">Nifty corners</a>, who allowed all types of personalization. Recently, I made <a href="http://dabblet.com/gist/3de62e39c104698be286">a gist</a> to translate all those examples to simple CSS using <code>border-radius</code>.</p>
+<p>When a solution with <code>div</code>s arrived, we were all running like headless chicken. This was it:</p>
+<pre><code class="language-markup">
+&lt;div class="rbroundbox"&gt;
+
+    &lt;div class="rbtop"&gt;&lt;div&gt;&lt;/div&gt;&lt;/div&gt;
+
+    &lt;div class="rbcontent"&gt;
+        &lt;h2&gt;Header&lt;/h2&gt;
+        &lt;p&gt;Text here my love.&lt;/p&gt;
+    &lt;/div&gt;
+
+    &lt;div class="rbbot"&gt;&lt;div&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;/div&gt;
+</code></pre>
+<p>The divs inside the "top" and "bottom" divs where used as styling elements, their sole purpose was to contain the right-corner images.</p>
+<p>THIS was DA THING.</p>
+<p>Today, nobody remembers that. But I had <a href="/work/web-dev/wordpress-theme-terapia/"> an entire site</a> made with this technique. Of course now it uses <code>border-radius</code>.</p>
+<p>Thanks God for <code>border-radius</code>.</p>
+<h2>Those footers</h2>
+<p>It was almost mandatory that all footers contained "Optimized for a resolution of 800x600" and, of course, "Webmaster: email@address.com". Because one single person could do a whole website back in the days XD. By the way, the designs used to be super rigid and full of images and backgrounds, because nobody in their sane mental health would browse the internet from a mobile phone. Although they certainly made nice throwing weapons; you could easily break the floor if your phone fell down.</p>
+<h2>CAPSLOCKS</h2>
+<p>Remember when your stylesheets had all the attributes written in capslocks? Same for the html tags and their attributes as well. And ASP reserved words. And SQL syntax. Capslocks. CAPSLOCKS EVERYWHERE.</p>
+<h2>Transparency</h2>
+<p>One of the sites I had saved in my dissectionables folder was the home page of the Aeroporto di Venezia. Why? Because back in 2002, it had transparent menus. There was a background image, and a set of menus and submenus would appear on hover. They had a blue background with some opacity that allowed to see the background image through the menu.</p>
+<p>Today, this sounds so <em>eezzyyy</em>. Back then... it was hell.</p>
+<p>Up until 2010, <a href="http://lea.verou.me/2010/12/rgba-php-v1-2-improved-url-syntax-now-at-github/">you couldn't even use rgba syntax</a>, and you had to use a png for backwards compatibility.</p>
+<p>And much earlier, for non-IE browsers you could use 60% transparent PNG images, but IE didn't understand PNG transparency, so you had to use transparent (and much more pixelated) GIF images instead. There was a famous blog post that I can't find anymore, showing an eagle on a transparent PNG flying over the sun, that didn't work at all in IE.</p>
+<h2>PHPbb forums</h2>
+<p>So easy to install, and with a million themes. I found like 7 different phpbb forum installations in my old folder. My favorite skins were "What is real", (because TRANSPARENCIES!), and "NoseBleed".</p>
+<h2>JavaScript</h2>
+<p>We usually talk about the evolution of CSS and all the things we can do with it now. But JavaScript was funny back in the days. I'm sure you remember this:</p>
+<pre><code class="language-markup">
+&lt;script language="JavaScript"&gt;&lt;!-- hide the script from old browsers --
+</code></pre>
+<p>which is not needed anymore. Or what about "discontinued" properties like <code class="language-markup">document.bgColor</code>? Now you would use <code class="language-markup">document.body.style.background</code>. </p>
+<p>These were a classic in the days when accessing the status bar made you feel like a hacker:</p>
+<pre><code class="language-markup">
+&lt;body onLoad="window.defaultStatus=This is my page"&gt;
+
+&lt;a href="newpage.htm" onMouseOver="window.status='Click Here to go to the Next Page!';return true"&gt;&lt;/a&gt;
+</code></pre>
+<p>And, remember how you swapped an image on <code>:hover</code>? With JavaScript, like this:</p>
+<pre><code class="language-markup">
+&lt;a href="document.html"
+    onmouseover="document.home.src='pic2.jpg'"
+    onmouseout="document.home.src='pic1.jpg'"&gt;
+&lt;img src="pic1.jpg" name="home"&gt;
+&lt;/a&gt;
+</code></pre>
+<p>For example:</p>
+<p><a href="#" onmouseover="document.home.src='/images/uploads/2014/07/avatar.png'" onmouseout="document.home.src='http://i.imgur.com/OTSA6eX.jpg'" style="display:block;width:270px;height:216px;margin:auto;"><img src="http://i.imgur.com/OTSA6eX.jpg" name="home" /></a></p>
+<h2>Dynamic layers</h2>
+<p>I never really came to get what exactly this was, but I saw it for the first time in a forum, where you could click a row to display all the replies to that comment. Today you would do that with JavaScript (or even with the CSS <code>:checked</code> hack), but who knows what they were using. At the time, I was doing an internship on web development with ASP and SQL, and when I asked my mentor, I got that answer. "<em>Oh, those are dynamic layers</em>".</p>
+<h2>CSS Zen garden</h2>
+<p>I think <a href="http://www.mezzoblue.com/zengarden/alldesigns/">Mezzo Blue's CSS Zen garden site</a> marked a before and an after in the direction of the web, and helped it be where it is today. I was so amazed at the things people submitted to this page. I downloaded them all, to dissect them, of course. I learned a lot from them. Even if this site dissapears in the future, it will always have a place in my heart (although with the release of html5 they seem to be active again).</p>
