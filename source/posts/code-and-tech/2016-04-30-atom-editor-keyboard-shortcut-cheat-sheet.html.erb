@@ -1,0 +1,67 @@
+---
+layout: post
+title: Atom Editor Keyboard Shortcut Cheat-Sheet
+date: 2016-04-30 17:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags: []
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>I'm trying out <a href="https://atom.io/">Atom</a> after hearing so much about it. Before I have used other text editors like <a href="http://www.vim.org/">Vim</a>, <a href="https://www.sublimetext.com/">Sublime</a>, <a href="https://wiki.gnome.org/Apps/Gedit">gedit</a> (text editor that comes out of the box with Ubuntu and has some nice plugins), <a href="http://blog.ostermiller.org/nedit/">NEdit</a>, <a href="http://www.nano-editor.org/">nano</a> and some IDE's like <a href="https://www.jetbrains.com/idea/">IntelliJ</a>, <a href="https://eclipse.org/">Eclipse</a> or <a href="http://netbeans.org/">NetBeans</a>.</p>
+<p>I'm really liking Atom. You have a nice file tree, like in Sublime or Gedit, and <kbd>Ctrl</kbd> + <kbd>p</kbd> will search for a file by name as you can do if you install the <a href="http://ctrlpvim.github.io/ctrlp.vim/">ctrlp</a> plugin in Vim. It also <strong>lets you see the git status of your files by using a colour code to show them</strong>. Like Vim, it allows you to split the window in as many panels as you want horizontally and vertically.</p>
+<p>I don't find it slow as many people on the nets, but it might be because I run on an 8 cores / 3.5GHz / 8 Gb RAM machine <code class="language-markup">&lt;/showoff></code>.</p>
+<p>As I did in the past for Vim, I decided to make a cheat-sheet with all the shortcuts I learned so far. I will keep adding more as I learn them.</p>
+<p>To see all the keyboard shortcuts your atom installation comes with, go to <strong>Edit &gt; Preferences &gt; Keybindings</strong>.</p>
+<p>I am using Ubuntu 14.04 on a Mountain laptop.</p>
+<ul>
+<li><kbd>Alt</kbd> + <kbd>←</kbd> or <kbd>→</kbd>: Skip words.</li>
+<li><kbd>Ctrl</kbd> + <kbd>↑</kbd> or <kbd>↓</kbd>: Move lines.</li>
+<li><kbd>Ctrl</kbd> + <kbd>k</kbd> and then <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd> or <kbd>↓</kbd>: Split pane.</li>
+<li><kbd>Ctrl</kbd> + <kbd>k</kbd> and then <kbd>Ctrl</kbd> + <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd> or <kbd>↓</kbd>: Switch panes (also <kbd>Alt</kbd> + <kbd>Number</kbd>).</li>
+<li><kbd>Ctrl</kbd> + <kbd>&lt;</kbd>: Toggle tree view.</li>
+<li><kbd>Ctrl</kbd> + <kbd>g</kbd> and then line number: Go to line.</li>
+<li><kbd>Ctrl</kbd> + <kbd>/</kbd>: Comment / uncomment.</li>
+<li><kbd>Ctrl</kbd> + <kbd>o</kbd>: Open file.</li>
+<li><kbd>Ctrl</kbd> + <kbd>n</kbd>: New file.</li>
+<li><kbd>Ctrl</kbd> + <kbd>q</kbd>: Close Atom.</li>
+<li><kbd>Ctrl</kbd> + <kbd>w</kbd>: Close current tab.</li>
+<li><kbd>Ctrl</kbd> + <kbd>m</kbd>: Go to matching bracket.</li>
+<li><kbd>Ctrl</kbd> + <kbd>l</kbd>: Select line (like <kbd>Shift</kbd> + <kbd>v</kbd> in Vim).</li>
+<li><kbd>Ctrl</kbd> + <kbd>j</kbd>: Move the next line to the end of this line (join lines).</li>
+<li><kbd>Ctrl</kbd> + <kbd>d</kbd> at the beginning of a word: Select the whole word. If you keep pressing <kbd>d</kbd>, it will find all occurrences of the word.</li>
+<li><kbd>Ctrl</kbd> + <kbd>u</kbd> un-select what was selected with <kbd>Ctrl</kbd> + <kbd>d</kbd>, one at a time.</li>
+<li><kbd>Ctrl</kbd> + left click: Select cursor position in <em>separated</em> lines.</li>
+<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>k</kbd>: Delete line. Keep pressing <kbd>k</kbd> to delete consecutive lines.</li>
+<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>d</kbd>: Duplicate current line below.</li>
+<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>f</kbd>: Search in project.</li>
+<li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>m</kbd>: Markdown preview (I find this one AMAZEBALLS).</li>
+<li><kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>↓</kbd>: Type in several <em>consecutive</em> lines at once (click to exit).</li>
+<li><kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>↓</kbd> and then <kbd>←</kbd> or <kbd>→</kbd>: Select columns (like <kbd>Ctrl</kbd> click and drag in NEdit).</li>
+</ul>
+<p>Also, <strong>you can add your own shortcuts</strong>. For example, I have a Spanish keyboard, so, to access the <kbd>[</kbd> and<kbd>]</kbd> keys, I have to type <kbd>Alt Gr</kbd> + <kbd>`</kbd> and <kbd>Alt Gr</kbd> + <kbd>+</kbd>. The <kbd>Alt Gr</kbd> or "<em>Right Alt</em>" is used in these keyboards to access the symbols to the right of a key (the icons at the top are accessed with <kbd>Shift</kbd>, and the symbols to the left just by pressing the key). But Atom doesn't know what a "<em>Right Alt</em>" is.</p>
+<p>Because of this, I have problems with indentation: <strong>Indent</strong> is mapped to <kbd>Ctrl</kbd> + <kbd>[</kbd> but I have to press <kbd>Ctrl</kbd> + <kbd>`</kbd>, and <strong>Outdent</strong> is mapped to <kbd>Ctrl</kbd> + <kbd>]</kbd>, but if I press <kbd>Ctrl</kbd> + <kbd>+</kbd> I zoom the text. So I have to select the line with <kbd>Ctrl</kbd> + <kbd>l</kbd> and press <kbd>tab</kbd>.</p>
+<p><strong>Auto-indent</strong> is funny, because it doesn't come mapped to any combination. So I had to add my own! How to do that? You have to add them to the <code>keymap.cson</code> file. You can find it in <strong>Edit &gt; Keymap...</strong>. If you pay attention to the keybinding's <strong>Command</strong> column, you will find that only some of them start with "<code>editor:</code>". Find any of those, and click the "copy" icon to its left. Then go to the <code>keymap.cson</code> file and paste it there.</p>
+<p>This will produce the right attribute, in this case '<code>atom-text-editor</code>', so I just have to edit the key. I searched for <kbd>Ctrl</kbd> + <kbd>i</kbd> and it's not mapped to anything, so my <code>keymap.cson</code> file looks like this:</p>
+<pre><code class="language-json">
+  'atom-text-editor':
+  'ctrl-i': 'editor:auto-indent'
+</code></pre>
+<p>Now if I go to <strong>Edit &gt; Lines &gt; Auto indent</strong>, my shortcut "Ctrl+I" appears next to it.</p>
+<p>Atom comes with a very handy vertical guide placed at 80 characters so that you can always write readable lines of code. However, when you are using it to write prose, as in a README file or blog post, you may want the lines to wrap automatically. You can do it per file, or, more conveniently, set it as the default behaviour for all files. To make this change permanent, you can open Atom's configuration file, <code class="language-bash">config.cson</code>, in <strong>Edit &gt; config...</strong> and add <code class="language-bash">softWrap: true</code> inside <code class="language-bash">editor:</code>, like this:</p>
+<pre><code class="language-json">
+  "*":
+  core: {}
+  editor:
+    fontSize: 13
+    invisibles: {}
+    softWrap: true
+  welcome:
+    showOnStartup: false
+</code></pre>
+<p>I'm not opinionated about editors, nor I like to be imposed one, nor I impose others to use one... Although in some companies all developers are encouraged to use the same editor to make pairing easier. I think everybody should use whatever is more comfortable to them. For now on, I think I'll stick with atom. Feels like something in between a simple editor and an IDE, with the best of both worlds.</p>

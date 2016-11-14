@@ -1,0 +1,25 @@
+---
+layout: post
+title: Stack Overflow has a new "Run snippet" button
+date: 2014-10-20 16:42:34.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags: []
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+<p>As every other developer and their dog, I crash from time to time in SO for answers to questions of Life, the Universe and Everything Else.</p>
+<p>The other day I came across a question that had a button I hadn't seen before. The button was below a code snippet, and when I clicked it, the snippet executed against an HTML5 sandboxed iframe inserted in the post:</p>
+<p><a href="http://i.stack.imgur.com/3HEI5.png"><img class="aligncenter" src="/images/uploads/2014/10/3HEI5.png" alt="Stack Overflow new run snippet button" width="918" height="542" /></a></p>
+<p>I found this so AWESOME that I had to search the origins of it. And I fell into this <a href="https://blog.stackexchange.com/2014/09/introducing-runnable-javascript-css-and-html-code-snippets/ ">Stack Overflow post</a> that explains it all.</p>
+<p>When I read how they do it, it reminded me of a recent <a>CodePen podcast</a> where the creators of the site explained how they create a secure environment for the execution of scripts. Basically:</p>
+<ul>
+<li>They use HTML5 sandboxed iframes in order to prevent many forms of malicious attack.</li>
+<li>They render the Snippets on an external domain (stacksnippets.net) in order to ensure that the same-origin policy is not in effect and to keep the snippets from accessing your logged-in session or cookies.</li>
+</ul>
+<p>It's gonna be great to be able to see the results of a snippet without having to copy and paste and save and compile and run in your own computer :-)</p>

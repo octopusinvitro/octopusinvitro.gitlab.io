@@ -1,0 +1,34 @@
+---
+layout: post
+title: Perform SQL queries in CSV
+date: 2015-03-14 20:12:35.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- SQL
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>Today I discovered a command-line tool that allows you to do SQL queries in a CSV file. It has a name that is very difficult to google search, not to mention to even click a link to it: <a href="https://github.com/harelba/q"><strong>q</strong></a>. Mwehehe.</p>
+
+<p>I used it recently to clean a CSV file of shipping information that had invalid postcodes:</p>
+
+<pre><code class="language-bash">
+q -d, -O -H "SELECT DISTINCT * FROM shipping/data.csv WHERE year = 2015 AND postcode != 'Invalid'" > shipping/data2015.csv
+</code></pre>
+
+<ul>
+  <li><code class="language-">-d</code> is the field delimiter, in this case a comma.</li>
+
+  <li><code class="language-">-O</code> keeps the header line in the output.</li>
+
+  <li>Finally, <code class="language-">-H</code> skips the header row.</li>
+</ul>
+
+<p>Neat.</p>

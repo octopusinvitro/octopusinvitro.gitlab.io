@@ -1,0 +1,137 @@
+---
+layout: post
+title: Client-side zipping on the fly
+date: 2016-06-16 21:56:46.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Jekyll
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>Recently I needed to find a solution to Zip some files on the fly (client-side) when the user clicked a download link on a static site.</p>
+
+<h2 id="context">Context</h2>
+<p>The site used Jekyll, was served through GitHub pages, and contained mostly tutorials. Some of those tutorials had example files to download. Since it was an open-source project with many contributors, these example files where spread all over GitHub in gists in the contributors personal accounts. This made it very difficult to update those example files when the tutorial was updated, as you can't submit a PR to a gist file.</p>
+
+<h2 id="problem-">Problem</h2>
+<p>The exercise files of the tutorials where in gists where they could not be updated or new files added. We wanted to bring these files into the tutorials repo to version-control them and generate a zip from the tutorial page itself.</p>
+
+<h2 id="constrains">Constrains</h2>
+<ul>
+  <li>Jekyll plugins are not allowed in GitHub pages.</li>
+  <li>Version control of a zip file is considered bad practice.</li>
+  <li>Client-side JavaScript does not have read access to files in the server.</li>
+  <li>Markdown doesn't allow html attributes in tags, so we are left with just the <code class="language-">href</code> of download links.</li>
+  <li>We wanted a simple solution, to be able to have a single commit that updates the instructions and example code together.</li>
+  <li>No workflow, to be able to push changes and have them get served from the site through GitHub pages.</li>
+</ul>
+
+<h2 id="possible-solution">Possible solution</h2>
+<p>The solution we agreed was to move those gists to the main repo, together with their tutorial, and zip them on the fly when a link was clicked. After doing some research, I found <a href="https://stuk.github.io/jszip/">JSZip</a>.</p>
+<p>So we used JSZip and some liquid to automatically generate a zip file containing the tutorial downloadable files, when clicking the download link.</p>
+<p>The workflow looks like this:</p>
+<ul>
+  <li>You add a folder with your exercise files inside of the tutorial folder:
+    <pre><code class="language-bash">
+javascript_tutorial/lesson3/
+    ├── files/
+    │   ├── index.html
+    │   ├── jquery.js
+    │   ├── script.js
+    │   └── style.css
+    └── tutorial.md</code></pre>
+  </li>
+  <li>Then, add an array variable <code class="language-">files</code> to the frontmatter of the tutorial page, containing a list with the paths of the files you added, <strong>including folder name</strong>:
+    <pre><code class="language-yaml">
+    ---
+    layout: page
+    title: 'Lesson 3: Introduction to jQuery'
+    files:
+      - files/index.html
+      - files/jquery.js
+      - files/script.js
+      - files/style.css
+    ---</code></pre>
+  </li>
+  <li>In the markdown of the tutorial page, add a download link and make it point to <code class="language-">generate-zip</code> ("generate-zip" is just to differenciate download links from other links):
+    <pre><code class="language-markdown">
+Download the files that you will need to work through the example [here](generate-zip).</code></pre>
+  </li>
+</ul>
+
+<h2 id="caveats">Caveats</h2>
+<p>At the moment this solution allows only one download link per page. This means that tutorials with more than one set of downloadables should be split into two. This can be fixed easily though, but I wanted to go one step at a time.</p>
+<p>Also, JSZip relies on <code class="language-">blobs</code> to work. The only problematic browsers that didn't have support for blobs seemed to be <a href="http://caniuse.com/#feat=blobbuilder">IE9 and Opera Mini</a>.</p>
+
+<figure>
+  <a href="http://caniuse.com/#feat=blobbuilder"><img src="/images/uploads/2016/06/blob-support.png" width="928" height="523" alt="Blob support"></a>
+  <figcaption>Blob support according to "Can I use..."</figcaption>
+</figure>
+
+<p>However, JSZip provides a IE version that can be added like this:</p>
+<pre><code class="language-markup">
+  &lt;!--[if IE]>
+  &lt;script type="text/javascript" src="http://stuk.github.io/jszip-utils/dist/jszip-utils-ie.js">&lt;/script>
+  &lt;![endif]--></code></pre>
+
+<h2 id="challenges">Challenges</h2>
+<p>I had some challenges testing promises and asynchronous methods. The manual testing worked though.</p>
+
+<h2 id="how-it-works">How it works</h2>
+<p>Liquid reads the variable in the frontmatter with the file names, and makes them available to the JS. Then the JS adds an event listener to links having an href of <code class="language-javascript">generate-zip</code> that tells JSZip to generate the zip on the fly when the link is clicked. Files are downloaded asynchronously from the repo.</p>
+
+<pre><code class="language-markup">
+  {% if page.files %}
+  {% assign pageurl = page.url | split: '/' | pop | join: '/' %}
+  {% capture files %}[{% for file in page.files %}
+  "{{ pageurl }}/{{ file }}"{% if forloop.last %}{% else %},{% endif %}{% endfor %}
+  ]{% endcapture %}
+  {% endif %}
+
+  &lt;script>
+  var Files = {
+    all : {{ files }}
+  }
+  &lt;/script>
+</code></pre>
+
+<p>This is how we share the files from the frontmatter with the JavaScript when Jekyll generates the page.</p>
+
+<pre><code class="language-javascript">
+  var addFiles = function() {
+    var filename;
+    Files.all.map(function(fileurl) {
+      filename = fileurl.replace(/.*\//g, "");
+      Zipper.zip.file(filename, downloader.getFile(fileurl), {binary:true});
+    });
+  };
+
+  var generateZip = function() {
+    if (JSZip.support.blob) {
+      addFiles();
+      generateAsync();
+    } else {
+      console.log("Blob is not supported")
+    }
+  }
+
+  var registerListener = function(downloadLink) {
+    downloadLink.addEventListener("click", function(event) {
+      event.preventDefault();
+      zipper.createZip(downloader);
+    }, false);
+  };
+</code></pre>
+
+<p>Then we can query all the download links:</p>
+
+<pre><code class="language-javascript">var downloadLink = document.body.querySelector('a[href=generate-zip]');</code></pre>
+
+<p>Files are bundled to reduce HTTP requests.</p>
