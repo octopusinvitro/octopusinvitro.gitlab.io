@@ -1,0 +1,186 @@
+---
+layout: post
+title: Client-side zipping on the fly
+date: 2016-06-16 21:56:46.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Jekyll
+- JavaScript
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>Recently I needed to find a solution to Zip some files on the fly (client-side) when the user clicked a download link on a static site.</p>
+
+<h2>Context</h2>
+<p>The site used Jekyll, was served through GitHub pages, and contained mostly tutorials. Some of those tutorials had example files to download. Since it was an open-source project with many contributors, these example files where spread all over GitHub in gists in the contributors personal accounts. This made it very difficult to update those example files when the tutorial was updated, as you can't submit a PR to a gist file.</p>
+
+<h2>Problem</h2>
+<ul>
+  <li>The exercise files of the tutorials were <a href="https://gist.github.com/despo/309f684b7a6e002aaf1f">in gists</a> where they could not be updated or new files added.</li>
+  <li>We wanted to bring these files into <a href="https://github.com/codebar/tutorials">the tutorials repository</a> to version-control them together with the tutorial they belong to.</li>
+  <li>We also wanted the students to be able to keep downloading the files in a zip file from the tutorial page as they did before.</li>
+</ul>
+
+<h2>Constrains</h2>
+<ul>
+  <li>Jekyll plugins <a href="https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages-and-jekyll#plugins">are not allowed</a> in GitHub pages.
+    <blockquote>
+      <p>GitHub Pages cannot build sites using unsupported plugins. If you want to use unsupported plugins, generate your site locally and then push your site's static files to GitHub.</p>
+    </blockquote>
+  </li>
+
+  <li>Version control of a zip file (or any binary file) <a href="https://robinwinslow.uk/dont-ever-commit-binary-files-to-git">is considered bad practice</a>, as they make the repository bloated and humans can't make sense of the changes anyway.</li>
+
+  <li>Client-side JavaScript does not have read access to files in the server. So the zip has to be generated on the fly.</li>
+
+  <li>We can't use HTML attributes in tags. So we can only use the <code class="language-markup">href</code> attribute of the download link <a href="#footnote1">[*]</a>.</li>
+
+  <li>We prefer a simple solution, to be able to have a single commit that updates the instructions and example code together.</li>
+
+  <li>No fancy workflows, so we can push changes and have them served immediately through GitHub pages.</li>
+</ul>
+
+<h2>Possible solution</h2>
+<p>The solution we agreed was to move those gists to the main repo, alongside their tutorial, and zip them on the fly when the download link was clicked. After doing some research, I found <a href="https://stuk.github.io/jszip/">JSZip</a>.</p>
+<p>So we used JSZip and some liquid to automatically generate a zip file containing the tutorial downloadable files, when clicking the download link.</p>
+<p>The workflow looks like this:</p>
+<ul>
+  <li>You add a folder with your exercise files inside of the tutorial folder:
+    <pre><code class="language-plaintext">
+javascript_tutorial/lesson3/
+├── files/
+│   ├── index.html
+│   ├── jquery.js
+│   ├── script.js
+│   └── style.css
+└── tutorial.md
+</code></pre>
+  </li>
+  <li>Then, add an array variable <code class="language-">files</code> to the frontmatter of the tutorial page, containing a list with the paths of the files you added, <strong>including folder name</strong>:
+    <pre><code class="language-yaml">
+---
+layout: page
+title: 'Lesson 3: Introduction to jQuery'
+files:
+  - files/index.html
+  - files/jquery.js
+  - files/script.js
+  - files/style.css
+---
+</code></pre>
+  </li>
+  <li>In the markdown of the tutorial page, add a download link and make it point to <code class="language-">download</code> ("download" is just to differenciate download links from other links):
+    <pre><code class="language-markdown">
+Download the files that you will need to work through the example [here](download).</code></pre>
+  </li>
+</ul>
+
+<h2>How it works</h2>
+
+<p>As I mentioned, we decided to use JSZip to zip the files on the fly. The way the JSZip library works is that you have to pass it the paths to the files you want to zip. For example, this code creates a text file called <code class="language-plaintext">hello.txt</code> with contents <code class="language-javascript">Hello World\n</code>:</p>
+
+<pre><code class="language-javascript">
+var zip = new JSZip();
+zip.file('hello.txt', 'Hello World\n');
+</code></pre>
+
+<p>If we store the tutorial files alongside the markdown tutorial file, we can tell JavaScript the path and names of the files it has to zip while Jekyll is building the site.</p>
+
+<p>In order to build the site, Jekyll parses the markdown files into HTML pages using the configuration in the frontmatter of said markdown files.</p>
+
+<p>The templating engine (in this case Liquid), reads the <code class="language-yaml">files</code> variable with the file paths in the frontmatter. Then it dumps them as a JavaScript array in a <code class="language-markup">&lt;script></code> tag at the bottom of the tutorial HTML page, so that the JSZip library can access them.<p>
+
+<pre><code class="language-liquid">
+{% if page.files %}
+{% assign pageurl = page.url | split: '/' | pop | join: '/' %}
+{% capture files %}[{% for file in page.files %}
+"{{ pageurl }}/{{ file }}"{% if forloop.last %}{% else %},{% endif %}{% endfor %}
+]{% endcapture %}
+{% endif %}
+</code></pre>
+
+<pre><code class="language-markup">
+&lt;script>
+var Files = {
+  all : {{ files }}
+}
+&lt;/script>
+</code></pre>
+
+<p>In JavaScript we add an event listener to links having an <code class="language-markup">href</code> of <code class="language-javascript">download</code> that tells JSZip to generate the zip on the fly when the link is clicked. Files are downloaded asynchronously from the repo.</p>
+
+<p>This is how we generate the zip on the fly client-side, after Jekyll generates the page:</p>
+
+<pre><code class="language-javascript">
+var addFiles = function() {
+  var filename;
+  Files.all.map(function(fileurl) {
+    filename = fileurl.replace(/.*\//g, '');
+    Zipper.zip.file(filename, downloader.getFile(fileurl), { binary: true });
+  });
+};
+
+var generateZip = function() {
+  if (JSZip.support.blob) {
+    addFiles();
+    generateAsync();
+  } else {
+    console.log('Blob is not supported')
+  }
+}
+
+var registerListener = function(downloadLink) {
+  downloadLink.addEventListener('click', function(event) {
+    event.preventDefault();
+    createZip();
+  }, false);
+};
+</code></pre>
+
+<p>Then we can query all the download links:</p>
+
+<pre><code class="language-javascript">var downloadLink = document.body.querySelector('a[href=download]');</code></pre>
+
+<p>The files are bundled to reduce the number of HTTP requests. Sadly, I couldn't find a CDN URL for the library, so at the moment it is bundled with the rest of the JavaScript <a href="#footnote2">[**]</a>.</p>
+
+
+<h2>Caveats</h2>
+<p>At the moment this solution allows only one download link per page. This means that tutorials with more than one set of downloadables should be split into two. This can be fixed easily though, but I wanted to go one step at a time.</p>
+<p>Also, JSZip relies on <code class="language-">blobs</code> to work. The only problematic browsers that didn't have support for blobs seemed to be <a href="http://caniuse.com/#feat=blobbuilder">IE9 and Opera Mini</a>.</p>
+
+<figure>
+  <a href="http://caniuse.com/#feat=blobbuilder"><img src="<%= image_host %>/images/uploads/2016/06/blob-support.png" width="928" height="523" alt="Blob support"></a>
+  <figcaption>Blob support according to "Can I use..."</figcaption>
+</figure>
+
+<p>However, JSZip provides a IE version that can be added like this:</p>
+<pre><code class="language-markup">
+  &lt;!--[if IE]>
+  &lt;script type="text/javascript" src="http://stuk.github.io/jszip-utils/dist/jszip-utils-ie.js">&lt;/script>
+  &lt;![endif]--></code></pre>
+
+<h2>Challenges</h2>
+<p>I had some challenges testing promises and asynchronous methods. The manual testing worked though.</p>
+
+<h2>Room for improvement</h2>
+
+<p>There is a lot of room for improvement. For example:</p>
+
+<ul>
+  <li>Rather than clicking a link, I think semantically speaking a <code class="language-markup">&lt;button></code> may be a better option 🤔</li>
+  <li>I couldn't test it widely in every browser and OS, just Ubuntu, Firefox and chrome. Other community members where able to make a couple more tests though.</li>
+  <li>At the moment it only does one download per page.</li>
+  <li>The tests of promises and asynchronous methods could be improved.</li>
+  <li>We need to port the rest of the tutorials.</li>
+</ul>
+
+<p id="footnote1" class="small">[*] Jekyll parses Markdwon using Kramdown. According to the <a href="https://kramdown.gettalong.org/quickref.html#block-attributes">Kramdown docs</a>, you can indeed add attributes to an element. For example, to add an id to a link: <code class="language-markdown">[a link with an id](http://foo.com) {: #link-id}</code></p>
+
+<p id="footnote2" class="small">[**] I found it!!! there is <a href="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js">a CDN link at Cloudflare</a>!</p>

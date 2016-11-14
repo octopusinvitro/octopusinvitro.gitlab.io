@@ -1,0 +1,128 @@
+---
+layout: post
+title: Backpropagation and the maths behind it
+date: 2019-03-23 18:01:29.000000000 +00:00
+type: post
+published: true
+status: publish
+categories:
+- Machine Learning
+tags:
+- deep learning series
+- featured
+author:
+  display_name: Octopus in vitro
+mathjax: true
+---
+
+<p>The process of moving the data forward through the network is called forward propagation. <strong>Backpropagation</strong> is the tool that gradient descent uses to calculate the gradient of the loss function with respect to each weight.</p>
+
+<p>The value of an output node is the weighted sum of the outputs of the previous layer, after passing through the activation function of its own layer:</p>
+
+<pre><code class="language-plaintext">
+node output = activation ( weighted sum of inputs )
+            = activation ( a1w1 + a2w2 + ... + aNwN )
+</code></pre>
+
+<p>Therefore, if we want to update the values of the output nodes, we can update their weights. Another way is by changing the activation output from the previous layer.</p>
+
+<p>We can't <em>directly</em> change the activation output because it's a calculation based on the weights and the previous layer's output. But, we can <em>indirectly</em> change this layer's output by jumping backwards and updating the previous weights.</p>
+
+<p>We continue this process until we reach the input layer.</p>
+
+<h2>Mathematical representation</h2>
+
+<p>The notation supposes that we have:</p>
+
+<ul>
+  <li><code class="language-plaintext">L</code> layers with index <code class="language-plaintext">l</code> in the range <code class="language-plaintext">l = [0, L - 1]</code></li>
+  <li><code class="language-plaintext">n</code> nodes in a layer <code class="language-plaintext">l</code> with index <code class="language-plaintext">j</code> in the range <code class="language-plaintext">j = [0, n - 1]</code></li>
+  <li><code class="language-plaintext">m</code> nodes in the previous layer <code class="language-plaintext">l - 1</code> with index <code class="language-plaintext">k</code> in the range <code class="language-plaintext">k = [0, m - 1]</code></li>
+</ul>
+
+<h3>Loss function</h3>
+
+<p>For any node <code class="language-plaintext">j</code> <strong>in the output layer</strong> <code class="language-plaintext">L</code>, if the activation output is <strong>a<sub>j</sub><sup>L</sup></strong>, and the actual output is <strong>y<sub>j</sub></strong>, then the loss <strong>C</strong> of training sample <code class="language-plaintext">0</code> is:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="C_{0j} = (a_j^L - y_j)^2"><mrow><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>=</mo><mo stretchy="false">(</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup><mo>-</mo><msub><mrow><mi>y</mi></mrow><mrow><mi>j</mi></mrow></msub><msup><mrow><mo stretchy="false">)</mo></mrow><mrow><mn>2</mn></mrow></msup></mrow></math>
+
+<p>where <strong>y<sub>j</sub></strong> is constant. The total loss will be the sum of the loss of all nodes:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="C_0 = \sum_{j=0}^{n - 1}C_{0j} = \sum_{j=0}^{n - 1}(a_j^L - y_j) "><mrow><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub><mo>=</mo><munderover><mo largeop="true">∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>-</mo><mn>1</mn></mrow></munderover><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn><mi>j</mi></mrow></msub><mo>=</mo><munderover><mo largeop="true">∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>-</mo><mn>1</mn></mrow></munderover><mo stretchy="false">(</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup><mo>-</mo><msub><mrow><mi>y</mi></mrow><mrow><mi>j</mi></mrow></msub><mo stretchy="false">)</mo></mrow></math>
+
+
+<p>This is what we have seen already when we covered <a href="/blog/machine-learning/loss-function-and-learning-rate">the loss function and learning rate</a>.</p>
+
+<h3>Input and output</h3>
+
+<p>For any node <code class="language-plaintext">j</code> <strong>in any layer <code class="language-plaintext">l</code></strong>, the input <strong>z<sub>j</sub><sup>l</sup></strong> is the weighted sum of the activation outputs of all nodes in layer <code class="language-plaintext">l - 1</code>, <strong>a<sub>k</sub><sup>l - 1</sup></strong>, where the weights are <strong>w<sub>jk</sub><sup>l</sup></strong>.</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="z_j^l = \sum_{k = 0}^{m - 1}w_{jk}^l a_k^{l - 1}"><mrow><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup><mo>=</mo><munderover><mo largeop="true">∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>m</mi><mo>-</mo><mn>1</mn></mrow></munderover><msubsup><mi>w</mi><mrow><mi>j</mi><mi>k</mi></mrow><mrow><mi>l</mi></mrow></msubsup><msubsup><mi>a</mi><mrow><mi>k</mi></mrow><mrow><mi>l</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></math>
+
+<p>The output of node <code class="language-plaintext">j</code> in layer <code class="language-plaintext">l</code> will be the activation function of layer <code class="language-plaintext">l</code> <strong>g<sup>l</sup></strong> applied to this weighted sum:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="a_j^l = g^l(z_j^l) "><mrow><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup><mo>=</mo><msup><mrow><mi>g</mi></mrow><mrow><mi>l</mi></mrow></msup><mo stretchy="false">(</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup><mo stretchy="false">)</mo></mrow></math>
+
+<p>This is what we have seen already when we covered <a href="/blog/machine-learning/artificial-neural-networks">the introduction to artificial neural networks</a>.</p>
+
+<h3>Differenciation</h3>
+
+<p>The total loss of the network for a single input <code class="language-plaintext">0</code> is a composition of functions:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="C_0 = C_0(a_j^l (z_j^l ( w_{j}^l ))) "><mrow><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub><mo>=</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub><mo stretchy="false">(</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup><mo stretchy="false">(</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup><mo stretchy="false">(</mo><msubsup><mi>w</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow></math>
+
+<p>To differentiate a composition of functions, we use the <strong>chain rule</strong>:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial C_0}{\partial w_{jk}^l} = \frac{\partial C_0}{\partial a_j^l} \frac{\partial a_j^l}{\partial z_j^l} \frac{\partial z_j^l}{\partial w_{jk}^l}"><mrow><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mi>j</mi><mi>k</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow></mfrac><mfrac><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow></mfrac><mfrac><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mi>j</mi><mi>k</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow></mfrac></mrow></math>
+
+<p>The first term is calculated differently for the output layer and the hidden layers. This is because the loss function is a direct function of the outputs in the last layer, but is an indirect function of the outputs in the hidden layers. So the derivative will be different.</p>
+<h4>Output layer</h4>
+
+<p>Let's check the values of the three terms for <code class="language-plaintext">l = L</code>, <code class="language-plaintext">j = 1</code> and <code class="language-plaintext">k = 2</code></p>
+
+<ul>
+  <li>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial C_0}{\partial a_j^L} = \frac{\partial}{\partial a_j^L} \sum_{j=0}^{n - 1} (a_j^L - y_j)^2 = 2(a_1^L - y_1)"><mrow><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo></mrow><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac><munderover><mo largeop="true">∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>-</mo><mn>1</mn></mrow></munderover><mo stretchy="false">(</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup><mo>-</mo><msub><mrow><mi>y</mi></mrow><mrow><mi>j</mi></mrow></msub><msup><mrow><mo stretchy="false">)</mo></mrow><mrow><mn>2</mn></mrow></msup><mo>=</mo><mn>2</mn><mo stretchy="false">(</mo><msubsup><mi>a</mi><mrow><mi>1</mi></mrow><mrow><mi>L</mi></mrow></msubsup><mo>-</mo><msub><mrow><mi>y</mi></mrow><mrow><mi>1</mi></mrow></msub><mo stretchy="false">)</mo></mrow></math>
+  </li>
+
+  <li>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial a_j^l}{\partial z_j^l} = \frac{\partial g^L}{\partial z_1^L}"><mrow><mfrac><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo><msup><mrow><mi>g</mi></mrow><mrow><mi>L</mi></mrow></msup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mn>1</mn></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac></mrow></math>
+  </li>
+
+  <li>
+    <math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial z_j^l}{\partial w_{jk}^l} = \frac{\partial}{\partial w_{jk}^l} \sum_{k = 0}^{m - 1}w_{jk}^l a_k^{l - 1} = a_2^{L - 1}"><mrow><mfrac><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mi>j</mi><mi>k</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mi>j</mi><mi>k</mi></mrow><mrow><mi>l</mi></mrow></msubsup></mrow></mfrac><munderover><mo largeop="true">∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>m</mi><mo>-</mo><mn>1</mn></mrow></munderover><msubsup><mi>w</mi><mrow><mi>j</mi><mi>k</mi></mrow><mrow><mi>l</mi></mrow></msubsup><msubsup><mi>a</mi><mrow><mi>k</mi></mrow><mrow><mi>l</mi><mo>-</mo><mn>1</mn></mrow></msubsup><mo>=</mo><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></math>
+  </li>
+</ul>
+
+<p>Putting it all together, the partial derivative of the loss with respect to one weight, for a single training sample <code class="language-plaintext">0</code> with <code class="language-plaintext">j = 1</code> and <code class="language-plaintext">k = 2</code> in the output layer <code class="language-plaintext">L</code> is:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial C_0}{\partial w_{12}^L} = 2(a_1^L - y_1) \frac{\partial g^L}{\partial z_1^L} a_2^{L - 1}  "><mrow><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mn>12</mn></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac><mo>=</mo><mn>2</mn><mo stretchy="false">(</mo><msubsup><mi>a</mi><mrow><mn>1</mn></mrow><mrow><mi>L</mi></mrow></msubsup><mo>-</mo><msub><mrow><mi>y</mi></mrow><mrow><mn>1</mn></mrow></msub><mo stretchy="false">)</mo><mfrac><mrow><mo>∂</mo><msup><mrow><mi>g</mi></mrow><mrow><mi>L</mi></mrow></msup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mn>1</mn></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></math>
+
+<p>If we have a total of <code class="language-plaintext">N</code> training samples, the derivative of the loss for all of them with respect to one weight in the output layer is the average sum:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial C}{\partial w_{12}^L} = \frac{1}{N} \sum_{i = 0}^{N - 1} \frac{\partial C_i}{\partial w_{12}^L} "><mrow><mfrac><mrow><mo>∂</mo><mi>C</mi></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mn>12</mn></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac><mo>=</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mi>N</mi></mrow></mfrac><munderover><mo largeop="true">∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>N</mi><mo>-</mo><mn>1</mn></mrow></munderover><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mi>i</mi></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mn>12</mn></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac></mrow></math>
+
+
+<h4>Hidden layers</h4>
+
+<p>For the hidden layers we use the chain rule as before, but now the first term has to be calculated differently.</p>
+
+<p>For <code class="language-plaintext">l = L - 1</code>, <code class="language-plaintext">j = 2</code> and <code class="language-plaintext">k = 2</code>:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial C_0}{\partial w_{22}^{L-1}} = \frac{\partial C_0}{\partial a_2^{L - 1}} \frac{\partial a_2^{L - 1}}{\partial z_2^{L - 1}} \frac{\partial z_2^{L - 1}}{\partial w_{22}^{L-1}}"><mrow><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mn>22</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><mfrac><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><mfrac><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mn>22</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac></mrow></math>
+
+<p>In the first term, we need to sum in <code class="language-plaintext">j</code> because a change in <strong>a<sub>2</sub><sup>L - 1</sup></strong> will affect all nodes in the layer <code class="language-plaintext">L</code>:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial C_0}{\partial w_{22}^{L-1}} = \left( \sum_{j=0}^{n - 1} \frac{\partial C_0}{\partial a_j^L} \frac{\partial a_j^L}{\partial z_j^L} \frac{\partial z_j^L}{\partial a_2^{L - 1}} \right) \frac{\partial a_2^{L - 1}}{\partial z_2^{L - 1}} \frac{\partial z_2^{L - 1}}{\partial w_{22}^{L-1}}  "><mrow><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mn>22</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><mo>=</mo><mrow><mo>(</mo><mrow><munderover><mo largeop="true">∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>-</mo><mn>1</mn></mrow></munderover><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac><mfrac><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac><mfrac><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac></mrow><mo>)</mo></mrow><mfrac><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><mfrac><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mn>22</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac></mrow></math>
+
+<p>The first two terms of the first term are calculated as before. The third is new and is calculated like this:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial z_j^L}{\partial a_2^{L - 1}} = \frac{\partial}{\partial a_2^{L - 1}} \sum_{k = 0}^{m - 1}w_{jk}^L a_k^{L - 1} = w_{j2}^L "><mrow><mfrac><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup></mrow><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><mo>=</mo><mfrac><mrow><mo>∂</mo></mrow><mrow><mo>∂</mo><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><munderover><mo largeop="true">∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>m</mi><mo>-</mo><mn>1</mn></mrow></munderover><msubsup><mi>w</mi><mrow><mi>j</mi><mi>k</mi></mrow><mrow><mi>L</mi></mrow></msubsup><msubsup><mi>a</mi><mrow><mi>k</mi></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup><mo>=</mo><msubsup><mi>w</mi><mrow><mi>j</mi><mn>2</mn></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></math>
+
+<p>Putting it all together:</p>
+
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" title="\frac{\partial C_0}{\partial w_{22}^{L-1}} = \left( \sum_{j=0}^{n - 1} 2(a_j^L - y_j) \frac{\partial g^L}{\partial z_j^L} w_{j2}^L \right) \frac{\partial g^{L - 1}}{\partial z_2^{L - 1}} a_2^{L - 2} "><mrow><mfrac><mrow><mo>∂</mo><msub><mrow><mi>C</mi></mrow><mrow><mn>0</mn></mrow></msub></mrow><mrow><mo>∂</mo><msubsup><mi>w</mi><mrow><mn>22</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><mo>=</mo><mrow><mo>(</mo><mrow><munderover><mo largeop="true">∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>-</mo><mn>1</mn></mrow></munderover><mn>2</mn><mo stretchy="false">(</mo><msubsup><mi>a</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup><mo>-</mo><msub><mrow><mi>y</mi></mrow><mrow><mi>j</mi></mrow></msub><mo stretchy="false">)</mo><mfrac><mrow><mo>∂</mo><msup><mrow><mi>g</mi></mrow><mrow><mi>L</mi></mrow></msup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mi>j</mi></mrow><mrow><mi>L</mi></mrow></msubsup></mrow></mfrac><msubsup><mi>w</mi><mrow><mi>j</mi><mn>2</mn></mrow><mrow><mi>L</mi></mrow></msubsup></mrow><mo>)</mo></mrow><mfrac><mrow><mo>∂</mo><msup><mrow><mi>g</mi></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msup></mrow><mrow><mo>∂</mo><msubsup><mi>z</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>1</mn></mrow></msubsup></mrow></mfrac><msubsup><mi>a</mi><mrow><mn>2</mn></mrow><mrow><mi>L</mi><mo>-</mo><mn>2</mn></mrow></msubsup></mrow></math>
+
+<p>These gradients will be used to update the weights as we saw when explaining <a href="/blog/machine-learning/training-and-learning#learning">training and learning</a>:</p>
+
+<pre><code class="language-plaintext">new weight = old weight - (learning rate * gradient)</code></pre>

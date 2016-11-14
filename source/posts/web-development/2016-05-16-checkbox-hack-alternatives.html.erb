@@ -1,0 +1,82 @@
+---
+layout: post
+title: Checkbox hack alternatives
+date: 2016-05-16 18:09:19.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- CSS
+- HTML
+- JavaScript
+- hacks
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+
+<p>The checkbox hack is when you use an <code class="language-markup">&lt;input&gt;</code> element of type &quot;checkbox&quot; to show or hide another element in the page by checking the state of its boolean attribute &quot;checked&quot;.</p>
+
+<p>Since show/hide sounds "boolean", it may seem like a good idea at first. But it's called a hack for a reason. It's bad semantics and accessibility is not the best. There was <a href="https://css-tricks.com/the-checkbox-hack/">an article about it in the famous CSS tricks site</a>, but even there it came with a disclaimer:</p>
+
+<blockquote>
+  <p>Disclaimer: Some of this stuff crosses the line of what you &quot;should&quot; do with CSS and introduces some bad semantics. It's still wicked fun to play with and cool that it's possible, but in general functional behavior should be controlled by JavaScript.</p>
+</blockquote>
+
+<p>I totally agree that if you are going to make a switch you should use object-oriented JavaScript instead.</p>
+
+<h2>Main issues</h2>
+
+<ul>
+  <li>semantics: form elements are to be used in forms, not in navigation lists, tabs or treelists.</li>
+  <li>it doesn't work on old iOs and on Android.</li>
+  <li>it relies on the <code class="language-css">:checked</code> pseudo-class, which is not supported everywhere.</li>
+  <li>it may switch screen readers to form mode.</li>
+  <li>content of the shown element may be more difficult to read in form mode.</li>
+  <li>at the same time, <code class="language-css">display: none</code> on the checkbox or on the toggable area will make it temporarily unreadable for screen readers which is confusing.</li>
+</ul>
+
+<h2>Other issues</h2>
+
+<ul>
+  <li>
+    <p>The control will need to be well labelled so that the user knows exactly what the control does without relying on any text, icons or images around it. It would be good to look into "ARIA roles" to help with marking interactive elements in a more accessible way.</p>
+  </li>
+  <li>
+    <p>Also, the user may not know that a change has taken place once they have operated the control. In the checkbox hack, the only non-visual change is that the checkbox reports as &quot;checked&quot; when activated. That alone is not enough to signal the full extent of the control's purpose and status.</p>
+  </li>
+  <li>
+    <p>If you use this hack in several elements on the page, you could check any number of them and end up with all open, but you may want to only have one open at all times. This is very difficult to achieve with CSS only.</p>
+  </li>
+  <li>
+    <p>This hack is used a lot in dropdown menus. If you have a long list of elements, it is not scrolled so that it fits the screen.</p>
+  </li>
+  <li>
+    <p>Putting the label before the checkbox doesn't work. Since the <code class="language-css">~</code> selector only has access to immediate siblings, nesting the checkbox inside a label also will not work, unless the target is inside the label as well.</p>
+  </li>
+  <li>
+    <p>And Lea also had something to add:</p>
+    <blockquote>
+      <p><a href="https://twitter.com/WebManWlkg">@WebManWlkg</a> The checkbox hack restricts the structure of the markup too much to make it practical for most use cases.</p>
+      — Lea Verou (@LeaVerou) <a href="https://twitter.com/LeaVerou/status/702571345142538240">24 February 2016</a>
+    </blockquote>
+  </li>
+</ul>
+
+
+<h2>Accessible hide/show solutions</h2>
+
+<p>I think JavaScript should not be abused and should be used only following a progressive enhancement approach. But for these kind of user interactions, if there is a lack of a native element, then often a solution involving both CSS and JavaScript is more accessible.</p>
+
+<p>In particular, these two resources seem to be good sources of accessible widgets that you can use safely on your sites:</p>
+
+<ul>
+  <li><a href="https://whatsock.com/">whatstock</a> by Bryan Garaventa, who is blind himself. Comes with a lot of widgets.</li>
+  <li><a href="https://edenspiekermann.github.io/a11y-toggle/">a11y-togle</a> by Edenspiekermann. If you don't find what you need in whatstock, try this one.</li>
+</ul>
+
+<p>Other than this, the <code class="language-markup">&lt;details&gt;</code> and <code class="language-markup">&lt;summary&gt;</code> elements have a similar behaviour and are native to HTML.</p>
