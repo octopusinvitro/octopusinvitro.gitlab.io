@@ -1,0 +1,220 @@
+---
+layout: post
+title: Django cheatsheet
+date: 2016-11-23 17:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Web development
+tags:
+- Python
+- Django
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>These are my notes from the <a href="https://www.codeschool.com/courses/try-django">Try Django</a> and <a href="https://www.codeschool.com/courses/digging-into-django">Digging into Django</a>, courses. You may also be interested in <a href="/blog/code-and-tech/python-cheatsheet">my cheatsheet</a> for the <a href="https://www.codeschool.com/courses/try-python">Try Python</a> and <a href="https://www.codeschool.com/courses/flying-through-python">Flying through Python</a> courses.</p>
+
+<h2>"Try Django" - notes</h2>
+
+<ul>
+  <li>Django follows the Model-View-Controller (MVC) pattern. But in Django, Controllers are called Views, and Views are called Templates, so it is called the Model-Template-View (MTV) pattern:
+<pre><code class="language-">
+# MVC        = MTV
+# ---------------------
+# model      = model
+# view       = template
+# controller = view
+</code></pre>
+  </li>
+  <li>To install Django, first go learn about <a href="/blog/code-and-tech/virtual-environments-in-python">virtual environments in Python</a>. Then:
+<pre><code class="language-bash">
+# $ pip install django
+</code></pre>
+  </li>
+</ul>
+
+
+<h3>Creating projects</h3>
+
+<p>In Django there is one PROJECT that contains several APPS. You have to create one project and one app. Imagine we want to start a project called "Treasuregram". To create this project, type:</p>
+<pre><code class="language-bash">$ django-admin startproject Treasuregram</code></pre>
+
+<p>To run the project, cd Treasuregram, and type:</p>
+<pre><code class="language-bash">$ python manage.py runserver</code></pre>
+
+<p>It creates a db.sqlite3 and tells you:</p>
+<pre><code class="language-bash">
+You have 13 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): admin, auth, contenttypes, sessions.
+Run 'python manage.py migrate' to apply them.
+</code></pre>
+
+<p>This is because Django comes with an admin panel out of the box, and those migrations are needed for the admin to work.
+
+
+<h3>Create an app</h3>
+
+<p>Go to <a href="http://localhost:8000">localhost:8000</a>. It tells you to run:</p>
+<pre><code class="language-bash">$ python manage.py startapp app_name.</code></pre>
+
+<p>This creates a directory <code class="language-python">app_name</code> at the same level that the project. You can also go to <a href="http://localhost:8000/admin">localhost:8000/admin</a></p>
+
+
+<h3>Views (the controllers)</h3>
+
+<p>Their function is to receive a request and send a response. They go in <code class="language-">views.py</code> or inside a directory called <code class="language-">views</code>. To render templates, you have to <code class="language-python">import render</code>.</p>
+
+<p>Django uses a URL dispatcher that matches a URL using regex with the corresponding view. The routes of your web-app live in <code class="language-python">Project/urls.py</code>. For example:</p>
+
+<pre><code class="language-bash">
+r'^index/' # --> r = raw, (string won't be escaped)
+r'^$'      # --> Check that the URL has an empty path, $ terminates the regex
+
+# Examples:
+r'^home/'  # targets url/home/ and url/home/foo
+r'^home/$' # targets url/home/ only
+</code></pre>
+
+<h3>Templates (the views)</h3>
+
+<p>Django looks for template files in the templates directory. But you have to add the app in <code class="language-">Project/settings.py</code>.</p>
+
+<p>A <strong>context</strong> is a dictionary that maps template variable names to objects. The keys of a context are rendered in double brackets called "<em>moustaches</em>".</p>
+
+<p>There are other interesting things you can do in templates, like looping, cicling, etc. The documentation for that with some examples is in <a href="https://docs.djangoproject.com/ja/1.9/ref/templates/builtins/#cycle">the official page</a>.</p>
+
+<h4>Static files</h4>
+
+<p>This is anything that goes inside a static folder, for example: styles, scripts, images, etc.</p>
+
+<p>Add <code class="language-python">{% load staticfiles %}</code> in the template to make them available. Then, to load the path to the static file, do:</p>
+
+<pre><code class="language-markup">&lt;link rel="stylesheet" href="{% static 'main.css %}"></code></pre>
+
+
+<h3>Models</h3>
+
+<p>Django uses ORM (Object Relational Mapping) to translate Python to SQL statements.</p>
+
+<p>Right after you create or update a model you have to do a <strong>migration</strong> (same in Rails). This is like version control but for databases.</p>
+
+<pre><code class="language-bash">
+$ python manage.py makemigrations
+$ python manage.py migrate
+</code></pre>
+
+<p>We can preview the SQL commands that would be run with:</p>
+
+<pre><code class="language-bash">$ python manage.py sqlmigrate main_app 0001</code></pre>
+
+<p>If you run <code class="language-bash">makemigrations</code> and <code class="language-bash">migrate</code> again, it would tell you "nothing to do".
+
+
+<h3>Django shell</h3>
+
+<p>Django comes with a special shell that provides extra django commands, for example, to manipulate the database, add/update/remove records, etc.:</p>
+
+<pre><code class=language-python>
+$ python manage.py shell
+> from main_app.models import Treasure
+</code></pre>
+
+<p>Now we can do queries in our database, for example:</p>
+
+<pre><code class=language-python>
+> Treasure.objects.all()
+</code></pre>
+
+<p>This is equivalent to <code class="language-sql">SELECT * FROM Treasure</code>. The return value is called a Django <strong>QuerySet</strong>.</p>
+
+<p>There is also the equivalent of <code class="language-sql">WHERE</code>, and you have two methods for that; one that returns a group of records (<code class="language-python">filter()</code>) and one that returns a single record (<code class="language-python">get()</code>):</p>
+
+<pre><code class=language-python>
+> Treasure.objects.filter(location = 'Orlando, FL')
+> Treasure.objects.get(pk = 1)
+</code></pre>
+
+<p>Here,<code class=language-python>pk</code> refers to the primary key, which uniquely identifies an object (or a row in a databse table), so the result will return just one object.</p>
+
+<p>We can use the Django shell, to manually introduce data in the database:</p>
+
+<pre><code class=language-python>
+> t = Treasure(name="Gold Nugget", value=500.00, material='gold',   location="Curly's Creek, NM", img_url='https://placekitten.com/200/200')
+> t.save
+> t = Treasure(name="Fool's Gold", value=0,      material='pyrite', location="Fool's Falls, CO",  img_url='https://placekitten.com/200/200')
+> t.save()
+> t = Treasure(name="Coffee Can",  value=20.00,  material='tin',    location="Acme, CA",          img_url='https://placekitten.com/200/200')
+> t.save()
+</code></pre>
+
+<p>Defining a <code class=language-python>def __str__(self):</code> method in the model allows us to see something useful in the console.</p>
+
+
+<h3>The admin panel</h3>
+
+<p>Got to <a href="http://localhost/admin">http://localhost/admin</a>. You will see a login screen. When you first create a Django app, the admin table is empty. So let's create an admin user:</p>
+
+<pre><code class=language-bash>$ python manage.py createsuperuser</code></pre>
+
+<p>You will be able to login now, but the screen will be empty. This is because you have to register your models with the admin for them to show up.</p>
+
+<p>In <code>admin.py</code>, we import the models and register them:</p>
+
+<pre><code class=language-python>
+from django.contrib import admin
+from .models import Treasure
+
+admin.site.register(Treasure)
+</code></pre>
+
+<p>This is all in the Try Django tutorial. It's al lthe basic stuff to allow you to start making very basic Django sites.</p>
+
+<p>You could stop here and go practice what you learnt, or keep reading for more advanced stuff.</p>
+
+<h2>"Flying through Python" - notes</h2>
+
+<p>Random templating wisdom: there are things called "template tags" that will allow you to add some simple logic to the templates (I am against having any logic in the templates, but this is something that the framework offers you). For example, you can sort a dictionary:</p>
+
+<pre><code class=language-python>{% for location in locations|dictsort:'name' %} sort by name</code></pre>
+
+<p>To catch an id passed through a url (for example, <code class="language-">http://example.dom/user/3</code>), we can use: <code class=language-python>[0-9]+</code>. This matches any number, then we capture it with <code class=language-python>()</code> so that it gets passed as a parameter to the method in the view.</p>
+
+<h3>One to many relationship</h3>
+
+<p>Imagine we want to associate a user with their treasures. One user can own many treasures. But one treasure has only one owner. This is called a "one-to-many" relationship.</p>
+
+<p>In the treasure model, add:</p>
+<pre><code class=language-python>from django.contrib.auth.models import User</code></pre>
+
+<p>and then in the model class definition add:</p>
+<pre><code class=language-python>user = models.ForeignKey(User)</code></pre>
+
+<p>that will tell both tables to use the user id of the User table as a foreign key.</p>
+
+<p>Then migrate. You will get the message "<em>you are trying to add a non-nullable field</em>". Provide a one-off default and type 1 to give all current records in the table a foreign key that points to the first user.</p>
+
+<h3>Transactions</h3>
+
+<p>You can have Django tell a transaction to be complete or incomplete:</p>
+
+<pre><code class=language-python>
+form.save(commit=True)
+form.save(commit=False)
+</code></pre>
+
+<p>The last one allows you to do stuff before saving.</p>
+
+<h3>User login</h3>
+
+<p>There is a built in login function in Django, so if you want to make your own be carefull with naming.</p>
+
+<code class="language-python"># action="."</code> means post to same page.
+
+<p>This is still WIP, more to come in the future!</p>
+
+<h2>The end</h2>
+
+<p>This is the end, from here you may want to go back to <a href="/blog/code-and-tech/virtual-environments-in-python">virtual environments in Python</a> or jump to <a href="/blog/code-and-tech/python-cheatsheet">my Python cheatsheet</a>. I hope they are useful!</p>
