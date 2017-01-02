@@ -9,6 +9,7 @@ code[class*="language-"],
 pre[class*="language-"] {
   color: $darker-violet;
   font-family: 'Ubuntu Mono', monospace;
+  white-space: break-spaces;
 }
 
 code[class*="language-"] {

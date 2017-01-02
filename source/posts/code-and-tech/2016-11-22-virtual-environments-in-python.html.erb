@@ -1,0 +1,157 @@
+---
+layout: post
+title: Virtual environments in Python
+date: 2016-11-22 17:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Python
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>While working in your Python app, you may need to install packages to add extra functionality. Those packages may come in different versions.</p>
+
+<p>To deal with <strong>package installation</strong>, Python has a tool that works like <code class="language-bash">gem</code> in Ruby, <code class="language-bash">npm</code> in node, etc. It's called <code class="language-bash">pip</code>.</p>
+
+<p>To deal with <strong>package versions</strong>, Python has another tool which is equivalent to <code class="language-bash">bundler</code> in Ruby, the <code class="language-bash">package.json</code> file in node, etc. It's called <code class="language-bash">virtualenv</code>.
+
+<p>To install pip:</p>
+
+<pre><code class="language-bash">
+$ curl https://bootstrap.pypa.io/get-pip.py
+$ sudo python get-pip.py
+</code></pre>
+
+<p>To install virtualenv:</p>
+
+<pre><code class="language-bash">
+$ sudo pip install virtualenv
+</code></pre>
+
+<p>The first step when working on a Python app is to create a local environment to install things. Be aware that some files will need execution permissions. In the directory of our future app, type:</p>
+
+<pre><code class="language-bash">
+$ virtualenv venv
+$ . venv/bin/activate
+(venv) $
+</code></pre>
+
+<p>This will create a directory <code class="language-bash">venv</code> where everything our app needs will be installed. We also have to activate it, which gives us a special prompt (<code class="language-bash">(venv) $</code>) to let us know that we are in a parallel universe where our packages "exist".</p>
+
+<p>To install your app packages in its environment, for example, if you wanted to install the <a href="http://docs.python-requests.org/en/master/">requests</a> package:</p>
+
+<pre><code class="language-bash">
+(venv) $ pip install requests
+(venv) $ pip freeze # will print all installed packages and their versions.
+(venv) $ DO YOUR STUFF HERE
+</code></pre>
+
+<p>When we are finished working on our app we can deactivate the environment to recover our normal prompt (going back to our universe), or close that terminal window.</p>
+
+<pre><code class="language-bash">
+(venv) $ deactivate venv
+$
+</code></pre>
+
+
+<h2>Say hi to virtualenvwrapper: virtualenv on steroids</h2>
+
+<p>There is a wrapper around <code class="language-bash">virtualenv</code> called <code class="language-bash">virtualenvwrapper</code>, that offers more functionality. You can learn more about it in its <a href="https://virtualenvwrapper.readthedocs.io/en/latest/">official website</a>.</p>
+
+<p>To install: First check if you have it installed:</p>
+
+<pre><code class="language-bash">$ dpkg -l | grep virtualenvwrapper</code></pre>
+
+<p>Then install it:</p>
+
+<pre><code class="language-bash">
+$ sudo apt-get install virtualenvwrapper
+</code></pre>
+
+<p>Then you have to do some set up:</p>
+
+<pre><code class="language-bash">
+export VIRTUALENVWRAPPER_PYTHON=/home/USERNAME/.pyenv/shims/python
+export WORKON_HOME=/opt/virtualenvwrapper # add it to your .bashrc file too
+mkdir -p $WORKON_HOME
+</code></pre>
+
+<p>To create an environment:</p>
+
+<pre><code class="language-bash">$ mkvirtualenv -a PATH_TO_YOUR_APP PROJECT_NAME</code></pre>
+
+<p>If you want to create it with a specific version of Python:</p>
+
+<pre><code class="language-bash">$ mkvirtualenv -a PATH_TO_YOUR_APP --python=/usr/bin/python3.4 PROJECT_NAME</code></pre>
+
+<p>This makes a dir for the project inside <code class="language-bash">/home/admin/.virtualenvs</code>. Edit the <code class="language-bash">.project</code> file inside the project's folder to point it to the path where the project lives.</p>
+
+<p>After that, you have these commands available:</p>
+
+<ul>
+  <li><code class="language-bash">cdvirtualenv</code>: takes you to the virtualenv directory in your home directory.</li>
+  <li><code class="language-bash">cdproject</code>: will take you to the path where your project lives.</li>
+  <li><code class="language-bash">workon PROJECT_NAME</code>: will take you to the path AND inside environment of your project.</li>
+  <li><code class="language-bash">deactivate</code>: will take you out of the environment of your project.</li>
+</ul>
+
+<p>This tool is so cool and convenient that it became the environment tool that I use for everything I do in Python these days.</p>
+
+
+<h2>Other handy tools when working with Python</h2>
+
+<h3>Flake8 as a linter</h3>
+
+<p>I use atom as my editor, and I have used linters for Javascript in the past, so I searched if there was anything like that for Python. There is an official package called <a href="https://atom.io/packages/linter-flake8">linter-flake8</a> which does live checking following <a href="http://flake8.pycqa.org/en/latest/">the flake8 style guide</a>. You can also install flake8 as a CLI command, and <a href="http://flake8.pycqa.org/en/latest/user/configuration.html">it has some nice configuration options</a>. For example, I have <code class="language-">E221</code> and <code class="language-">E501</code> in "Ignore Error codes" in the package settings. You can also specify this on the terminal.</p>
+
+
+<h3>Pry-like shell with IPython</h3>
+
+<p>IPython is a tool that you can install together with Django as an alternative to the Django shell, and it gives you bash completion, colored output, etc. For example, something that you can do is <code class="language-">dir(classname)</code>, which is equivalent to <code class="language-">cd classname</code> in pry, i.e., a command that allows you to see the guts of a class, its methods, member fields, etc.</p>
+
+<h3>Debugging with ipdb</h3>
+
+<p>This is the equivalent of throwing a <code class="language-">binding.pry</code> in your code in Ruby. Instead of <code class="language-">binding.pry</code>, in Python you can type:</p>
+
+<pre><code class="language-python">
+import ipdb; ipdb.set_trace()
+</code></pre>
+
+<p>It looks long, but when I start typing <code class="language-">import ipdb</code> in atom on a Python file, it autocompletes the whole command (it also does the same with <code class="language-">binding.pry</code>)</p>
+
+<p>Some handy commands to move through the code that I haven't check if pry has as well are:</p>
+<ul>
+  <li><code class="language-">n</code>: next line</li>
+  <li><code class="language-">up</code>: go up in the stack trace</li>
+  <li><code class="language-">down</code>: go down in the stack trace</li>
+</ul>
+
+<h3>Better dependency management with pipenv</h3>
+
+<p><a href="https://robots.thoughtbot.com/how-to-manage-your-python-projects-with-pipenv">This Thoughbot post</a> explains it all.</p>
+
+<h3>Rake-like task runner</h3>
+
+<p>I found three tools:</p>
+
+<ul>
+  <li><a href="https://github.com/paver/paver">paver</a></li>
+  <li><a href="http://docs.pyinvoke.org/en/latest/getting_started.html">invoke</a></li>
+  <li><a href="https://moz.com/devblog/shovel-rake-for-python/">shovel</a></li>
+</ul>
+
+<h3>Automatically keep packages up to date</h3>
+
+<p>In Ruby most people use Gemnasium, but there is a service called <a href="https://depfu.com/">depfu</a> that checks your <code class="lang-">Gemfile.lock</code> against gem updates and submits a PR if any gems have released a newer version.</p>
+
+<p>There is a similar service for python. It's called <a href="https://pyup.io/">pyup</a>.
+
+<h2>Where do I go next?</h2>
+
+<p>Next, you may want to go back to <a href="/blog/code-and-tech/python-cheatsheet">my Python cheatsheet</a> or jump to <a href="/blog/code-and-tech/django-cheatsheet">my Django cheatsheet</a>. I hope they are useful!</p>
