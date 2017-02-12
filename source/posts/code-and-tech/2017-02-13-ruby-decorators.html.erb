@@ -1,0 +1,511 @@
+---
+layout: post
+title: Ruby decorators, inheritance, mixins, Forwardable and SimpleDelegator
+date: 2017-02-13 17:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Ruby
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>This is the story of an exploration of options I did recently. Explorations are fun and you learn a lot! I am writing this for myself, but maybe it is useful for you, imaginary reader. Who knows.</p>
+
+<h2>Some context, what am I trying to solve?</h2>
+
+<p>In a Sinatra app I am working on, I recently needed to extend functionality of a class that delegates a lot of methods to another class. In particular, a <code class="language-ruby">Person</code> class that wraps another person object coming from a library, adding extra functionality like making urls for certain fields or translating an object returned by the library's person class into another object.</p>
+
+<p>Basically, two things are happening here:</p>
+<ul>
+  <li>Delegating methods to the other class</li>
+  <li>Adding extra functionality</li>
+</ul>
+
+<p>I tried to do <a href="http://wiki.c2.com/?DoTheSimplestThingThatCouldPossiblyWork">the simplest thing that could possibly work</a>, so I passed the library person as an argument to the constructor and manually delegated all methods, then added the new methods (I am using the symbol/hash syntax for the arguments of the constructor, as recommended by Sandi Metz <a href="http://www.poodr.com/">in her book POODR</a>):</p>
+
+<pre><code class="language-ruby">
+module EP
+  class Person
+    def initialize(person:, # ...more arguments here)
+      @person = person
+      # ...initialize other arguments here
+    end
+
+    def id
+      person.id
+    end
+
+    def name
+      person.name
+    end
+
+    def image
+      person.image
+    end
+
+    # ...etc
+    # + extra methods that add new functionality
+  end
+end
+</code></pre>
+
+<p>This is already very ugly (the person class of the library I am using has a lot of methods), but what is more ugly is that there is a presenter/page class that uses this class to show information of the person and also adds more functionality (functionality whose place belongs in a page class but not necessarily in a person class). So I did the same:</p>
+
+<pre><code class="language-ruby">
+# The person field of a person page responds to
+# the same interface as an EP::Person
+module Page
+  class Person
+    def initialize(person:, # ...more arguments here)
+      @person = person
+      # ...initialize other arguments here
+    end
+
+    def id
+      person.id
+    end
+
+    def name
+      person.name
+    end
+
+    # ...etc.
+
+    # ...+ new methods
+  end
+end
+</code></pre>
+
+<p>The tests have the same problem, both look like:</p>
+
+<pre><code class="language-ruby">
+  # ...
+
+  it 'has a name' do
+    person.name.must_equal('Jon Doe')
+  end
+
+  it 'has an image' do
+    person.image.must_equal('http://example.com/jon-doe.jpg')
+  end
+
+  # ...
+</code></pre>
+
+<p>As you can see, there is a lot of repetition!</p>
+
+<p>So, after following the <strong>red-green-refactor mantra</strong>, it's refactoring time again, just this time it's gonna be a very big refactoring that should be made or things will keep  getting worse.</p>
+
+<p>Also, it's a good practice to wrap libraries or library objects in your own classes to protect your application from them. These wrappers act as an interface living in the borders of your app with the exterior, like a translator or communicator. This way, any breaking changes of external things you have no control over can be handled in one place.</p>
+
+<p>So I thought about all the possibilities I could use:</p>
+<ul>
+  <li>inheritance,</li>
+  <li>composition,</li>
+  <li>the Decorator Pattern,</li>
+  <li>the <code class="language-ruby">Forwardable</code> module provided by the Ruby core,</li>
+  <li>during my research for this I also learnt about the existence of the <code class="language-ruby">SimpleDelegator</code> class, which I had no idea of!</li>
+</ul>
+
+<p>But just because <em>you can</em> use something doesn't mean <em>you should</em>, right?. What's the best for my specific use-case?</p>
+
+<p>With this app I am starting to get into that point where you have enough code to see patterns and things that need to be refactored or die forever in the technical-debt ocean of doom. Aaaaaah! So I want to do things right, I want to find the right abstraction that will allow this code to be kept clean, changeable and easy to maintain in the future. Code that doesn't rot! In this post I am going to share what I found and what I decided to use at the end.</p>
+
+<p>"<em>The Next Developer</em>" is the most important person in my life when thinking about this.</p>
+
+<h2 id="options">Exploring the possibilities</h1>
+
+<p>These are the things I explored:</p>
+
+<h3>The Decorator Pattern</h3>
+
+<p>The way to implement the <a href="http://wiki.c2.com/?DecoratorPattern">Decorator Pattern</a> in Ruby is very well explained in <a href="https://robots.thoughtbot.com/evaluating-alternative-decorator-implementations-in">this Thoughtbot article about decorators</a>, in particular, in the <a href="https://robots.thoughtbot.com/evaluating-alternative-decorator-implementations-in#the-quotplain-old-ruby-objectquot-poro-decorator">Plain Old Ruby Object decorator</a> section.</p>
+
+<p>But before I tried to give this a try, I wanted to check how my colleagues in another team were doing it. I hear them talking all the time about decorators they are using in their own code. Maybe they had already done this research and found a solution I could use!</p>
+
+<p>However, when I looked at the code, it didn't look like they were using the Decorator Pattern, it looked more like a very intricate implementation of inheritance.</p>
+
+<p>This is the code they are using, simplified:</p>
+
+<pre><code class="language-ruby">
+class Decorator
+  def initialize(thing_to_decorate:, # other arguments)
+    @thing_to_decorate = thing_to_decorate
+    # initialize other arguments
+  end
+
+  def decorated_thing
+    ThingToDecorate.new(
+      a_method: a_method,
+      another_method: another_method,
+      # etc.
+    )
+  end
+
+  def a_method
+    thing_to_decorate.a_method
+  end
+
+  def another_method
+    thing_to_decorate.another_method
+  end
+
+  # ...etc., other methods here
+
+  private
+  attr_reader :thing_to_decorate, # other class fields
+end
+</code></pre>
+
+<p>And then this is used like this:</p>
+
+<pre><code class="language-ruby">
+class ThingDecorator < Decorator
+  def a_method
+    # do something with "thing_to_decorate.a_method"
+  end
+
+  # maybe add new specialization methods here
+end
+
+decorated_thing = ThingDecorator.new(thing_to_decorate).decorated_thing
+# do something with the decorated thing
+</code></pre>
+
+<p>The reason why this is basically inheritance is because this is just selecting some methods in <code class="language-ruby">thing_to_decorate</code> whose behaviour you want to change, creating a <code class="language-ruby">ThingToDecorate</code> object which receives those modifications, and then returning that object, which is kind of an intricate way of implementing simple inheritance, since you would not need the <code class="language-ruby">decorated_thing</code> at all. You could just create <code class="language-ruby">ThingToDecorate</code> as a subclass of whatever is the class of <code class="language-ruby">thing_to_decorate</code>, modify the methods you want to modify, and use instances of it directly. But maybe they needed this implementation for that particular codebase for some reason.</p>
+
+<p>The only benefit I see of using this code is if you only wanted to expose some of the methods in <code class="language-ruby">thing_to_decorate</code>, since inheritance exposes all the methods of the parent. But Ruby has much simpler ways of doing this as I will show below.</p>
+
+<p>Inheritance can be understood as a kind of decoration indeed. But I discarded this approach because:</p>
+<ul>
+  <li>If I use this, I would still need to manually delegate all methods that I need from the parent.</li>
+  <li>The person class in the library I am using already has a defined signature for the constructor. With this approach, I would have to pass the person methods as arguments to the constructor (i.e. <code class="language-ruby">ThingToDecorate.new(id: id, name: name, #... etc.)</code>, where <code class="language-ruby">ThingToDecorate</code> would be the person to decorate).</li>
+</ul>
+
+<p>OK, so let's explore simple inheritance in my use-case:</p>
+
+<h3>Inheritance</h3>
+
+<p>Say the person class I am delegating methods to is called <code class="language-ruby">LibraryName</code>. This would look something like:</p>
+<pre><code class="language-ruby">
+module EP
+  class Person < LibraryName::Person
+    def initialize(
+      # arguments needed by the parent class,
+      # arguments needed by the subclass
+    )
+        super(
+          # send arguments to the parent here
+        )
+        # initialize subclass arguments here
+    end
+
+    # ...plus new EP::Person methods
+  end
+end
+</code></pre>
+
+<p>The person class in the library is initialized with a <code class="language-ruby">document</code> object that I don't have access to, all I can do is get an instance of a person. So this option was discarded.</p>
+
+<p>This is the library constructor:</p>
+<pre><code class="language-ruby">
+  def initialize(document, popolo = nil)
+    @document = document
+    @popolo = popolo
+    # ...some metaprogramming here
+  end
+</code></pre>
+
+<p>Things to consider:</p>
+<ul>
+  <li>I try to avoid inheritance in general, unless what I am writing is really a specialization and the parent class is as abstract as possible (i.e., we don't make instances of it), which the person class in the library isn't (Java makes this easy with explicit <code class="language-java">interface</code> and <code class="language-java">abstract</code> class types, but we are in rubyland here).</li>
+  <li>Even if I could have done this, the page class would have to inherit again from this person class to add its own functionality. Double inheritance can get double as bad!</li>
+  <li>Inheritance couples objects statically.</li>
+  <li>The subclass inherits ALL methods of the parent, and maybe you don't want to expose all of them.</li>
+</ul>
+
+<p>OK, let's explore the next option.</p>
+
+
+<h3>Mixin modules</h3>
+
+<p>I first learnt about mixin modules in Rails and it blew my mind. However, depending on how you use them, they can either solve your problems or raise new ones and add complexity. They are another kind of inheritance, after all, just a bit more flexible, reusable, plug &amp; play, etc.</p>
+
+<p>The mixin module would be like:</p>
+<pre><code class="language-ruby">
+module PersonInterface
+  def id
+    person.id
+  end
+
+  def name
+    person.name
+  end
+
+  # ...etc.
+end
+</code></pre>
+
+<p>And then we can include it in our person class:</p>
+<pre><code class="language-ruby">
+module EP
+  class Person
+    def initialize(person:, # ...more arguments here)
+      @person = person
+      # ...initialize other arguments here
+    end
+
+    include PersonInterface
+    # ...+ new EP::Person methods
+  end
+end
+</code></pre>
+
+<p>And in the presenter:</p>
+<pre><code class="language-ruby">
+module Page
+  class Person
+    def initialize(person:, # ...more arguments here)
+      @person = person
+      # ...initialize other arguments here
+    end
+
+    include PersonInterface
+    # ...+ new Page::Person methods
+  end
+end
+</code></pre>
+
+<p>This approach moves all the repeated delegation code to the mixin module. We can do the same thing for the tests:</p>
+
+<p>The module tests:</p>
+<pre><code class="language-ruby">
+module PersonInterfaceTest
+  def test_has_a_name
+    subject.name.must_equal('Jon Doe')
+  end
+
+  def test_has_an_image
+    subject.image.must_equal('http://example.com/jon-doe.jpg')
+  end
+  # ...etc.
+end
+</code></pre>
+
+<p>Our Person tests:</p>
+<pre><code class="language-ruby">
+describe 'EP::Person' do
+  let(:subject) { EP::Person.new(
+    person: library_person_instance,
+    # ...other arguments
+  ) }
+  include PersonInterfaceTest
+  # ...tests for the new EP functionality
+end
+</code></pre>
+
+<p>And for the presenter:</p>
+<pre><code class="language-ruby">
+describe 'Page::Person' do
+  let(:subject) { Page::Person.new(
+    person: ep_person_instance,
+    # ...other arguments
+  ) }
+  include PersonInterfaceTest
+  # ...tests for the new Page functionality
+end
+</code></pre>
+
+<p>Good things:</p>
+<ul>
+  <li>We can plug a module in other classes (like the page class); it is reusable.</li>
+  <li>We don't have to expose all the methods of the library's person class, just those we need.</li>
+  <li>It also cleans the tests because we can just inject the module where we want to test the interface and we avoid repeating code.</li>
+</ul>
+
+<p>However, there are some ways this could go wrong:</p>
+<ul>
+  <li>For example, for the tests, you would have to make sure that the information returned by calling those methods on a person duck-type, whoever that is, is the same. This is not true for my application for reasons I have no space here to explain. So this option was discarded as well.</li>
+  <li>In the person page, we still need to manually delegate the new functionality in <code class="language-ruby">EP::Person</code>.</li>
+  <li>Including modules suffers from the same problem that Rails: it adds "<em>magic</em>" to the combo. You see a method and you don't know where it came from.</li>
+</ul>
+
+<p>OK, next:</p>
+
+
+<h3>Ruby's SimpleDelegator</h3>
+
+<p>This is a Ruby core class that helps you delegate methods to another object. You can still add extra args to the constructor as it uses inheritance.</p>
+
+<p>The way you use it is, you subclass <code class="language-ruby">SimpleDelegator</code> (which works more as an abstract class than the library's person class) and then you pass the "delegatable" object as an argument to <code class="language-ruby">super()</code>.</p>
+
+<p>The tests would look like:</p>
+<pre><code class="language-ruby">
+describe 'EP::Person' do
+  let(:decorated_person) { EP::Person.new(
+    person: library_person_instance,
+    # other arguments
+  )}
+
+  it 'has a name' do
+    decorated_person.name.must_equal('Jon Doe')
+  end
+end
+</code></pre>
+
+<p>And the class:</p>
+<pre><code class="language-ruby">
+module EP
+  class Person < SimpleDelegator
+    def initialize(person:, # other arguments:)
+      super(person)
+      # initialize other arguments here
+    end
+
+    # ...+ extra EP::Person methods
+  end
+end
+</code></pre>
+
+<p>The <code class="language-ruby">SimpleDelegator</code> class has some of the benefits of inheritance, plus others:</p>
+<ul>
+  <li>You don't have to manually delegate the methods of the parent class</li>
+  <li>You are coupled to a much simpler and stabler class, the <code class="language-ruby">SimpleDelegator</code></li>
+  <li>Revamps double inheritance, because the person page class would inherit again from <code class="language-ruby">SimpleDelegator</code>, even if now we are passing an instance of an object that responds to the same interface as <code class="language-ruby">EP::Person</code>
+  <li>You have <code class="language-ruby">.__set_obj__()</code> and <code class="language-ruby">.__get_obj__()</code> methods available to manipulate the object you are delegating to, which give you more flexibility
+</ul>
+
+<p>The <code class="language-ruby">SimpleDelegator</code> class has the same problems as inheritance, plus others:</p>
+<ul>
+  <li>You can not choose which methods to expose, it's all or nothing</li>
+  <li>I forsee that <code class="language-ruby">.__set_obj__()</code> and <code class="language-ruby">.__get_obj__()</code>, having so much power, could open a can of unstability worms if not used properly and may add complexity</li>
+  <li><code class="language-ruby">binding.pry</code> gets weird when you use it inside of a class that inherits from <code class="language-ruby">SimpleDelegator</code></li>
+</ul>
+
+
+<p>A good article on the <code class="language-ruby">SimpleDelegator</code> is <a href="http://devblog.orgsync.com/2013/03/22/decorate-your-ruby-objects-like-a-boss/">Decorate your Ruby objects like a boss</a>.</p>
+
+<p>Let's investigate another option:</p>
+
+<h3>Forwardable</h3>
+
+<p>This is a module from the Ruby core that works pretty much like the <code class="language-ruby">SimpleDelegator</code> class, but it allows you to choose which methods you want to expose from the decorated class by using the <code class="language-ruby">def_delegators</code> method. It also allows you to rename methods in the parent using <code class="language-ruby">def_delegator</code>. A nice article on <code class="language-ruby">Forwardable</code> is <a href="http://vaidehijoshi.github.io/blog/2015/03/31/delegating-all-of-the-things-with-ruby-forwardable/">Delegating all the things with Ruby Forwardable</a>.</p>
+
+<p>This is how you use it:</p>
+
+<pre><code class="language-ruby">
+module EP
+  class Person
+    extend Forwardable
+    def_delegators :@person, :id, :name, :image, # etc.
+    def_delegator :@person, :area, :ep_area
+
+    def initialize(person: person, # other arguments)
+      @person = person
+      # initialize other arguments
+    end
+
+    # ...+ extra EP::Person methods
+  end
+end
+</code></pre>
+
+<p>I like this approach, it is more expressive than the <code class="language-ruby">SimpleDelegator</code> because you don't have magic methods appearing out of nowhere (the person class comes from a library, is not like we can go to our codebase and open a file where we can read which methods it defines).</p>
+
+<p>Just for fun, let's also consider using <code class="language-ruby">method_missing</code> (please don't kill me!).</p>
+
+<h3><code class="language-ruby">method_missing</code></h3>
+
+<p>People don't like to use <code class="language-ruby">method_missing</code> because it is a bit like adding or modifying methods in a Ruby core class on the fly, like when you monkey-patch the String or the Array class to do something fancy. You can read more about this particular way of meta-programming in <a href="https://www.leighhalliday.com/ruby-metaprogramming-method-missing">Ruby Metaprogramming - Method Missing</a>.</p>
+
+<p>Again this is very similar to the two previous cases, we pass the object we want to decorate to the constructor, and then:</p>
+
+<pre><code class="language-ruby">
+module EP
+  class Person
+    def initialize(person:, # other arguments)
+      @person = person
+      # initialize other arguments
+    end
+
+    def method_missing(method, *args, &amp;block)
+      person.send(method, *args, &amp;block)
+    end
+
+    # ...+ extra EP::Person methods
+  end
+end
+</code></pre>
+
+<p>You get all the methods of the parent with this approach.</p>
+
+<p>I don't think I would use it for my own classes, but I can imagine myself using it to objectify a hash, so that I can call the keys of that hash as if they where methods. For example, to objectify a JSON response.</p>
+
+<p>Could be handy to have a class out of a hash like this, using <code class="language-ruby">.to_s</code> (or <code class="language-ruby">.to_sym</code>, depending on the case):</p>
+
+<pre><code class="language-ruby">
+class HashAsAnObject
+  def initialize(hash =  {})
+    @hash = hash
+  end
+
+  def method_missing(method, *args, &amp;block)
+    hash.fetch(method.to_s, nil)
+  end
+
+  private
+
+  attr_reader :hash
+end
+</code></pre>
+
+<p>How can this go wrong:</p>
+<ul>
+  <li>It is a Kernel method, so you are basically meta-programming. With great power comes great responsability</li>
+  <li>Can be hard to debug, if there is no method in the decorated object (or in the case of <code class="language-ruby">HashAsAnObject</code>, if there is no such key in the hash). Since the method call is being called on the decorator, but the decorated object is the one raising the error. It may be painful to track down where the problem resides.</li>
+  <li>This gives you only one level objectification (I'm making up words here, don't worry). If some key points to a subhash, the method associated to that key will return a hash.</li>
+  <li>If you add this method, you have to remember to also define <code class="language-ruby">respond_to_missing</code>, as detailed in <a href="https://robots.thoughtbot.com/always-define-respond-to-missing-when-overriding">this Thoughtbot blog post</a>.</li>
+</ul>
+
+<p>How you can solve some of the previous points:</p>
+<ul>
+  <li>
+    <p>The nice thing about doing this to a hash as opposed to a class that you create, is that you can use the approach that Avdi Grimm uses in his book <a href="https://www.confidentruby.com/">Confident Ruby</a>, where he passes a block to the <code class="language-ruby">.fetch()</code> method, to give him more flexibility, for better error handling, etc. Like this:</p>
+
+<pre><code class="language-ruby">
+# Using a customized fetch:
+def method_missing(method, *args, &amp;block)
+  hash.fetch(method.to_s) do
+    raise Error, "#{hash.class} does not respond to #{method}"
+  end
+end
+</code></pre>
+      <p>Hopefully this helps with debugging!</p>
+    </li>
+    <li>We could play some inception game here, and when a key returns a subhash, convert those subkeys to methods as well. As pointed out in <a href="http://stackoverflow.com/a/20305146/2750478">this StackOverflow answer</a>:
+<pre><code class="language-ruby">
+module H
+  def method_missing sym,*
+    r = fetch(sym){fetch(sym.to_s){super}}
+    Hash === r ? r.extend(H) : r
+  end
+end
+
+the = { answer: { is: 42 } }
+the.extend(H)
+the.answer.is # => 42
+</code></pre>
+  </li>
+</ul>
+
+<p>With inheritance, <code class="language-ruby">SimpleDelegator</code> and <code class="language-ruby">missing_method</code>, if a method is defined here with the same name as another method in the parent or decorated class, it will overwrite the method. So that is one thing to keep in mind, because these are the three options that hide the parent or decorated object methods from you, so if you add new methods to the decorators, beware of the naming.</p>
+
+<h2>What would I use?</h2>
+
+<p>I feel really tempted to use <code class="language-ruby">method_mising</code> for the JSON objects that I have in this particular app, whose hashes don't have more than two levels. And I think <code class="language-ruby">Forwardable</code> is the best approach for my <code class="language-ruby">EP::Person</code> and <code class="language-ruby">Page::Person</code> classes. But I will give it a second thought.</p>
