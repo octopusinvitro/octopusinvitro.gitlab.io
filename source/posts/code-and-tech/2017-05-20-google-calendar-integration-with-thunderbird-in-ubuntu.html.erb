@@ -1,0 +1,32 @@
+---
+layout: post
+title: Google calendar integration with Thunderbird in Ubuntu
+date: 2017-05-20 22:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags: []
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>These days almost every company I have worked with uses gmail to manage the company email accounts. This means that usually there is also a company Google calendar shared with the whole team with all the relevant events that you have to be aware of.</p>
+
+<p>If you are on Ubuntu, you may be using Thunderbird as your email client for your work or personal email accounts management. Thunderbird sends you a notification when you have a new email. It would be nice if it could also send you a notification when an event in the shared calendar is close to happening.</p>
+
+<p>Thankfully, you can avoid overheads by handling both Google email and its associated calendar in the same application, because there is an add-on for that called <a href="https://addons.mozilla.org/en-GB/thunderbird/addon/lightning/">Lightning</a>. This add-on is developed by the "Mozilla Calendar Project". To install it, go to "<em>Tools > Add-ons</em>", then click in "<em>Browse all add-ons</em>" and type "<em>Lightning</em>" in the search box. Click on the add-on to open its page and then click "<em>Add to Thunderbird</em>". You will need to restart Thunderbird for the add-on to be installed.</p>
+
+<p>Now you will have a "Today Pane" that you can toggle on/off, with today's and upcoming events, and a new menu item called "<em>Events and tasks</em>", among other things. But your calendar still doesn't have your events from your Google calendar. For that you need to go to "<em>New > Calendar...</em>" to add the calendar associated with that email account. You can follow the instructions in <a href="https://support.mozilla.org/en-US/kb/using-lightning-google-calendar#w_read-and-write-access">the official page</a>, or just do what the modal window tells you.</p>
+
+<p>Now, everytime an event is close, you will receive a notification, with an alarm sound. But with only this you won't be able to add a new event to this calendar and have it appear on your Google calendar. For that you have to install another add-on called <a href="https://addons.mozilla.org/en-GB/thunderbird/addon/provider-for-google-calendar/">Provider for Google Calendar</a>. Follow the same process as before, you will also have to restart Thunderbird, and then add the calendar as before. Now you can add an event and when this event is closed, will make a noise.</p>
+
+
+<h2>Adding a calendar for a second email account</h2>
+
+<p>To add a calendar for a second email account that you also manage with Thunderbird, the steps are the same.</p>
+
+<p>However, Thunderbird doesn't seem to make a separation between calendars from different accounts. So this means that you will have just one calendar view, but with all the events of the different accounts mixed in. You can always untick the boxes of the calendars you don't want to visualize, or not add them in the first place the first time you add the new calendar!</p>
