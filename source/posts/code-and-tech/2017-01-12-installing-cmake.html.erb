@@ -1,0 +1,71 @@
+---
+layout: post
+title: Installing CMake
+date: 2017-01-12 17:42:45.000000000 +01:00
+type: post
+published: true
+status: publish
+categories:
+- Code &amp; computers
+tags:
+- Bash
+author:
+  display_name: Octopus in vitro
+  first_name: ''
+  last_name: ''
+---
+
+<p>I'll be honest: I hadn't have to use Make or CMake in ages. But sometimes you need to install some system tool that comes with a make file, and you discover that you don't have CMake installed or your version is too old and doesn't work with said make file.</p>
+
+<p>So this is what I did to install it (in case I have to do it again):</p>
+
+<ul><li>Uninstall your current version:</li></ul>
+
+<pre><code class="language-bash">
+sudo apt-get purge cmake
+</code></pre>
+
+<ul><li>Go to official CMake webpage then download and extract the latest version.</li></ul>
+
+<pre><code class="language-bash">
+mkdir ~/temp
+cd ~/temp
+wget https://cmake.org/files/v3.7/cmake-3.7.2.tar.gz
+tar xzvf cmake-3.7.2.tar.gz
+cd cmake-3.7.2/
+</code></pre>
+
+<ul><li>Install it by running:</li></ul>
+
+<pre><code class="language-bash">
+./bootstrap
+make -j4
+sudo make install
+</code></pre>
+
+<ul><li>Test your new <code class="language-bash">cmake</code> version.</li></ul>
+
+<pre><code class="language-bash">
+cmake --version
+</code></pre>
+
+<ul><li>Results of <code class="language-bash">cmake --version</code>:</li></ul>
+
+<pre><code class="language-bash">
+cmake version 3.7.2
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+</code></pre>
+
+<p>Note In 3.7.X the X represent a number that may change if the app is updated. According to the official webpage the Latest Release at the moment of writing this is 3.7.2.</p>
+
+<p>The make install command need root privileges. The <code class="language-bash">cmake --version</code> command only works after you open a new terminal because cmake is installed under <code class="language-bash">/usr/local/bin/</code> by default, not <code class="language-bash">/usr/bin/</code>.</p>
+
+<h2 id="installinggcc6">Installing gcc-6</h2>
+
+<p>I also had to update my gcc. Since I use Ubuntu, this is the ppa:</p>
+
+<pre><code class="language-bash">
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install gcc-6.3
+</code></pre>
