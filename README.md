@@ -28,8 +28,8 @@ documentation http://doc.gitlab.com/ee/pages/README.html.
 This project's static Pages are built by [GitLab CI][ci], following the steps
 defined in [`.gitlab-ci.yml`](.gitlab-ci.yml):
 
-```
-image: ruby:2.3
+```yml
+image: ruby:2.5
 
 cache:
   paths:
