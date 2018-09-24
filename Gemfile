@@ -7,8 +7,8 @@ ruby '2.5.0'
 
 # Middleman Gems
 gem 'middleman'
-gem 'middleman-livereload'
 gem 'middleman-blog'
+gem 'middleman-livereload'
 
 # gem 'redcarpet', '~> 3.3', '>= 3.3.3'
 gem 'nokogiri'
