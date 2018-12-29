@@ -8,6 +8,7 @@ GEM
       tzinfo (~> 1.1)
     addressable (2.5.2)
       public_suffix (>= 2.0.2, < 4.0)
+    ast (2.4.0)
     backports (3.11.4)
     builder (3.2.3)
     coderay (1.1.2)
@@ -37,6 +38,7 @@ GEM
     hashie (3.6.0)
     http_parser.rb (0.6.0)
     i18n (0.7.0)
+    jaro_winkler (1.5.1)
     kramdown (1.17.0)
     listen (3.0.8)
       rb-fsevent (~> 0.9, >= 0.9.4)
@@ -95,6 +97,9 @@ GEM
     padrino-support (0.13.3.4)
       activesupport (>= 3.1)
     parallel (1.12.1)
+    parser (2.5.3.0)
+      ast (~> 2.4.0)
+    powerpack (0.1.2)
     pry (0.12.2)
       coderay (~> 1.1.0)
       method_source (~> 0.9.0)
@@ -102,9 +107,19 @@ GEM
     rack (2.0.6)
     rack-livereload (0.3.17)
       rack
+    rainbow (3.0.0)
     rb-fsevent (0.10.3)
     rb-inotify (0.9.10)
       ffi (>= 0.5.0, < 2)
+    rubocop (0.61.1)
+      jaro_winkler (~> 1.5.1)
+      parallel (~> 1.10)
+      parser (>= 2.5, != 2.5.1.1)
+      powerpack (~> 0.1)
+      rainbow (>= 2.2.2, < 4.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (~> 1.4.0)
+    ruby-progressbar (1.10.0)
     sass (3.4.25)
     servolux (0.13.0)
     temple (0.8.0)
@@ -115,6 +130,7 @@ GEM
       thread_safe (~> 0.1)
     uglifier (3.2.0)
       execjs (>= 0.3.0, < 3)
+    unicode-display_width (1.4.1)
 
 PLATFORMS
   ruby
@@ -126,6 +142,7 @@ DEPENDENCIES
   middleman-livereload
   nokogiri
   pry
+  rubocop
 
 RUBY VERSION
    ruby 2.5.0p0

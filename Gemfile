@@ -16,4 +16,7 @@ gem 'nokogiri'
 # For feed.xml.builder
 gem 'builder'
 
-gem 'pry'
+group :development do
+  gem 'pry'
+  gem 'rubocop'
+end
