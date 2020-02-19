@@ -31,11 +31,11 @@ def work_tag(tag)
 end
 
 def blog_tags
-  get_tags(blog('blog'))
+  get_tags(blog('blog')).sort_by { |tag, _articles| tag.downcase }
 end
 
 def work_tags
-  get_tags(blog('work'))
+  get_tags(blog('work')).sort_by { |tag, _articles| tag.downcase }
 end
 
 def featured_image(article)
