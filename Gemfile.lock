@@ -94,7 +94,7 @@ GEM
       middleman-core (>= 3.3)
       rack-livereload (~> 0.3.15)
     minitest (5.19.0)
-    nokogiri (1.16.7-x86_64-linux)
+    nokogiri (1.18.8-x86_64-linux-gnu)
       racc (~> 1.4)
     oj (3.13.21)
     padrino-helpers (0.15.1)
